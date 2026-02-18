@@ -34,12 +34,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. User can log out and is returned to the login screen with all financial data cleared from view
   5. First successful login auto-creates the user row so existing accounts, liabilities, and snapshots FK constraints are satisfied
 
-**Research flag:** Verify `st.components.v1.html()` return value (postMessage bridge) against Streamlit 1.53.1 docs before building the auth widget. If the token silently returns `None`, use the Firebase REST API fallback (Python `requests` to `identitytoolkit.googleapis.com`) — document the decision before implementing.
+**Research flag:** RESOLVED — `st.components.v1.html()` returns None; must use `declare_component()` with path to directory containing index.html.
 
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md — Auth service layer + Firebase custom Streamlit component
+- [ ] 04-02-PLAN.md — Auth gate integration into main.py + data migration script
 
 ---
 
@@ -71,5 +72,5 @@ Phases execute in numeric order: 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1-3. Foundation (pre-GSD) | — | Complete | Pre-2026-02-17 |
-| 4. Firebase Authentication | 0/TBD | Not started | - |
+| 4. Firebase Authentication | 0/2 | Planning complete | - |
 | 5. Cloud Run Deployment | 0/TBD | Not started | - |
