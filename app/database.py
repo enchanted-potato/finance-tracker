@@ -1,0 +1,13 @@
+from collections.abc import Generator
+
+from sqlmodel import Session, create_engine
+
+from app.config import settings
+
+engine = create_engine(settings.database_url, echo=settings.debug)
+
+
+def get_session() -> Generator[Session, None, None]:
+    """Yield a database session with automatic cleanup."""
+    with Session(engine) as session:
+        yield session
