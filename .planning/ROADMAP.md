@@ -39,8 +39,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Auth service layer + Firebase custom Streamlit component
-- [ ] 04-02-PLAN.md — Auth gate integration into main.py + data migration script
+- [x] 04-01-PLAN.md — Auth service layer + Firebase custom Streamlit component
+- [x] 04-02-PLAN.md — Auth gate integration into main.py + data migration script
 
 ---
 
@@ -72,5 +72,5 @@ Phases execute in numeric order: 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1-3. Foundation (pre-GSD) | — | Complete | Pre-2026-02-17 |
-| 4. Firebase Authentication | 0/2 | Planning complete | - |
+| 4. Firebase Authentication | 2/2 | Complete | 2026-02-21 |
 | 5. Cloud Run Deployment | 0/TBD | Not started | - |

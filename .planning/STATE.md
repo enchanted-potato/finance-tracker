@@ -2,19 +2,19 @@
 
 ## Current Position
 
-Phase: 4 of 5 (Firebase Authentication) — complete
-Plan: 02 of 02 (auth integration and migration script complete)
-Status: Phase 4 complete — ready for Phase 5
-Last activity: 2026-02-21 — Completed 04-02-PLAN.md (auth integration)
+Phase: 5 of 5 (Cloud Run Deployment) — not started
+Plan: —
+Status: Ready to plan Phase 5
+Last activity: 2026-02-21 — Completed Phase 4 (Firebase Authentication)
 
-Progress: [████░░░░░░] ~40%  (phases 4-5; phases 1-3 pre-GSD complete)
+Progress: [████████░░] ~80%  (phases 4-5; phases 1-3 pre-GSD complete)
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** Seeing your net worth trend over time at a glance, without the overhead of transaction tracking.
-**Current focus:** Phase 4 — Firebase Authentication
+**Current focus:** Phase 5 — Cloud Run Deployment
 
 ## Performance Metrics
 
