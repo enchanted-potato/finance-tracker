@@ -1,0 +1,128 @@
+from decimal import Decimal
+
+from loguru import logger
+from sqlmodel import Session, select
+
+from app.models import Account, AccountType
+
+
+def create_account(
+    *,
+    session: Session,
+    user_id: str,
+    account_type_id: int,
+    name: str,
+    balance: Decimal = Decimal("0"),
+    currency: str = "GBP",
+) -> Account:
+    """Create a new asset account.
+
+    :param session: Database session.
+    :param user_id: Firebase UID of the owner.
+    :param account_type_id: FK to account_types.
+    :param name: Display name for the account.
+    :param balance: Initial balance.
+    :param currency: ISO 4217 currency code.
+    :returns: The newly created account.
+    """
+    account = Account(
+        user_id=user_id,
+        account_type_id=account_type_id,
+        name=name,
+        balance=balance,
+        currency=currency,
+    )
+    session.add(account)
+    session.commit()
+    session.refresh(account)
+    logger.info(f"Created account '{name}' (id={account.id}) for user {user_id}")
+    return account
+
+
+def list_accounts(*, session: Session, user_id: str, active_only: bool = True) -> list[Account]:
+    """List accounts for a user.
+
+    :param session: Database session.
+    :param user_id: Firebase UID of the owner.
+    :param active_only: If True, exclude deactivated accounts.
+    :returns: List of accounts.
+    """
+    statement = select(Account).where(Account.user_id == user_id)
+    if active_only:
+        statement = statement.where(Account.is_active.is_(True))
+    statement = statement.order_by(Account.account_type_id, Account.name)
+    return list(session.exec(statement).all())
+
+
+def get_account(*, session: Session, account_id: int, user_id: str) -> Account | None:
+    """Fetch a single account by ID.
+
+    :param session: Database session.
+    :param account_id: Primary key of the account.
+    :param user_id: Firebase UID of the owner.
+    :returns: The account or None if not found.
+    """
+    statement = select(Account).where(Account.id == account_id, Account.user_id == user_id)
+    return session.exec(statement).first()
+
+
+def update_balance(
+    *,
+    session: Session,
+    account_id: int,
+    user_id: str,
+    new_balance: Decimal,
+) -> Account:
+    """Update the balance of an account.
+
+    :param session: Database session.
+    :param account_id: Primary key of the account.
+    :param user_id: Firebase UID of the owner.
+    :param new_balance: The new balance value.
+    :returns: The updated account.
+    :raises ValueError: If the account is not found or inactive.
+    """
+    account = get_account(session=session, account_id=account_id, user_id=user_id)
+    if account is None:
+        raise ValueError(f"Account {account_id} not found for user {user_id}")
+    if not account.is_active:
+        raise ValueError(f"Account {account_id} is deactivated")
+    account.balance = new_balance
+    session.add(account)
+    session.commit()
+    session.refresh(account)
+    logger.info(f"Updated account {account_id} balance to {new_balance}")
+    return account
+
+
+def deactivate_account(*, session: Session, account_id: int, user_id: str) -> Account:
+    """Soft-delete an account by marking it inactive.
+
+    :param session: Database session.
+    :param account_id: Primary key of the account.
+    :param user_id: Firebase UID of the owner.
+    :returns: The deactivated account.
+    :raises ValueError: If the account is not found.
+    """
+    account = get_account(session=session, account_id=account_id, user_id=user_id)
+    if account is None:
+        raise ValueError(f"Account {account_id} not found for user {user_id}")
+    account.is_active = False
+    session.add(account)
+    session.commit()
+    session.refresh(account)
+    logger.info(f"Deactivated account {account_id}")
+    return account
+
+
+def list_account_types(*, session: Session, user_id: str) -> list[AccountType]:
+    """List account types visible to a user (system defaults + user custom).
+
+    :param session: Database session.
+    :param user_id: Firebase UID of the owner.
+    :returns: List of account types.
+    """
+    statement = select(AccountType).where(
+        (AccountType.user_id.is_(None)) | (AccountType.user_id == user_id)
+    )
+    return list(session.exec(statement.order_by(AccountType.name)).all())
