@@ -31,7 +31,9 @@ def _firebase_auth_widget(firebase_config: dict, action: str = "") -> dict | Non
     Returns:
         Auth state dict with status and optional token, or None if not ready
     """
-    return _auth_component(firebase_config=firebase_config, action=action, default=None)
+    return _auth_component(
+        firebase_config=firebase_config, action=action, default=None, key="firebase_auth"
+    )
 
 
 def _auth_gate() -> None:
@@ -40,10 +42,6 @@ def _auth_gate() -> None:
     Blocks all page content until user is authenticated via Firebase.
     Handles login, logout, and session persistence across page navigation.
     """
-    # If already authenticated, allow access
-    if st.session_state.get("user_id"):
-        return
-
     # Build Firebase config from settings
     firebase_config = {
         "apiKey": settings.firebase_web_api_key,
@@ -51,14 +49,21 @@ def _auth_gate() -> None:
         "projectId": settings.firebase_project_id,
     }
 
-    # Handle logout request
+    # Handle logout request BEFORE checking auth status
     if st.session_state.get("_logout_requested"):
+        # Tell component to sign out (this clears Firebase localStorage)
         _firebase_auth_widget(firebase_config, action="logout")
+        # Clear Python session state
         st.session_state.pop("user_id", None)
         st.session_state.pop("user_email", None)
         st.session_state.pop("user_name", None)
         st.session_state.pop("_logout_requested", None)
-        st.rerun()
+        # Stop here - component will handle signOut and send unauthenticated on next render
+        st.stop()
+
+    # If already authenticated, allow access
+    if st.session_state.get("user_id"):
+        return
 
     # Render auth widget
     result = _firebase_auth_widget(firebase_config)
@@ -69,8 +74,7 @@ def _auth_gate() -> None:
         st.stop()
 
     if result.get("status") == "initializing":
-        # Component is checking auth state
-        st.spinner("Loading...")
+        # Component is checking auth state - just wait
         st.stop()
 
     if result.get("status") == "unauthenticated":
