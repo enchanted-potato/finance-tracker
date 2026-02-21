@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: finance
+      POSTGRES_PASSWORD: finance
+      POSTGRES_DB: finance_tracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+      - /app/.venv
+    environment:
+      DATABASE_URL: postgresql://finance:finance@db:5432/finance_tracker
+      FIREBASE_CREDENTIALS_PATH: ""
+      DEBUG: "true"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
