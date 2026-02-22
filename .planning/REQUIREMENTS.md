@@ -19,7 +19,7 @@ Requirements for initial live release (auth + deployment). Phases 1-3 (foundatio
 ### Deployment
 
 - [ ] **DEPLOY-01**: Firebase service account credentials are stored in GCP Secret Manager (not in Docker image, not in repository, not in .env)
-- [ ] **DEPLOY-02**: `.dockerignore` excludes `.env`, credential JSON files, and `.git` from Docker image
+- [x] **DEPLOY-02**: `.dockerignore` excludes `.env`, credential JSON files, and `.git` from Docker image
 - [ ] **DEPLOY-03**: App connects to Cloud SQL via Unix socket when running on Cloud Run (DATABASE_URL format change only — no code changes to `app/database.py`)
 - [ ] **DEPLOY-04**: App is deployed to Cloud Run, accessible via HTTPS URL, with working Google Sign-In authentication
 - [ ] **DEPLOY-05**: Data migration script updates all `user_id = 'test-user'` rows to the real Firebase UID before production traffic reaches the app
@@ -56,7 +56,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-05 | Phase 4 | Pending |
 | AUTH-06 | Phase 4 | Pending |
 | DEPLOY-01 | Phase 5 | Pending |
-| DEPLOY-02 | Phase 5 | Pending |
+| DEPLOY-02 | Phase 5 | Complete |
 | DEPLOY-03 | Phase 5 | Pending |
 | DEPLOY-04 | Phase 5 | Pending |
 | DEPLOY-05 | Phase 5 | Pending |

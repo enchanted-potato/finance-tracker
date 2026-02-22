@@ -2,12 +2,12 @@
 
 ## Current Position
 
-Phase: 5 of 5 (Cloud Run Deployment) — not started
-Plan: —
-Status: Ready to plan Phase 5
-Last activity: 2026-02-21 — Completed Phase 4 (Firebase Authentication)
+Phase: 5 of 5 (Cloud Run Deployment) — in progress
+Plan: 01 of 04
+Status: Executing Phase 5 plans
+Last activity: 2026-02-22 — Completed 05-01-PLAN.md (Docker deployment configuration)
 
-Progress: [████████░░] ~80%  (phases 4-5; phases 1-3 pre-GSD complete)
+Progress: [████████░░] ~82%  (phases 4-5; phases 1-3 pre-GSD complete)
 
 ## Project Reference
 
@@ -19,15 +19,16 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 288 seconds (~5 minutes)
-- Total execution time: 575 seconds
+- Total plans completed: 3
+- Average duration: 234 seconds (~4 minutes)
+- Total execution time: 701 seconds
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 04 | 2 | 575s | 288s |
+| 05 | 1 | 126s | 126s |
 
 *Updated after each plan completion*
 
@@ -47,6 +48,9 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 - Phase 4-02: Session persistence via st.session_state.user_id across Streamlit reruns
 - Phase 4-02: Logout flow uses session_state flag + st.rerun to trigger component signOut
 - Phase 4-02: Migration script written now for Phase 5 execution
+- [Phase 05]: Use shell parameter expansion ${PORT:-8501} for Cloud Run PORT compatibility
+- [Phase 05]: Remove 'uv run' wrapper from CMD (dependencies installed via uv sync in image)
+- [Phase 05]: Exclude *.json except pyproject.json to catch Firebase credentials
 
 ### Pending Todos
 
