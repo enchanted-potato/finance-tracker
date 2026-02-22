@@ -55,12 +55,15 @@ Plans:
   4. The app is accessible via HTTPS Cloud Run URL with working Google Sign-In end-to-end
   5. All rows with `user_id = 'test-user'` are migrated to the real Firebase UID before production traffic reaches the app
 
-**Research flag:** Verify Cloud SQL Unix socket `DATABASE_URL` format (`postgresql+psycopg2://USER:PASS@/DBNAME?host=/cloudsql/PROJECT:REGION:INSTANCE`) and exact `gcloud run deploy` flag names (`--set-secrets`, `--add-cloudsql-instances`) against official GCP docs before executing deploy commands. Wrong URL format causes container crash at startup with a misleading health-check timeout error.
+**Research flag:** RESOLVED — Verified Cloud SQL Unix socket `DATABASE_URL` format (`postgresql+psycopg2://USER:PASS@/DBNAME?host=/cloudsql/PROJECT:REGION:INSTANCE`) and exact `gcloud run deploy` flag names (`--set-secrets`, `--add-cloudsql-instances`) via official GCP docs.
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md — Prepare Docker configuration (.dockerignore, PORT-aware Dockerfile)
+- [ ] 05-02-PLAN.md — Set up GCP infrastructure (Cloud SQL, Secret Manager, IAM)
+- [ ] 05-03-PLAN.md — Deploy to Cloud Run with Cloud SQL and Secret Manager integration
+- [ ] 05-04-PLAN.md — Migrate test-user data to production Firebase UID
 
 ---
 
@@ -73,4 +76,4 @@ Phases execute in numeric order: 4 → 5
 |-------|----------------|--------|-----------|
 | 1-3. Foundation (pre-GSD) | — | Complete | Pre-2026-02-17 |
 | 4. Firebase Authentication | 2/2 | Complete | 2026-02-21 |
-| 5. Cloud Run Deployment | 0/TBD | Not started | - |
+| 5. Cloud Run Deployment | 0/4 | Not started | - |
