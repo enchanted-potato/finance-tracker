@@ -51,6 +51,7 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 - [Phase 05]: Use shell parameter expansion ${PORT:-8501} for Cloud Run PORT compatibility
 - [Phase 05]: Remove 'uv run' wrapper from CMD (dependencies installed via uv sync in image)
 - [Phase 05]: Exclude *.json except pyproject.json to catch Firebase credentials
+- [Phase 05]: Use Terraform for GCP infrastructure provisioning instead of manual Console (reproducible, version-controlled)
 
 ### Pending Todos
 
