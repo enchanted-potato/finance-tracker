@@ -10,5 +10,5 @@ resource "google_secret_manager_secret" "firebase_creds" {
 # Secret version with Firebase credentials
 resource "google_secret_manager_secret_version" "firebase_creds_version" {
   secret      = google_secret_manager_secret.firebase_creds.id
-  secret_data = file("${path.root}/../firebase-credentials.json")
+  secret_data = file("${path.root}/../.firebase/firebase-tracker-sa.json")
 }

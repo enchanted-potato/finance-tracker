@@ -44,7 +44,7 @@ resource "google_sql_database" "database" {
 
 # IAM database user for Cloud Run service account
 resource "google_sql_user" "iam_user" {
-  name     = data.google_compute_default_service_account.default.email
+  name     = trimsuffix(data.google_compute_default_service_account.default.email, ".gserviceaccount.com")
   instance = google_sql_database_instance.main.name
   type     = "CLOUD_IAM_SERVICE_ACCOUNT"
 }
