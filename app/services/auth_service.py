@@ -6,7 +6,6 @@ from loguru import logger
 from sqlmodel import Session, select
 
 from app.config import settings
-from app.models import User
 
 
 def init_firebase_admin() -> None:
