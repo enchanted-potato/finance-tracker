@@ -3,7 +3,7 @@
 import firebase_admin
 from firebase_admin import auth, credentials
 from loguru import logger
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.config import settings
 
@@ -58,30 +58,24 @@ def verify_firebase_token(id_token: str) -> dict | None:
 
 def get_or_create_user(
     session: Session, uid: str, email: str, display_name: str
-) -> User:
-    """Get existing user or create new one.
+) -> str:
+    """Validate user ID and return it.
 
     Args:
-        session: SQLModel database session
+        session: SQLModel database session (unused, kept for compatibility)
         uid: Firebase user ID
-        email: User email
-        display_name: User display name
+        email: User email (unused, kept for compatibility)
+        display_name: User display name (unused, kept for compatibility)
 
     Returns:
-        User model instance
+        Validated Firebase UID string
+
+    Raises:
+        ValueError: If uid is 'test-user' (blocked in production)
     """
-    # Try to get existing user
-    statement = select(User).where(User.id == uid)
-    user = session.exec(statement).first()
+    # Block test-user from production
+    if uid == 'test-user':
+        raise ValueError("Invalid user_id: 'test-user' is not allowed in production")
 
-    if user:
-        return user
-
-    # Create new user
-    user = User(id=uid, email=email, display_name=display_name)
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-    logger.info(f"Created new user: {uid} ({email})")
-
-    return user
+    logger.info(f"Authenticated user: {uid} ({email})")
+    return uid
