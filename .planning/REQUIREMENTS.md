@@ -22,7 +22,7 @@ Requirements for initial live release (auth + deployment). Phases 1-3 (foundatio
 - [x] **DEPLOY-02**: `.dockerignore` excludes `.env`, credential JSON files, and `.git` from Docker image
 - [x] **DEPLOY-03**: App connects to Cloud SQL via Unix socket when running on Cloud Run (DATABASE_URL format change only — no code changes to `app/database.py`)
 - [ ] **DEPLOY-04**: App is deployed to Cloud Run, accessible via HTTPS URL, with working Google Sign-In authentication
-- [ ] **DEPLOY-05**: Data migration script updates all `user_id = 'test-user'` rows to the real Firebase UID before production traffic reaches the app
+- [x] **DEPLOY-05**: Data migration script updates all `user_id = 'test-user'` rows to the real Firebase UID before production traffic reaches the app
 
 ## Future Requirements (v1.1+)
 
@@ -59,7 +59,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPLOY-02 | Phase 5 | Complete |
 | DEPLOY-03 | Phase 5 | Complete |
 | DEPLOY-04 | Phase 5 | Pending |
-| DEPLOY-05 | Phase 5 | Pending |
+| DEPLOY-05 | Phase 5 | Complete |
 
 **Coverage:**
 - v1.0 requirements: 11 total

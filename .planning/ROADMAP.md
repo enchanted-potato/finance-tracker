@@ -76,4 +76,4 @@ Phases execute in numeric order: 4 → 5
 |-------|----------------|--------|-----------|
 | 1-3. Foundation (pre-GSD) | — | Complete | Pre-2026-02-17 |
 | 4. Firebase Authentication | 2/2 | Complete | 2026-02-21 |
-| 5. Cloud Run Deployment | 0/4 | Not started | - |
+| 5. Cloud Run Deployment | 3/4 | In Progress|  |

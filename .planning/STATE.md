@@ -3,9 +3,9 @@
 ## Current Position
 
 Phase: 5 of 5 (Cloud Run Deployment) — in progress
-Plan: 02 of 04
+Plan: 04 of 04
 Status: Executing Phase 5 plans
-Last activity: 2026-02-27 — Completed 05-02-PLAN.md (GCP Infrastructure Setup)
+Last activity: 2026-02-27 — Completed 05-04-PLAN.md (Schema Simplification)
 
 Progress: [████████░░] ~85%  (phases 4-5; phases 1-3 pre-GSD complete)
 
@@ -19,16 +19,16 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 733 seconds (~12 minutes)
-- Total execution time: 2932 seconds
+- Total plans completed: 5
+- Average duration: 1630 seconds (~27 minutes)
+- Total execution time: 8151 seconds
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 04 | 2 | 575s | 288s |
-| 05 | 2 | 2357s | 1179s |
+| 05 | 3 | 7576s | 2525s |
 
 *Updated after each plan completion*
 
@@ -57,6 +57,7 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 - [Phase 05]: Remove users table entirely — single-user app, use Firebase UID directly in accounts/liabilities/snapshots
 - [Phase 05]: No migration needed — database is empty, fresh start on Cloud SQL
 - [Phase 05]: Block 'test-user' as valid user_id in app validation
+- [Phase 05]: Store Firebase UID directly as string in user_id fields with no FK constraints
 
 ### Pending Todos
 
@@ -71,5 +72,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Phase 5 context updated — schema simplification decisions captured (remove users table, no migration needed)
+Stopped at: Completed 05-04-PLAN.md (Schema Simplification)
 Resume file: .planning/phases/05-cloud-run-deployment/05-CONTEXT.md
