@@ -52,7 +52,7 @@ class LiabilityType(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(max_length=100)
-    user_id: str | None = Field(default=None, foreign_key="users.id", max_length=128)
+    user_id: str | None = Field(default=None, max_length=128)
 
 
 class Liability(SQLModel, table=True):
