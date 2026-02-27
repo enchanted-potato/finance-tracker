@@ -3,11 +3,11 @@
 ## Current Position
 
 Phase: 5 of 5 (Cloud Run Deployment) — in progress
-Plan: 01 of 04
+Plan: 02 of 04
 Status: Executing Phase 5 plans
-Last activity: 2026-02-22 — Completed 05-01-PLAN.md (Docker deployment configuration)
+Last activity: 2026-02-27 — Completed 05-02-PLAN.md (GCP Infrastructure Setup)
 
-Progress: [████████░░] ~82%  (phases 4-5; phases 1-3 pre-GSD complete)
+Progress: [████████░░] ~85%  (phases 4-5; phases 1-3 pre-GSD complete)
 
 ## Project Reference
 
@@ -19,16 +19,16 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 234 seconds (~4 minutes)
-- Total execution time: 701 seconds
+- Total plans completed: 4
+- Average duration: 733 seconds (~12 minutes)
+- Total execution time: 2932 seconds
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 04 | 2 | 575s | 288s |
-| 05 | 1 | 126s | 126s |
+| 05 | 2 | 2357s | 1179s |
 
 *Updated after each plan completion*
 
@@ -52,6 +52,8 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 - [Phase 05]: Remove 'uv run' wrapper from CMD (dependencies installed via uv sync in image)
 - [Phase 05]: Exclude *.json except pyproject.json to catch Firebase credentials
 - [Phase 05]: Use Terraform for GCP infrastructure provisioning instead of manual Console (reproducible, version-controlled)
+- [Phase 05]: Comment out IAM database user resource - automatic creation on first connection with cloudsql.client role
+- [Phase 05]: Use postgres superuser with password for initial schema creation instead of IAM auth
 
 ### Pending Todos
 
@@ -65,6 +67,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Completed 04-02-PLAN.md — Phase 4 (Firebase Authentication) complete. Ready for Phase 5 (Cloud Deployment)
+Last session: 2026-02-27
+Stopped at: Completed 05-02-PLAN.md (GCP Infrastructure Setup) — Cloud SQL with schema initialized, ready for data migration
 Resume file: None
