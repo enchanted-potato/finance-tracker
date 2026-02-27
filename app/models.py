@@ -92,7 +92,7 @@ class Snapshot(SQLModel, table=True):
     )
 
     id: int | None = Field(default=None, primary_key=True)
-    user_id: str = Field(foreign_key="users.id", max_length=128)
+    user_id: str = Field(max_length=128)
     total_assets: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
     total_liabilities: Decimal = Field(
         default=Decimal("0"), max_digits=14, decimal_places=2
