@@ -62,7 +62,7 @@ class Liability(SQLModel, table=True):
     __table_args__ = (Index("ix_liabilities_user_active", "user_id", "is_active"), {"extend_existing": True})
 
     id: int | None = Field(default=None, primary_key=True)
-    user_id: str = Field(foreign_key="users.id", max_length=128)
+    user_id: str = Field(max_length=128)
     liability_type_id: int = Field(foreign_key="liability_types.id")
     name: str = Field(max_length=255)
     balance: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
