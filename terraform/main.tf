@@ -43,11 +43,13 @@ resource "google_sql_database" "database" {
 }
 
 # IAM database user for Cloud Run service account
-resource "google_sql_user" "iam_user" {
-  name     = trimsuffix(data.google_compute_default_service_account.default.email, ".gserviceaccount.com")
-  instance = google_sql_database_instance.main.name
-  type     = "CLOUD_IAM_SERVICE_ACCOUNT"
-}
+# Note: With IAM authentication enabled, the database user is created automatically
+# on first connection when the service account has cloudsql.client role (granted in iam.tf)
+# resource "google_sql_user" "iam_user" {
+#   name     = trimsuffix(data.google_compute_default_service_account.default.email, ".gserviceaccount.com")
+#   instance = google_sql_database_instance.main.name
+#   type     = "CLOUD_IAM_SERVICE_ACCOUNT"
+# }
 
 # Data source for default compute service account
 data "google_compute_default_service_account" "default" {}
