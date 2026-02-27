@@ -54,6 +54,9 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 - [Phase 05]: Use Terraform for GCP infrastructure provisioning instead of manual Console (reproducible, version-controlled)
 - [Phase 05]: Comment out IAM database user resource - automatic creation on first connection with cloudsql.client role
 - [Phase 05]: Use postgres superuser with password for initial schema creation instead of IAM auth
+- [Phase 05]: Remove users table entirely — single-user app, use Firebase UID directly in accounts/liabilities/snapshots
+- [Phase 05]: No migration needed — database is empty, fresh start on Cloud SQL
+- [Phase 05]: Block 'test-user' as valid user_id in app validation
 
 ### Pending Todos
 
@@ -63,10 +66,10 @@ None yet.
 
 - ~~Phase 4: `st.components.v1.html()` postMessage return value mechanism needs verification~~ — RESOLVED: postMessage protocol works correctly, auth flow verified end-to-end
 - Phase 5: Cloud SQL Unix socket URL format and `gcloud run deploy` flag syntax need verification against current GCP docs before executing deploy commands
-- Phase 5: Must execute migration script with real Firebase UID after first production login
+- ~~Phase 5: Must execute migration script with real Firebase UID after first production login~~ — RESOLVED: No data exists, no migration needed
 
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 05-02-PLAN.md (GCP Infrastructure Setup) — Cloud SQL with schema initialized, ready for data migration
-Resume file: None
+Stopped at: Phase 5 context updated — schema simplification decisions captured (remove users table, no migration needed)
+Resume file: .planning/phases/05-cloud-run-deployment/05-CONTEXT.md
