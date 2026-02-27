@@ -7,21 +7,6 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
 
-class User(SQLModel, table=True):
-    """Mirrors Firebase auth user."""
-
-    __tablename__ = "users"
-    __table_args__ = {"extend_existing": True}
-
-    id: str = Field(primary_key=True, max_length=128)
-    email: str = Field(max_length=255)
-    display_name: str = Field(default="", max_length=255)
-    created_at: datetime = Field(
-        default=None,
-        sa_column_kwargs={"server_default": sa_text("now()")},
-    )
-
-
 class AccountType(SQLModel, table=True):
     """Predefined or user-custom account categories."""
 
