@@ -110,10 +110,13 @@ def _auth_gate() -> None:
         email = decoded.get("email", "")
         name = decoded.get("name", "")
 
-        # Create or get user in database
+        # Validate user ID
         session = next(get_session())
         try:
-            get_or_create_user(session, uid, email, name)
+            user_id = get_or_create_user(session, uid, email, name)
+        except ValueError as e:
+            st.error(f"Authentication error: {e}")
+            st.stop()
         finally:
             session.close()
 
