@@ -3,9 +3,9 @@
 ## Current Position
 
 Phase: 5 of 5 (Cloud Run Deployment) — in progress
-Plan: 04 of 04
+Plan: 03 of 04 — CHECKPOINT (awaiting human verification)
 Status: Executing Phase 5 plans
-Last activity: 2026-02-27 — Completed 05-04-PLAN.md (Schema Simplification)
+Last activity: 2026-02-28 — Completed 05-03 Tasks 1+2; awaiting checkpoint verification at Task 3
 
 Progress: [████████░░] ~85%  (phases 4-5; phases 1-3 pre-GSD complete)
 
@@ -58,6 +58,9 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 - [Phase 05]: No migration needed — database is empty, fresh start on Cloud SQL
 - [Phase 05]: Block 'test-user' as valid user_id in app validation
 - [Phase 05]: Store Firebase UID directly as string in user_id fields with no FK constraints
+- [Phase 05-03]: Build Docker images with --platform linux/amd64 on Apple Silicon — Cloud Run requires amd64
+- [Phase 05-03]: Add ENV PATH="/app/.venv/bin:$PATH" to Dockerfile — uv venv not in PATH by default
+- [Phase 05-03]: Cloud Run service URL: https://finance-tracker-rntookejza-uc.a.run.app
 
 ### Pending Todos
 
@@ -66,11 +69,11 @@ None yet.
 ### Blockers/Concerns
 
 - ~~Phase 4: `st.components.v1.html()` postMessage return value mechanism needs verification~~ — RESOLVED: postMessage protocol works correctly, auth flow verified end-to-end
-- Phase 5: Cloud SQL Unix socket URL format and `gcloud run deploy` flag syntax need verification against current GCP docs before executing deploy commands
+- ~~Phase 5: Cloud SQL Unix socket URL format and `gcloud run deploy` flag syntax need verification against current GCP docs before executing deploy commands~~ — RESOLVED: Deploy succeeded with documented flags
 - ~~Phase 5: Must execute migration script with real Firebase UID after first production login~~ — RESOLVED: No data exists, no migration needed
 
 ## Session Continuity
 
-Last session: 2026-02-27
-Stopped at: Completed 05-04-PLAN.md (Schema Simplification)
+Last session: 2026-02-28
+Stopped at: 05-03 Task 3 checkpoint (human verification of Cloud Run deployment)
 Resume file: .planning/phases/05-cloud-run-deployment/05-CONTEXT.md

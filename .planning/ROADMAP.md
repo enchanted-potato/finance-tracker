@@ -62,7 +62,7 @@ Plans:
 Plans:
 - [ ] 05-01-PLAN.md — Prepare Docker configuration (.dockerignore, PORT-aware Dockerfile)
 - [ ] 05-02-PLAN.md — Set up GCP infrastructure (Cloud SQL, Secret Manager, IAM)
-- [ ] 05-03-PLAN.md — Deploy to Cloud Run with Cloud SQL and Secret Manager integration
+- [~] 05-03-PLAN.md — Deploy to Cloud Run with Cloud SQL and Secret Manager integration (checkpoint: awaiting human verification)
 - [ ] 05-04-PLAN.md — Migrate test-user data to production Firebase UID
 
 ---
