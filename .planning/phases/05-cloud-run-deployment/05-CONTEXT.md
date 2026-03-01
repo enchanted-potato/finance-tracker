@@ -35,7 +35,7 @@ Deploy the Streamlit app to Google Cloud Run with Cloud SQL database connection 
 - Firebase service account: Store entire JSON file as single Secret Manager secret
 - Secret name: `finance-tracker-firebase-creds` (app-prefixed for multi-app clarity)
 - Cloud Run access: Mount secret as file at `/secrets/firebase.json` (not env var)
-- Database password: Use Cloud SQL IAM authentication (passwordless, Cloud Run service account)
+- Database password: Postgres user with password auth (IAM auth does not work with plain psycopg2 via Unix socket — requires `cloud-sql-python-connector`; password stored as Cloud Run env var)
 
 ### Deployment Validation
 - Direct deploy to production — single deployment, no staged rollout
@@ -43,6 +43,7 @@ Deploy the Streamlit app to Google Cloud Run with Cloud SQL database connection 
 - First data created through UI after deployment — no seed scripts
 - Logging: Cloud Logging only (GCP default stdout/stderr) — no structured logging or alerts
 - Rollback plan: Fix forward — deploy new revisions with fixes, no rollback to previous revisions
+- Revision behavior: Every config change (`gcloud run services update` for env vars, secrets, memory, etc.) automatically creates and deploys a new revision — no explicit redeploy command needed
 
 ### Claude's Discretion
 - Exact `gcloud run deploy` command flags and order
