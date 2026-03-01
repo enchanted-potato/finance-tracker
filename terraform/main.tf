@@ -8,8 +8,10 @@ terraform {
 }
 
 provider "google" {
-  project = var.project_id
-  region  = var.region
+  project               = var.project_id
+  region                = var.region
+  billing_project       = var.project_id
+  user_project_override = true
 }
 
 # Cloud SQL instance
@@ -53,3 +55,16 @@ resource "google_sql_database" "database" {
 
 # Data source for default compute service account
 data "google_compute_default_service_account" "default" {}
+
+# Firebase Auth authorized domains
+# Manages the full list — must include defaults or Terraform will remove them
+resource "google_identity_platform_config" "auth" {
+  project = var.project_id
+
+  authorized_domains = [
+    "localhost",
+    "${var.project_id}.firebaseapp.com",
+    "${var.project_id}.web.app",
+    var.cloud_run_domain,
+  ]
+}
