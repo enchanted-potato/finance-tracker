@@ -6,6 +6,7 @@ import streamlit as st
 
 from app.database import get_session
 from app.services.snapshot_service import (
+    delete_snapshot,
     get_snapshot_history,
     import_csv_snapshots,
     update_snapshot,
@@ -93,7 +94,7 @@ def render() -> None:
             col_liab.markdown("**Liabilities**")
             col_nw.markdown("**Net Worth**")
             col_change.markdown("**Change**")
-            col_details.markdown("**Details**")
+            col_details.markdown("")
             col_date, col_assets, col_liab, col_nw, col_change, col_details = st.columns([2, 2, 2, 2, 2, 1])
 
         col_date.text(snap.snapshot_date.strftime("%Y-%m-%d"))
@@ -102,53 +103,62 @@ def render() -> None:
         col_nw.text(f"£{snap.net_worth:,.2f}")
         col_change.text(change)
 
-        # Dropdown detail on same row
-        with col_details.popover("⋮", use_container_width=True):
-            # Edit form
-            st.markdown("**Edit Snapshot**")
-            with st.form(key=f"edit_form_{snap.id}"):
-                new_assets = st.number_input(
-                    "Total Assets",
-                    value=float(snap.total_assets),
-                    step=0.01,
-                    format="%.2f",
-                )
-                new_liabilities = st.number_input(
-                    "Total Liabilities",
-                    value=float(snap.total_liabilities),
-                    step=0.01,
-                    format="%.2f",
-                )
+        show_key = f"show_{snap.id}"
+        if show_key not in st.session_state:
+            st.session_state[show_key] = False
+        if col_details.button("Edit", key=f"btn_{snap.id}", use_container_width=True):
+            st.session_state[show_key] = not st.session_state[show_key]
 
-                if st.form_submit_button("Save"):
-                    session = next(get_session())
-                    try:
-                        update_snapshot(
-                            session=session,
-                            snapshot_id=snap.id,
-                            total_assets=Decimal(str(new_assets)),
-                            total_liabilities=Decimal(str(new_liabilities)),
-                        )
-                        st.success("Updated!")
-                        st.rerun()
-                    finally:
-                        session.close()
+        if st.session_state[show_key]:
+            with st.container():
+                with st.form(key=f"edit_form_{snap.id}"):
+                    new_assets = st.number_input(
+                        "Total Assets",
+                        value=float(snap.total_assets),
+                        step=0.01,
+                        format="%.2f",
+                    )
+                    new_liabilities = st.number_input(
+                        "Total Liabilities",
+                        value=float(snap.total_liabilities),
+                        step=0.01,
+                        format="%.2f",
+                    )
 
-            # Detail view
-            if snap.detail_json:
-                st.markdown("---")
-                st.markdown("**Breakdown**")
-                detail = snap.detail_json
+                    col_save, col_delete = st.columns([1, 1])
+                    with col_save:
+                        if st.form_submit_button("Save"):
+                            session = next(get_session())
+                            try:
+                                update_snapshot(
+                                    session=session,
+                                    snapshot_id=snap.id,
+                                    total_assets=Decimal(str(new_assets)),
+                                    total_liabilities=Decimal(str(new_liabilities)),
+                                )
+                                st.session_state[show_key] = False
+                                st.rerun()
+                            finally:
+                                session.close()
+                    with col_delete:
+                        if st.form_submit_button("🗑️ Delete", type="secondary"):
+                            session = next(get_session())
+                            try:
+                                delete_snapshot(session=session, snapshot_id=snap.id, user_id=user_id)
+                                st.rerun()
+                            finally:
+                                session.close()
 
-                if detail.get("accounts"):
-                    st.markdown("**Accounts**")
-                    for acct in detail["accounts"]:
-                        st.text(f"  {acct['name']}: £{Decimal(acct['balance']):,.2f}")
-
-                if detail.get("liabilities"):
-                    st.markdown("**Liabilities**")
-                    for liab in detail["liabilities"]:
-                        st.text(f"  {liab['name']}: £{Decimal(liab['balance']):,.2f}")
+                if snap.detail_json:
+                    detail = snap.detail_json
+                    if detail.get("accounts"):
+                        st.markdown("**Accounts**")
+                        for acct in detail["accounts"]:
+                            st.text(f"  {acct['name']}: £{Decimal(acct['balance']):,.2f}")
+                    if detail.get("liabilities"):
+                        st.markdown("**Liabilities**")
+                        for liab in detail["liabilities"]:
+                            st.text(f"  {liab['name']}: £{Decimal(liab['balance']):,.2f}")
 
 
 def _format_change(current: Decimal, previous: Decimal | None) -> str:

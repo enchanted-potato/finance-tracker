@@ -294,6 +294,24 @@ def update_snapshot(
     return snapshot
 
 
+def delete_snapshot(*, session: Session, snapshot_id: int, user_id: str) -> None:
+    """Delete a snapshot by ID.
+
+    :param session: Database session.
+    :param snapshot_id: ID of the snapshot to delete.
+    :param user_id: Firebase UID of the owner (for ownership check).
+    :raises ValueError: If the snapshot is not found or belongs to another user.
+    """
+    snapshot = session.exec(
+        select(Snapshot).where(Snapshot.id == snapshot_id, Snapshot.user_id == user_id)
+    ).first()
+    if not snapshot:
+        raise ValueError(f"Snapshot {snapshot_id} not found")
+    session.delete(snapshot)
+    session.commit()
+    logger.info(f"Deleted snapshot {snapshot_id} for user {user_id}")
+
+
 def _parse_decimal(raw: str) -> Decimal:
     """Parse a string like '£ 10,753.42' or '10753.42' to Decimal."""
     cleaned = raw.strip().replace("£", "").replace("$", "").replace(",", "").strip()
