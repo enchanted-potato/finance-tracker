@@ -49,6 +49,13 @@ def _auth_gate() -> None:
         "projectId": settings.firebase_project_id,
     }
 
+    # Bypass auth in local dev
+    if settings.dev_user_id and not st.session_state.get("user_id"):
+        st.session_state["user_id"] = settings.dev_user_id
+        st.session_state["user_email"] = "dev@local"
+        st.session_state["user_name"] = "Dev User"
+        return
+
     # Handle logout request BEFORE checking auth status
     if st.session_state.get("_logout_requested"):
         # Tell component to sign out (this clears Firebase localStorage)
@@ -162,6 +169,19 @@ def main() -> None:
             /* Apply Poppins font everywhere except icons */
             *:not(span.material-icons):not(.material-icons) {
                 font-family: 'Poppins', Arial, sans-serif !important;
+            }
+
+            /* Ensure Material Icons font is never overridden by inheritance */
+            .material-icons, span.material-icons {
+                font-family: 'Material Icons' !important;
+            }
+
+            /* Hide sidebar collapse button (uses Material Symbols which conflict with font override) */
+            [data-testid="collapsedControl"],
+            [data-testid="stSidebarCollapseButton"],
+            [data-testid="stSidebarCollapsedControl"],
+            button[kind="header"] {
+                display: none !important;
             }
 
             /* Main background color - Anthropic Light */
