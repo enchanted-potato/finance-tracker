@@ -14,7 +14,7 @@ from app.services.auth_service import (
     init_firebase_admin,
     verify_firebase_token,
 )
-from frontend.pages import accounts, configure, dashboard, history, liabilities
+from frontend.pages import accounts, configure, dashboard, history, liabilities, pension
 
 # Declare custom Firebase auth component
 _AUTH_COMPONENT_DIR = os.path.join(os.path.dirname(__file__), "auth_component")
@@ -261,6 +261,7 @@ def main() -> None:
         "Dashboard": "📊",
         "Accounts": "💰",
         "Liabilities": "💳",
+        "Pension": "🏦",
         "History": "📈",
         "Configure": "⚙️",
     }
@@ -290,6 +291,8 @@ def main() -> None:
             accounts.render()
         case "Liabilities":
             liabilities.render()
+        case "Pension":
+            pension.render()
         case "History":
             history.render()
         case "Configure":

@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app.database import get_session
-from app.services.account_service import list_account_types, list_accounts
+from app.services.account_service import list_account_types, list_non_pension_accounts, list_pension_accounts
 from app.services.liability_service import list_liabilities, list_liability_types
 from app.services.snapshot_service import get_snapshot_history
 
@@ -21,7 +21,8 @@ def render() -> None:
 
     session = next(get_session())
     try:
-        accounts = list_accounts(session=session, user_id=user_id)
+        accounts = list_non_pension_accounts(session=session, user_id=user_id)
+        pension_accounts = list_pension_accounts(session=session, user_id=user_id)
         liabilities = list_liabilities(session=session, user_id=user_id)
         account_types = list_account_types(session=session, user_id=user_id)
         liability_types = list_liability_types(session=session, user_id=user_id)
@@ -37,13 +38,14 @@ def render() -> None:
     # when no active records exist (e.g. data imported as snapshots only).
     total_assets = sum((a.balance for a in accounts), Decimal("0"))
     total_liabilities = sum((lb.balance for lb in liabilities), Decimal("0"))
+    total_pension = sum((a.balance for a in pension_accounts), Decimal("0"))
     if total_assets == 0 and total_liabilities == 0 and all_snapshots:
         latest = all_snapshots[-1]
         total_assets = latest.total_assets
         total_liabilities = latest.total_liabilities
     net_worth = total_assets - total_liabilities
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric(
             "Net Worth",
@@ -54,6 +56,8 @@ def render() -> None:
         st.metric("Total Assets", f"£{total_assets:,.2f}")
     with col3:
         st.metric("Total Liabilities", f"£{total_liabilities:,.2f}")
+    with col4:
+        st.metric("Total Pension", f"£{total_pension:,.2f}")
 
     if not all_snapshots:
         st.info(
@@ -83,6 +87,11 @@ def render() -> None:
     with col_liability_pie:
         st.subheader("Liability Breakdown")
         _render_liability_pie(liabilities, lt_map)
+
+    # --- Pension breakdown bar chart ---
+    if pension_accounts:
+        st.subheader("Pension Breakdown")
+        _render_pension_bar(pension_accounts)
 
 
 def _net_worth_delta(snapshots: list, current_net_worth: Decimal) -> str | None:
@@ -232,5 +241,32 @@ def _render_liability_pie(liabilities: list, type_map: dict[int, str]) -> None:
         margin={"l": 20, "r": 20, "t": 20, "b": 20},
         showlegend=False,
         paper_bgcolor="rgba(0,0,0,0)",
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _render_pension_bar(pension_accounts: list) -> None:
+    """Render a bar chart of pension value per provider (account name)."""
+    names = [a.name for a in pension_accounts]
+    values = [float(a.balance) for a in pension_accounts]
+
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=names,
+                y=values,
+                marker_color="#A855F7",
+                text=[f"£{v:,.0f}" for v in values],
+                textposition="outside",
+            )
+        ]
+    )
+    fig.update_layout(
+        yaxis_title="Amount (£)",
+        yaxis_tickformat="£,.0f",
+        margin={"l": 60, "r": 20, "t": 20, "b": 40},
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        showlegend=False,
     )
     st.plotly_chart(fig, use_container_width=True)
