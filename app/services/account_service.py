@@ -5,6 +5,62 @@ from sqlmodel import Session, select
 
 from app.models import Account, AccountType
 
+PENSION_TYPE_NAME = "Pension"
+
+
+def _get_pension_type_id(session: Session, user_id: str) -> int | None:
+    """Return the AccountType.id for 'Pension' visible to this user, or None.
+
+    :param session: Database session.
+    :param user_id: Firebase UID of the owner.
+    :returns: The id of the Pension account type, or None if not found.
+    """
+    statement = select(AccountType).where(
+        (AccountType.name == PENSION_TYPE_NAME),
+        (AccountType.user_id.is_(None)) | (AccountType.user_id == user_id),
+    )
+    at = session.exec(statement).first()
+    return at.id if at else None
+
+
+def list_pension_accounts(*, session: Session, user_id: str, active_only: bool = True) -> list[Account]:
+    """List accounts whose type is 'Pension'.
+
+    :param session: Database session.
+    :param user_id: Firebase UID of the owner.
+    :param active_only: If True, exclude deactivated accounts.
+    :returns: List of pension accounts ordered by name.
+    """
+    pension_type_id = _get_pension_type_id(session, user_id)
+    if pension_type_id is None:
+        return []
+    statement = select(Account).where(
+        Account.user_id == user_id,
+        Account.account_type_id == pension_type_id,
+    )
+    if active_only:
+        statement = statement.where(Account.is_active.is_(True))
+    statement = statement.order_by(Account.name)
+    return list(session.exec(statement).all())
+
+
+def list_non_pension_accounts(*, session: Session, user_id: str, active_only: bool = True) -> list[Account]:
+    """List accounts whose type is NOT 'Pension' (used for Total Assets).
+
+    :param session: Database session.
+    :param user_id: Firebase UID of the owner.
+    :param active_only: If True, exclude deactivated accounts.
+    :returns: List of non-pension accounts ordered by type and name.
+    """
+    pension_type_id = _get_pension_type_id(session, user_id)
+    statement = select(Account).where(Account.user_id == user_id)
+    if pension_type_id is not None:
+        statement = statement.where(Account.account_type_id != pension_type_id)
+    if active_only:
+        statement = statement.where(Account.is_active.is_(True))
+    statement = statement.order_by(Account.account_type_id, Account.name)
+    return list(session.exec(statement).all())
+
 
 def create_account(
     *,

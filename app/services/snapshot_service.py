@@ -7,6 +7,7 @@ from loguru import logger
 from sqlmodel import Session, select
 
 from app.models import Account, Liability, Snapshot
+from app.services.account_service import _get_pension_type_id
 
 
 def capture_snapshot(
@@ -25,7 +26,8 @@ def capture_snapshot(
     if snapshot_date is None:
         snapshot_date = date.today()
 
-    accounts = list(
+    pension_type_id = _get_pension_type_id(session, user_id)
+    all_accounts = list(
         session.exec(
             select(Account).where(Account.user_id == user_id, Account.is_active.is_(True))
         ).all()
@@ -36,14 +38,27 @@ def capture_snapshot(
         ).all()
     )
 
-    total_assets = sum((a.balance for a in accounts), Decimal("0"))
+    # Split pension vs non-pension so pension is excluded from total_assets / net_worth
+    pension_accounts = [
+        a for a in all_accounts if pension_type_id and a.account_type_id == pension_type_id
+    ]
+    non_pension_accounts = [
+        a for a in all_accounts if not (pension_type_id and a.account_type_id == pension_type_id)
+    ]
+
+    total_assets = sum((a.balance for a in non_pension_accounts), Decimal("0"))
+    total_pension = sum((a.balance for a in pension_accounts), Decimal("0"))
     total_liabilities = sum((lb.balance for lb in liabilities), Decimal("0"))
     net_worth = total_assets - total_liabilities
 
     detail = {
         "accounts": [
             {"id": a.id, "name": a.name, "balance": str(a.balance), "type_id": a.account_type_id}
-            for a in accounts
+            for a in non_pension_accounts
+        ],
+        "pension_accounts": [
+            {"id": a.id, "name": a.name, "balance": str(a.balance), "type_id": a.account_type_id}
+            for a in pension_accounts
         ],
         "liabilities": [
             {
@@ -54,6 +69,7 @@ def capture_snapshot(
             }
             for lb in liabilities
         ],
+        "total_pension": str(total_pension),
     }
 
     # Upsert: check if a snapshot already exists for this date
