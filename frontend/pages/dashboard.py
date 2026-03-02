@@ -70,6 +70,7 @@ def render() -> None:
     range_option = st.radio(
         "Time range",
         options=["6 Months", "1 Year", "All Time"],
+        index=2,
         horizontal=True,
         label_visibility="collapsed",
     )
