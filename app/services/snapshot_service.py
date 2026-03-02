@@ -270,6 +270,95 @@ def import_csv_snapshots(
     return imported, skipped, errors
 
 
+def import_csv_liabilities(
+    *,
+    session: Session,
+    user_id: str,
+    file_content: str,
+) -> tuple[int, int, list[str]]:
+    """Update existing snapshots' total_liabilities (and recalculate net_worth) from CSV.
+
+    Expects a CSV with a date column and a liabilities column. Only updates existing
+    snapshots — does not create new ones. total_assets is left unchanged.
+
+    :param session: Database session.
+    :param user_id: Firebase UID of the owner.
+    :param file_content: Raw CSV string.
+    :returns: Tuple of (updated_count, skipped_count, errors).
+    """
+    reader = csv.DictReader(io.StringIO(file_content))
+    if reader.fieldnames is None:
+        return 0, 0, ["CSV file is empty or has no header row."]
+
+    # Normalise headers for flexible matching
+    normalised = {h.strip().lower(): h for h in reader.fieldnames}
+
+    # Detect date column
+    date_col = None
+    for candidate in ("date", "snapshot_date"):
+        if candidate in normalised:
+            date_col = normalised[candidate]
+            break
+    if date_col is None:
+        return 0, 0, ["Could not find a 'Date' column in the CSV."]
+
+    # Detect liabilities column
+    liabilities_col = None
+    for candidate in ("total liabilities", "total_liabilities", "liabilities"):
+        if candidate in normalised:
+            liabilities_col = normalised[candidate]
+            break
+    if liabilities_col is None:
+        return 0, 0, ["Could not find a 'Total Liabilities' column in the CSV."]
+
+    updated = 0
+    skipped = 0
+    errors: list[str] = []
+
+    for row_num, row in enumerate(reader, start=2):
+        raw_date = row.get(date_col, "").strip()
+        if not raw_date:
+            continue
+
+        # Parse date
+        parsed_date = _parse_date(raw_date)
+        if parsed_date is None:
+            errors.append(f"Row {row_num}: Could not parse date '{raw_date}'.")
+            continue
+
+        # Parse liabilities value
+        try:
+            total_liabilities = _parse_decimal(row[liabilities_col])
+        except (InvalidOperation, ValueError, KeyError) as exc:
+            errors.append(f"Row {row_num}: Bad numeric value — {exc}.")
+            continue
+
+        # Find existing snapshot for this user + date
+        snapshot_dt = datetime.combine(parsed_date, datetime.min.time())
+        existing = session.exec(
+            select(Snapshot).where(
+                Snapshot.user_id == user_id, Snapshot.snapshot_date == snapshot_dt
+            )
+        ).first()
+
+        if existing is None:
+            skipped += 1
+            continue
+
+        # Update liabilities and recalculate net_worth; leave total_assets untouched
+        existing.total_liabilities = total_liabilities
+        existing.net_worth = existing.total_assets - total_liabilities
+        session.add(existing)
+        updated += 1
+
+    session.commit()
+    logger.info(
+        f"CSV liabilities import for user {user_id}: {updated} updated, {skipped} skipped, "
+        f"{len(errors)} errors"
+    )
+    return updated, skipped, errors
+
+
 def _parse_date(raw: str) -> date | None:
     """Try common date formats and return a date or None."""
     for fmt in ("%d/%m/%y", "%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%m/%d/%Y"):
