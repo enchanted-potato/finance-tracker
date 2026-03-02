@@ -8,6 +8,7 @@ from app.database import get_session
 from app.services.snapshot_service import (
     delete_snapshot,
     get_snapshot_history,
+    import_csv_liabilities,
     import_csv_snapshots,
     update_snapshot,
 )
@@ -38,47 +39,93 @@ def render() -> None:
     # Reverse to show most recent first
     snapshots_desc = list(reversed(snapshots))
 
-    # --- CSV import and export ---
-    col1, col2 = st.columns(2)
+    # --- CSV export ---
+    csv_data = _build_csv(snapshots_desc)
+    st.download_button(
+        label="Export CSV",
+        data=csv_data,
+        file_name="net_worth_history.csv",
+        mime="text/csv",
+    )
 
-    with col1:
-        uploaded_file = st.file_uploader(
-            "📤 Import CSV",
-            type=["csv"],
-            help="Upload a CSV file with Date and Value columns to import historical snapshots",
-        )
-        csv_data = _build_csv(snapshots_desc)
-
-    with col2:
-        st.download_button(
-            label="📥 Export CSV",
-            data=csv_data,
-            file_name="net_worth_history.csv",
-            mime="text/csv",
-            use_container_width=False,
-        )
-
-
-    # Handle file upload
-    if uploaded_file is not None:
-        file_content = uploaded_file.read().decode("utf-8")
-        session = next(get_session())
-        try:
-            imported, skipped, errors = import_csv_snapshots(
-                session=session,
-                user_id=user_id,
-                file_content=file_content,
+    # --- Import Snapshots from CSV ---
+    with st.expander("Import Snapshots from CSV"):
+        st.caption("Format: Date, Value  or  Date, Total Assets, Total Liabilities, Net Worth")
+        col_tpl, col_upload = st.columns([1, 2])
+        with col_tpl:
+            template_snapshots = "Date,Total Assets,Total Liabilities,Net Worth\n2025-01-01,50000.00,10000.00,40000.00"
+            st.download_button(
+                label="Download template",
+                data=template_snapshots,
+                file_name="snapshots_template.csv",
+                mime="text/csv",
+                key="dl_snapshots_template",
             )
-            if errors:
-                st.error(f"Import completed with errors:\n" + "\n".join(errors))
-            else:
-                st.success(
-                    f"Import successful! {imported} snapshots imported, "
-                    f"{skipped} skipped (already exist)."
+        with col_upload:
+            uploaded_snapshots = st.file_uploader(
+                "Upload CSV",
+                type=["csv"],
+                key="upload_snapshots",
+                label_visibility="collapsed",
+            )
+        if uploaded_snapshots is not None:
+            file_content = uploaded_snapshots.read().decode("utf-8")
+            session = next(get_session())
+            try:
+                imported, skipped, errors = import_csv_snapshots(
+                    session=session,
+                    user_id=user_id,
+                    file_content=file_content,
                 )
-            st.rerun()
-        finally:
-            session.close()
+                if errors:
+                    st.error("Import completed with errors:\n" + "\n".join(errors))
+                else:
+                    st.success(
+                        f"Import successful! {imported} snapshots imported, "
+                        f"{skipped} skipped (already exist)."
+                    )
+                st.rerun()
+            finally:
+                session.close()
+
+    # --- Update Liabilities from CSV ---
+    with st.expander("Update Liabilities from CSV"):
+        st.caption("Format: Date, Total Liabilities  — updates existing snapshots only, leaves assets unchanged")
+        col_tpl2, col_upload2 = st.columns([1, 2])
+        with col_tpl2:
+            template_liabilities = "Date,Total Liabilities\n2025-01-01,0.00"
+            st.download_button(
+                label="Download template",
+                data=template_liabilities,
+                file_name="liabilities_template.csv",
+                mime="text/csv",
+                key="dl_liabilities_template",
+            )
+        with col_upload2:
+            uploaded_liabilities = st.file_uploader(
+                "Upload CSV",
+                type=["csv"],
+                key="upload_liabilities",
+                label_visibility="collapsed",
+            )
+        if uploaded_liabilities is not None:
+            file_content = uploaded_liabilities.read().decode("utf-8")
+            session = next(get_session())
+            try:
+                updated, skipped, errors = import_csv_liabilities(
+                    session=session,
+                    user_id=user_id,
+                    file_content=file_content,
+                )
+                if errors:
+                    st.error("Import completed with errors:\n" + "\n".join(errors))
+                else:
+                    st.success(
+                        f"Done! {updated} updated, {skipped} skipped (date not found)."
+                    )
+                st.rerun()
+            finally:
+                session.close()
 
     st.markdown("---")
 
