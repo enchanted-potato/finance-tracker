@@ -72,8 +72,14 @@ None yet.
 - ~~Phase 5: Cloud SQL Unix socket URL format and `gcloud run deploy` flag syntax need verification against current GCP docs before executing deploy commands~~ — RESOLVED: Deploy succeeded with documented flags
 - ~~Phase 5: Must execute migration script with real Firebase UID after first production login~~ — RESOLVED: No data exists, no migration needed
 
+## Quick Tasks Completed
+
+| # | Task | Commits | Date |
+|---|------|---------|------|
+| 1 | Add pension as separate category with dedicated page and dashboard chart | 4194ef8, 7ed7004 | 2026-03-01 |
+
 ## Session Continuity
 
-Last session: 2026-02-28
-Stopped at: 05-03 Task 3 checkpoint (human verification of Cloud Run deployment)
+Last session: 2026-03-02
+Stopped at: Session resumed — pension quick task complete; awaiting human verification of Cloud Run deployment (05-03 Task 3)
 Resume file: .planning/phases/05-cloud-run-deployment/05-CONTEXT.md
