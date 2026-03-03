@@ -168,7 +168,11 @@ def render() -> None:
                         step=0.01,
                         format="%.2f",
                     )
-                    new_liabilities = st.number_input(
+                    no_liabilities = st.checkbox(
+                        "No liabilities data",
+                        value=snap.total_liabilities is None,
+                    )
+                    new_liabilities = None if no_liabilities else st.number_input(
                         "Total Liabilities",
                         value=float(snap.total_liabilities) if snap.total_liabilities is not None else 0.0,
                         step=0.01,
@@ -184,7 +188,7 @@ def render() -> None:
                                     session=session,
                                     snapshot_id=snap.id,
                                     total_assets=Decimal(str(new_assets)),
-                                    total_liabilities=Decimal(str(new_liabilities)),
+                                    total_liabilities=Decimal(str(new_liabilities)) if new_liabilities is not None else None,
                                 )
                                 st.session_state[show_key] = False
                                 st.rerun()

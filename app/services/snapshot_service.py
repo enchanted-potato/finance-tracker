@@ -48,8 +48,10 @@ def capture_snapshot(
 
     total_assets = sum((a.balance for a in non_pension_accounts), Decimal("0"))
     total_pension = sum((a.balance for a in pension_accounts), Decimal("0"))
-    total_liabilities = sum((lb.balance for lb in liabilities), Decimal("0"))
-    net_worth = total_assets - total_liabilities
+    total_liabilities = (
+        sum((lb.balance for lb in liabilities), Decimal("0")) if liabilities else None
+    )
+    net_worth = (total_assets - total_liabilities) if total_liabilities is not None else None
 
     detail = {
         "accounts": [
@@ -380,14 +382,14 @@ def update_snapshot(
     session: Session,
     snapshot_id: int,
     total_assets: Decimal,
-    total_liabilities: Decimal,
+    total_liabilities: Decimal | None,
 ) -> Snapshot:
     """Update a snapshot's values.
 
     :param session: Database session.
     :param snapshot_id: ID of the snapshot to update.
     :param total_assets: New total assets value.
-    :param total_liabilities: New total liabilities value.
+    :param total_liabilities: New total liabilities value, or None if unknown.
     :returns: The updated snapshot.
     """
     snapshot = session.get(Snapshot, snapshot_id)
@@ -396,7 +398,7 @@ def update_snapshot(
 
     snapshot.total_assets = total_assets
     snapshot.total_liabilities = total_liabilities
-    snapshot.net_worth = total_assets - total_liabilities
+    snapshot.net_worth = (total_assets - total_liabilities) if total_liabilities is not None else None
 
     session.add(snapshot)
     session.commit()
