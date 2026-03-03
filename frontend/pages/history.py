@@ -39,18 +39,22 @@ def render() -> None:
     # Reverse to show most recent first
     snapshots_desc = list(reversed(snapshots))
 
-    # --- CSV export ---
-    csv_data = _build_csv(snapshots_desc)
-    st.download_button(
-        label="Export CSV",
-        data=csv_data,
-        file_name="net_worth_history.csv",
-        mime="text/csv",
+    # --- CSV actions ---
+    tab_export, tab_import_snaps, tab_import_liab = st.tabs(
+        ["Export CSV", "Import Snapshots", "Import Liabilities"]
     )
 
-    # --- Import Snapshots from CSV ---
-    with st.expander("Import Snapshots from CSV"):
-        st.caption("Format: Date, Value  or  Date, Total Assets, Total Liabilities, Net Worth")
+    with tab_export:
+        csv_data = _build_csv(snapshots_desc)
+        st.download_button(
+            label="Download CSV",
+            data=csv_data,
+            file_name="net_worth_history.csv",
+            mime="text/csv",
+        )
+
+    with tab_import_snaps:
+        st.caption("Format: Date, Total Assets, Total Liabilities, Net Worth")
         col_tpl, col_upload = st.columns([1, 2])
         with col_tpl:
             template_snapshots = "Date,Total Assets,Total Liabilities,Net Worth\n2025-01-01,50000.00,10000.00,40000.00"
@@ -88,9 +92,8 @@ def render() -> None:
             finally:
                 session.close()
 
-    # --- Update Liabilities from CSV ---
-    with st.expander("Update Liabilities from CSV"):
-        st.caption("Format: Date, Total Liabilities  — updates existing snapshots only, leaves assets unchanged")
+    with tab_import_liab:
+        st.caption("Updates existing snapshots only — leaves assets unchanged")
         col_tpl2, col_upload2 = st.columns([1, 2])
         with col_tpl2:
             template_liabilities = "Date,Total Liabilities\n2025-01-01,0.00"
