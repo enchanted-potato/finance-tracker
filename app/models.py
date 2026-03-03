@@ -93,11 +93,9 @@ class Snapshot(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     user_id: str = Field(max_length=128)
-    total_assets: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
-    total_liabilities: Decimal = Field(
-        default=Decimal("0"), max_digits=14, decimal_places=2
-    )
-    net_worth: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
+    total_assets: Decimal | None = Field(default=None, max_digits=14, decimal_places=2)
+    total_liabilities: Decimal | None = Field(default=None, max_digits=14, decimal_places=2)
+    net_worth: Decimal | None = Field(default=None, max_digits=14, decimal_places=2)
     snapshot_date: datetime = Field()
     detail_json: dict | None = Field(default=None, sa_column=Column(JSONB))
     created_at: datetime = Field(

@@ -224,18 +224,22 @@ def import_csv_snapshots(
         try:
             if assets_col:
                 total_assets = _parse_decimal(row[assets_col])
-                total_liabilities = (
-                    _parse_decimal(row[liabilities_col]) if liabilities_col else Decimal("0")
-                )
-                net_worth = (
-                    _parse_decimal(row[nw_col])
-                    if nw_col
-                    else total_assets - total_liabilities
-                )
+                if liabilities_col:
+                    total_liabilities = _parse_decimal(row[liabilities_col])
+                    net_worth = (
+                        _parse_decimal(row[nw_col])
+                        if nw_col
+                        else total_assets - total_liabilities
+                    )
+                else:
+                    # Assets only — no liabilities data, store as NULL
+                    total_liabilities = None
+                    net_worth = None
             else:
+                # Single value column — assets only, no liabilities data
                 total_assets = _parse_decimal(row[value_col])
-                total_liabilities = Decimal("0")
-                net_worth = total_assets
+                total_liabilities = None
+                net_worth = None
         except (InvalidOperation, ValueError, KeyError) as exc:
             errors.append(f"Row {row_num}: Bad numeric value — {exc}.")
             continue
@@ -346,8 +350,10 @@ def import_csv_liabilities(
             continue
 
         # Update liabilities and recalculate net_worth; leave total_assets untouched
+        # Treat NULL total_assets as Decimal("0") for net_worth calculation
+        assets_for_calc = existing.total_assets if existing.total_assets is not None else Decimal("0")
         existing.total_liabilities = total_liabilities
-        existing.net_worth = existing.total_assets - total_liabilities
+        existing.net_worth = assets_for_calc - total_liabilities
         session.add(existing)
         updated += 1
 
