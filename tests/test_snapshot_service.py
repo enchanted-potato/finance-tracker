@@ -21,7 +21,18 @@ class TestCaptureSnapshot:
         assert snapshot.total_assets == Decimal("0")
         assert snapshot.total_liabilities == Decimal("0")
         assert snapshot.net_worth == Decimal("0")
-        assert snapshot.detail_json == {"accounts": [], "liabilities": []}
+        assert snapshot.detail_json["accounts"] == []
+        assert snapshot.detail_json["liabilities"] == []
+
+    def test_capture_snapshot_stores_non_null_values_when_empty(self, db_session, test_user):
+        """capture_snapshot always stores Decimal(0), never None, even with no accounts."""
+        snapshot = capture_snapshot(session=db_session, user_id=test_user.id)
+        assert snapshot.total_assets is not None
+        assert snapshot.total_liabilities is not None
+        assert snapshot.net_worth is not None
+        assert snapshot.total_assets == Decimal("0")
+        assert snapshot.total_liabilities == Decimal("0")
+        assert snapshot.net_worth == Decimal("0")
 
     def test_capture_snapshot_with_accounts(self, db_session, test_user, make_account):
         make_account(name="Checking", balance=Decimal("5000"))
@@ -164,9 +175,39 @@ class TestImportCsvSnapshots:
         history = get_snapshot_history(session=db_session, user_id=test_user.id)
         assert len(history) == 3
         assert history[0].total_assets == Decimal("10753.42")
-        assert history[0].net_worth == Decimal("10753.42")
-        assert history[0].total_liabilities == Decimal("0")
+        assert history[0].net_worth is None
+        assert history[0].total_liabilities is None
         assert history[0].snapshot_date == datetime(2021, 1, 15)
+
+    def test_import_single_value_csv_sets_null_liabilities(self, db_session, test_user):
+        """Single-value CSV (Date,Value) sets total_liabilities=None and net_worth=None."""
+        csv_content = "Date,Value\n2025-01-15,15000.00\n"
+        imported, skipped, errors = import_csv_snapshots(
+            session=db_session, user_id=test_user.id, file_content=csv_content
+        )
+        assert imported == 1
+        assert errors == []
+
+        history = get_snapshot_history(session=db_session, user_id=test_user.id)
+        snap = history[0]
+        assert snap.total_assets == Decimal("15000.00")
+        assert snap.total_liabilities is None
+        assert snap.net_worth is None
+
+    def test_import_assets_only_csv_sets_null_liabilities(self, db_session, test_user):
+        """CSV with assets column but no liabilities column sets total_liabilities=None and net_worth=None."""
+        csv_content = "Date,Total Assets\n2025-02-01,20000.00\n"
+        imported, skipped, errors = import_csv_snapshots(
+            session=db_session, user_id=test_user.id, file_content=csv_content
+        )
+        assert imported == 1
+        assert errors == []
+
+        history = get_snapshot_history(session=db_session, user_id=test_user.id)
+        snap = history[0]
+        assert snap.total_assets == Decimal("20000.00")
+        assert snap.total_liabilities is None
+        assert snap.net_worth is None
 
     def test_import_app_export_csv(self, db_session, test_user):
         csv_content = (
@@ -297,3 +338,35 @@ class TestImportCsvLiabilities:
         assert snap_after.total_assets == original_assets
         assert snap_after.total_liabilities == Decimal("12000.00")
         assert snap_after.net_worth == original_assets - Decimal("12000.00")
+
+    def test_import_liabilities_when_total_assets_is_null(self, db_session, test_user):
+        """import_csv_liabilities recalculates net_worth even when existing snapshot has NULL total_assets."""
+        from app.models import Snapshot
+        from datetime import datetime
+
+        # Create a snapshot with total_assets=None (asset-only import scenario that was then updated)
+        snapshot_dt = datetime(2025, 9, 1)
+        snap = Snapshot(
+            user_id=test_user.id,
+            total_assets=None,
+            total_liabilities=None,
+            net_worth=None,
+            snapshot_date=snapshot_dt,
+            detail_json=None,
+        )
+        db_session.add(snap)
+        db_session.flush()
+
+        csv_content = "Date,Total Liabilities\n2025-09-01,3000.00\n"
+        updated, skipped, errors = import_csv_liabilities(
+            session=db_session, user_id=test_user.id, file_content=csv_content
+        )
+
+        assert updated == 1
+        assert errors == []
+
+        history = get_snapshot_history(session=db_session, user_id=test_user.id)
+        snap_after = history[0]
+        assert snap_after.total_liabilities == Decimal("3000.00")
+        # When total_assets is None, treat as 0 for net_worth calculation
+        assert snap_after.net_worth == Decimal("0") - Decimal("3000.00")
