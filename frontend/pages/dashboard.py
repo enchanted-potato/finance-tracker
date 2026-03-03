@@ -136,6 +136,7 @@ def _render_line_chart(snapshots: list) -> None:
             name="Net Worth",
             line={"color": "#2218E7", "width": 2},
             marker={"size": 6},
+            connectgaps=True,
         )
     )
 
@@ -148,6 +149,7 @@ def _render_line_chart(snapshots: list) -> None:
             name="Total Assets",
             line={"color": "#14A760", "width": 2},
             marker={"size": 6},
+            connectgaps=True,
         )
     )
 
@@ -160,6 +162,7 @@ def _render_line_chart(snapshots: list) -> None:
             name="Total Liabilities",
             line={"color": "#E82121", "width": 2},
             marker={"size": 6},
+            connectgaps=True,
         )
     )
 
