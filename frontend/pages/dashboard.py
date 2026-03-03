@@ -41,8 +41,8 @@ def render() -> None:
     total_pension = sum((a.balance for a in pension_accounts), Decimal("0"))
     if total_assets == 0 and total_liabilities == 0 and all_snapshots:
         latest = all_snapshots[-1]
-        total_assets = latest.total_assets
-        total_liabilities = latest.total_liabilities
+        total_assets = latest.total_assets if latest.total_assets is not None else Decimal("0")
+        total_liabilities = latest.total_liabilities if latest.total_liabilities is not None else Decimal("0")
     net_worth = total_assets - total_liabilities
 
     col1, col2, col3, col4 = st.columns(4)
@@ -100,6 +100,8 @@ def _net_worth_delta(snapshots: list, current_net_worth: Decimal) -> str | None:
     if len(snapshots) < 2:
         return None
     previous = snapshots[-2].net_worth
+    if previous is None:
+        return None
     delta = current_net_worth - previous
     return f"£{delta:,.2f}"
 
@@ -119,9 +121,9 @@ def _filter_snapshots(snapshots: list, range_option: str) -> list:
 def _render_line_chart(snapshots: list) -> None:
     """Render a Plotly line chart with net worth, total assets, and total liabilities."""
     dates = [s.snapshot_date.date() for s in snapshots]
-    net_worth_values = [float(s.net_worth) for s in snapshots]
-    assets_values = [float(s.total_assets) for s in snapshots]
-    liabilities_values = [float(s.total_liabilities) for s in snapshots]
+    net_worth_values = [float(s.net_worth) if s.net_worth is not None else None for s in snapshots]
+    assets_values = [float(s.total_assets) if s.total_assets is not None else None for s in snapshots]
+    liabilities_values = [float(s.total_liabilities) if s.total_liabilities is not None else None for s in snapshots]
 
     fig = go.Figure()
 

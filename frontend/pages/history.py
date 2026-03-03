@@ -148,9 +148,9 @@ def render() -> None:
             col_date, col_assets, col_liab, col_nw, col_change, col_details = st.columns([2, 2, 2, 2, 2, 1])
 
         col_date.text(snap.snapshot_date.strftime("%Y-%m-%d"))
-        col_assets.text(f"£{snap.total_assets:,.2f}")
-        col_liab.text(f"£{snap.total_liabilities:,.2f}")
-        col_nw.text(f"£{snap.net_worth:,.2f}")
+        col_assets.text(f"£{snap.total_assets:,.2f}" if snap.total_assets is not None else "-")
+        col_liab.text(f"£{snap.total_liabilities:,.2f}" if snap.total_liabilities is not None else "-")
+        col_nw.text(f"£{snap.net_worth:,.2f}" if snap.net_worth is not None else "-")
         col_change.text(change)
 
         show_key = f"show_{snap.id}"
@@ -164,13 +164,13 @@ def render() -> None:
                 with st.form(key=f"edit_form_{snap.id}"):
                     new_assets = st.number_input(
                         "Total Assets",
-                        value=float(snap.total_assets),
+                        value=float(snap.total_assets) if snap.total_assets is not None else 0.0,
                         step=0.01,
                         format="%.2f",
                     )
                     new_liabilities = st.number_input(
                         "Total Liabilities",
-                        value=float(snap.total_liabilities),
+                        value=float(snap.total_liabilities) if snap.total_liabilities is not None else 0.0,
                         step=0.01,
                         format="%.2f",
                     )
@@ -211,9 +211,9 @@ def render() -> None:
                             st.text(f"  {liab['name']}: £{Decimal(liab['balance']):,.2f}")
 
 
-def _format_change(current: Decimal, previous: Decimal | None) -> str:
+def _format_change(current: Decimal | None, previous: Decimal | None) -> str:
     """Format the change from previous snapshot."""
-    if previous is None:
+    if current is None or previous is None:
         return "-"
     delta = current - previous
     if delta >= 0:
@@ -230,9 +230,9 @@ def _build_csv(snapshots: list) -> str:
         writer.writerow(
             [
                 snap.snapshot_date.strftime("%Y-%m-%d"),
-                str(snap.total_assets),
-                str(snap.total_liabilities),
-                str(snap.net_worth),
+                str(snap.total_assets) if snap.total_assets is not None else "",
+                str(snap.total_liabilities) if snap.total_liabilities is not None else "",
+                str(snap.net_worth) if snap.net_worth is not None else "",
             ]
         )
     return output.getvalue()
