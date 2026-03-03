@@ -10,6 +10,7 @@ from app.services.snapshot_service import (
     capture_snapshot,
     get_latest_snapshot,
     get_snapshot_history,
+    import_csv_liabilities,
     import_csv_snapshots,
 )
 
@@ -119,15 +120,11 @@ class TestGetSnapshotHistory:
         assert len(history) == 3
 
     def test_history_scoped_to_user(self, db_session, test_user, make_account):
-        from app.models import User
-
-        other_user = User(id="other-snapshot-user", email="other@example.com")
-        db_session.add(other_user)
-        db_session.flush()
+        other_user_id = "other-snapshot-user"
 
         make_account(name="Checking", balance=Decimal("1000"))
         capture_snapshot(session=db_session, user_id=test_user.id, snapshot_date=date(2025, 1, 1))
-        capture_snapshot(session=db_session, user_id=other_user.id, snapshot_date=date(2025, 1, 1))
+        capture_snapshot(session=db_session, user_id=other_user_id, snapshot_date=date(2025, 1, 1))
 
         history = get_snapshot_history(session=db_session, user_id=test_user.id)
         assert len(history) == 1
@@ -230,3 +227,73 @@ class TestImportCsvSnapshots:
         assert imported == 1
         history = get_snapshot_history(session=db_session, user_id=test_user.id)
         assert history[0].total_assets == Decimal("10753.42")
+
+
+class TestImportCsvLiabilities:
+    def test_updates_existing_snapshot(self, db_session, test_user, make_account):
+        """Liabilities and net_worth are updated on an existing snapshot."""
+        make_account(name="Savings", balance=Decimal("50000"))
+        capture_snapshot(
+            session=db_session, user_id=test_user.id, snapshot_date=date(2025, 8, 11)
+        )
+
+        csv_content = "Date,Total Liabilities\n2025-08-11,5000.00\n"
+        updated, skipped, errors = import_csv_liabilities(
+            session=db_session, user_id=test_user.id, file_content=csv_content
+        )
+
+        assert updated == 1
+        assert skipped == 0
+        assert errors == []
+
+        history = get_snapshot_history(session=db_session, user_id=test_user.id)
+        assert len(history) == 1
+        snap = history[0]
+        assert snap.total_liabilities == Decimal("5000.00")
+        assert snap.net_worth == snap.total_assets - Decimal("5000.00")
+
+    def test_skips_missing_date(self, db_session, test_user):
+        """Rows with no matching snapshot are counted as skipped."""
+        csv_content = "Date,Total Liabilities\n2025-07-23,4500.00\n"
+        updated, skipped, errors = import_csv_liabilities(
+            session=db_session, user_id=test_user.id, file_content=csv_content
+        )
+
+        assert updated == 0
+        assert skipped == 1
+        assert errors == []
+
+    def test_invalid_row_produces_error(self, db_session, test_user, make_account):
+        """A row with bad numeric data produces an error entry and does not crash."""
+        make_account(name="Savings", balance=Decimal("50000"))
+        capture_snapshot(
+            session=db_session, user_id=test_user.id, snapshot_date=date(2025, 8, 11)
+        )
+
+        csv_content = "Date,Total Liabilities\n2025-08-11,not-a-number\n"
+        updated, skipped, errors = import_csv_liabilities(
+            session=db_session, user_id=test_user.id, file_content=csv_content
+        )
+
+        assert updated == 0
+        assert len(errors) == 1
+        assert "Row 2" in errors[0]
+
+    def test_only_liabilities_updated(self, db_session, test_user, make_account):
+        """total_assets is unchanged after a liabilities import."""
+        make_account(name="Savings", balance=Decimal("75000"))
+        snap_before = capture_snapshot(
+            session=db_session, user_id=test_user.id, snapshot_date=date(2025, 8, 11)
+        )
+        original_assets = snap_before.total_assets
+
+        csv_content = "Date,Total Liabilities\n2025-08-11,12000.00\n"
+        import_csv_liabilities(
+            session=db_session, user_id=test_user.id, file_content=csv_content
+        )
+
+        history = get_snapshot_history(session=db_session, user_id=test_user.id)
+        snap_after = history[0]
+        assert snap_after.total_assets == original_assets
+        assert snap_after.total_liabilities == Decimal("12000.00")
+        assert snap_after.net_worth == original_assets - Decimal("12000.00")

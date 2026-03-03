@@ -68,11 +68,7 @@ class TestListLiabilities:
         assert len(liabilities) == 2
 
     def test_list_liabilities_scoped_to_user(self, db_session, test_user, liability_type):
-        from app.models import User
-
-        other_user = User(id="other-user-2", email="other2@example.com")
-        db_session.add(other_user)
-        db_session.flush()
+        other_user_id = "other-user-2"
 
         create_liability(
             session=db_session,
@@ -82,7 +78,7 @@ class TestListLiabilities:
         )
         create_liability(
             session=db_session,
-            user_id=other_user.id,
+            user_id=other_user_id,
             liability_type_id=liability_type.id,
             name="Their Mortgage",
         )

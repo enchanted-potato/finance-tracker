@@ -1,10 +1,11 @@
 import os
 from decimal import Decimal
+from types import SimpleNamespace
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
-from app.models import Account, AccountType, Liability, LiabilityType, User
+from app.models import Account, AccountType, Liability, LiabilityType
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -34,12 +35,9 @@ def db_session(db_engine):
 
 
 @pytest.fixture
-def test_user(db_session):
-    """Create a test user and return it."""
-    user = User(id="test-user", email="test@example.com", display_name="Test User")
-    db_session.add(user)
-    db_session.flush()
-    return user
+def test_user():
+    """Return a simple user namespace with an id attribute (no DB row needed — no FK constraint)."""
+    return SimpleNamespace(id="test-user")
 
 
 @pytest.fixture
