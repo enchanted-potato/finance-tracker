@@ -77,9 +77,11 @@ None yet.
 | # | Task | Commits | Date |
 |---|------|---------|------|
 | 1 | Add pension as separate category with dedicated page and dashboard chart | 4194ef8, 7ed7004 | 2026-03-01 |
+| 2 | Add liabilities CSV upload to history page | 449efe2, 5106830 | 2026-03-02 |
+| 3 | Fix NULL values for missing history data (nullable snapshot fields, gap charts, dash display) | 6c98f39, 96b9a07, 096b69b | 2026-03-03 |
 
 ## Session Continuity
 
-Last session: 2026-03-02
-Stopped at: Session resumed — pension quick task complete; awaiting human verification of Cloud Run deployment (05-03 Task 3)
+Last session: 2026-03-03
+Stopped at: Completed quick-3 (fix null values for missing history data)
 Resume file: .planning/phases/05-cloud-run-deployment/05-CONTEXT.md
