@@ -1,0 +1,31 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    command: sleep infinity
+    volumes:
+      - ..:/app:cached
+      - venv:/app/.venv
+    environment:
+      DATABASE_URL: postgresql://finance:finance@db:5432/finance_tracker
+      FIREBASE_CREDENTIALS_PATH: ""
+      DEBUG: "true"
+      DEV_USER_ID: "local-dev-user"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: finance
+      POSTGRES_PASSWORD: finance
+      POSTGRES_DB: finance_tracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+  venv:
