@@ -2,19 +2,19 @@
 
 ## Current Position
 
-Phase: 5 of 5 (Cloud Run Deployment) — in progress
-Plan: 03 of 04 — CHECKPOINT (awaiting human verification)
-Status: Executing Phase 5 plans
-Last activity: 2026-02-28 — Completed 05-03 Tasks 1+2; awaiting checkpoint verification at Task 3
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v1.1
+Last activity: 2026-03-05 — Milestone v1.1 UI Overhaul started
 
-Progress: [████████░░] ~85%  (phases 4-5; phases 1-3 pre-GSD complete)
+Progress: [░░░░░░░░░░] 0%
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-17)
+See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** Seeing your net worth trend over time at a glance, without the overhead of transaction tracking.
-**Current focus:** Phase 5 — Cloud Run Deployment
+**Current focus:** v1.1 — UI Overhaul
 
 ## Performance Metrics
 

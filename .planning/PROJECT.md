@@ -8,6 +8,18 @@ Personal net worth tracker for a single user. Track asset accounts and liabiliti
 
 Seeing your net worth trend over time at a glance, without the overhead of transaction tracking.
 
+## Current Milestone: v1.1 UI Overhaul
+
+**Goal:** Improve every page for both practicality and aesthetics — redesign balance entry to support date-based backfilling, add history views per data type, and polish dashboard and supporting pages.
+
+**Target features:**
+- Date-aware balance entry on Accounts, Liabilities, and Pension pages (backfilling support)
+- Per-page history views with daily totals and expandable per-item breakdown
+- Dashboard metric cards with colored styled boxes; fix negative delta color
+- History page table styling and date formatting
+- Configure page inline delete per row
+- Sidebar active state color improvement
+
 ## Requirements
 
 ### Validated
@@ -23,13 +35,26 @@ Seeing your net worth trend over time at a glance, without the overhead of trans
 - ✓ User can export snapshot history as CSV — Phase 1-3
 - ✓ User can import historical snapshots via CSV — Phase 1-3
 - ✓ User can configure custom account/liability types — Phase 1-3
+- ✓ User can log in with Firebase Authentication — Phase 4
+- ✓ App is deployed and accessible on Cloud Run with Cloud SQL — Phase 5
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] User can log in with Firebase Authentication (email/password)
-- [ ] App is deployed and accessible on Cloud Run with Cloud SQL
+- [ ] User can enter account balances for any chosen date (backfilling)
+- [ ] User can view asset entry history with daily totals and per-account breakdown
+- [ ] User can enter liability balances for any chosen date (backfilling)
+- [ ] User can view liability entry history with daily totals and per-liability breakdown
+- [ ] User can enter pension balances for any chosen date (backfilling)
+- [ ] User can view pension entry history with daily totals and per-provider breakdown
+- [ ] Dashboard metric cards display with colored styled boxes; negative delta shown in red
+- [ ] Line chart y-axis shows thousands comma separator
+- [ ] Pension bar chart has visual depth (shadows)
+- [ ] History page uses styled table with dates formatted as "Jan 2025"
+- [ ] History expanded row shows asset and liability breakdown with edit and delete
+- [ ] Configure page delete type action is inline per row
+- [ ] Sidebar active page indicator uses improved color
 
 ### Out of Scope
 
@@ -43,11 +68,11 @@ Seeing your net worth trend over time at a glance, without the overhead of trans
 
 ## Context
 
-- Phases 1-3 complete: foundation, services, UI all working locally with a hardcoded test user (`TEST_USER_ID = "test-user"`)
-- Firebase Admin SDK is declared as a dependency but not integrated
-- App runs locally via `docker-compose up`; no production deployment yet
+- App is live: https://finance-tracker-rntookejza-uc.a.run.app (Cloud Run + Cloud SQL)
+- Firebase Auth integrated (Google Sign-In); single user
+- Phases 1-5 complete; quick tasks added post-v1.0: pension tracking, liabilities CSV upload, null value fixes
 - Stack: Python 3.12, Streamlit, SQLModel, PostgreSQL, Plotly, Firebase Auth, uv
-- Target: Google Cloud Run + Cloud SQL (free tier `db-f1-micro`)
+- Deployed on Google Cloud Run + Cloud SQL (free tier `db-f1-micro`)
 - Codebase analysis in `.planning/codebase/`
 
 ## Constraints
@@ -68,4 +93,4 @@ Seeing your net worth trend over time at a glance, without the overhead of trans
 | Hardcoded test user for Phases 1-3 | Unblock UI development without auth complexity | ✓ Good |
 
 ---
-*Last updated: 2026-02-17 after milestone v1.0 started*
+*Last updated: 2026-03-05 after milestone v1.1 started*
