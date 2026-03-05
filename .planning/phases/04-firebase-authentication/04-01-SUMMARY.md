@@ -21,6 +21,8 @@ key_files:
     - app/config.py
     - .env.example
 
+requirements-completed: [AUTH-01, AUTH-06]
+
 decisions:
   - "Use raw postMessage instead of Streamlit JS helper for zero-build component"
   - "Firebase Admin SDK hot-reload protection with if not firebase_admin._apps guard"

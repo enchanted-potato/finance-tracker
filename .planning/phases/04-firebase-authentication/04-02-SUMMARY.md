@@ -19,6 +19,8 @@ key_files:
   modified:
     - frontend/main.py
 
+requirements-completed: [AUTH-02, AUTH-03, AUTH-04, AUTH-05]
+
 decisions:
   - "Remove TEST_USER_ID completely — auth_service.get_or_create_user handles user provisioning"
   - "Auth gate pattern: check session_state first, then widget, then verify token"

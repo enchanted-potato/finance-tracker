@@ -3,7 +3,7 @@ phase: 05-cloud-run-deployment
 plan: 01
 subsystem: deployment
 tags: [docker, security, cloud-run]
-requirements: [DEPLOY-02]
+requirements-completed: [DEPLOY-02]
 
 dependency_graph:
   requires: []

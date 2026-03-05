@@ -12,7 +12,7 @@ Requirements for initial live release (auth + deployment). Phases 1-3 (foundatio
 - [x] **AUTH-01**: User can sign in with Google Sign-In via Firebase OAuth popup
 - [x] **AUTH-02**: App verifies Firebase ID token server-side before granting access to any page
 - [x] **AUTH-03**: User session persists across page reruns (survives Streamlit navigation, lost on browser close or container cold start)
-- [ ] **AUTH-04**: App shows login screen with no page content if user is not authenticated
+- [x] **AUTH-04**: App shows login screen with no page content if user is not authenticated
 - [x] **AUTH-05**: User can log out, clearing session state and returning to the login screen
 - [x] **AUTH-06**: User account is auto-created on first successful login (satisfies FK constraint on accounts, liabilities, snapshots)
 
@@ -22,7 +22,7 @@ Requirements for initial live release (auth + deployment). Phases 1-3 (foundatio
 - [x] **DEPLOY-02**: `.dockerignore` excludes `.env`, credential JSON files, and `.git` from Docker image
 - [x] **DEPLOY-03**: App connects to Cloud SQL via Unix socket when running on Cloud Run (DATABASE_URL format change only — no code changes to `app/database.py`)
 - [ ] **DEPLOY-04**: App is deployed to Cloud Run, accessible via HTTPS URL, with working Google Sign-In authentication
-- [x] **DEPLOY-05**: Data migration script updates all `user_id = 'test-user'` rows to the real Firebase UID before production traffic reaches the app
+- [x] **DEPLOY-05**: Data migration script updates all `user_id = 'test-user'` rows to the real Firebase UID before production traffic reaches the app (no migration needed — DB was empty; stale script deleted)
 
 ## Future Requirements (v1.1+)
 
@@ -52,14 +52,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-01 | Phase 4 | Complete |
 | AUTH-02 | Phase 4 | Complete |
 | AUTH-03 | Phase 4 | Complete |
-| AUTH-04 | Phase 6 | Pending |
+| AUTH-04 | Phase 6 | Complete |
 | AUTH-05 | Phase 4 | Complete |
 | AUTH-06 | Phase 4 | Complete |
 | DEPLOY-01 | Phase 5 | Complete |
 | DEPLOY-02 | Phase 5 | Complete |
 | DEPLOY-03 | Phase 5 | Complete |
 | DEPLOY-04 | Phase 5 | Pending |
-| DEPLOY-05 | Phase 6 | Pending |
+| DEPLOY-05 | Phase 6 | Complete |
 
 **Coverage:**
 - v1.0 requirements: 11 total

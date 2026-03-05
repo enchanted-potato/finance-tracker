@@ -59,7 +59,10 @@ def verify_firebase_token(id_token: str) -> dict | None:
 def get_or_create_user(
     session: Session, uid: str, email: str, display_name: str
 ) -> str:
-    """Validate user ID and return it.
+    """Validate user ID and return it. Does not write to the database.
+
+    The users table no longer exists. This function validates the uid
+    (blocking 'test-user' in production) and returns it unchanged.
 
     Args:
         session: SQLModel database session (unused, kept for compatibility)
@@ -68,7 +71,7 @@ def get_or_create_user(
         display_name: User display name (unused, kept for compatibility)
 
     Returns:
-        Validated Firebase UID string
+        Validated Firebase UID string (same as input uid)
 
     Raises:
         ValueError: If uid is 'test-user' (blocked in production)
