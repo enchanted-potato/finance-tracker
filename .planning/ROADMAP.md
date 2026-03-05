@@ -79,7 +79,10 @@ Plans:
   5. Phase 04 SUMMARY.md files (04-01, 04-02) include `requirements-completed` frontmatter fields
   6. 05-01-SUMMARY.md frontmatter uses `requirements-completed` key (not `requirements`)
 
-**Plans:** 1 plan (to be created)
+**Plans:** 1 plan
+
+Plans:
+- [ ] 06-01-PLAN.md — Remove dead code, delete stale script, update all documentation tracking
 
 ---
 
