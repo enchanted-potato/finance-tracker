@@ -2,26 +2,26 @@
 
 ## Current Position
 
-Phase: 5 of 5 (Cloud Run Deployment) — in progress
-Plan: 03 of 04 — CHECKPOINT (awaiting human verification)
-Status: Executing Phase 5 plans
-Last activity: 2026-02-28 — Completed 05-03 Tasks 1+2; awaiting checkpoint verification at Task 3
+Phase: 6 of 6 (Auth/Deployment Cleanup) — in progress
+Plan: 01 of 01 — Complete
+Status: Executing Phase 6 plans
+Last activity: 2026-03-05 — Completed 06-01 (v1.0 audit gap closure)
 
-Progress: [████████░░] ~85%  (phases 4-5; phases 1-3 pre-GSD complete)
+Progress: [██████████] ~100%  (phases 4-6; phases 1-3 pre-GSD complete)
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** Seeing your net worth trend over time at a glance, without the overhead of transaction tracking.
-**Current focus:** Phase 5 — Cloud Run Deployment
+**Current focus:** Phase 6 — Auth/Deployment Cleanup (v1.0 complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 1630 seconds (~27 minutes)
-- Total execution time: 8151 seconds
+- Total plans completed: 6
+- Average duration: 1381 seconds (~23 minutes)
+- Total execution time: 8284 seconds
 
 **By Phase:**
 
@@ -29,6 +29,7 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 |-------|-------|-------|----------|
 | 04 | 2 | 575s | 288s |
 | 05 | 3 | 7576s | 2525s |
+| 06 | 1 | 133s | 133s |
 
 *Updated after each plan completion*
 
@@ -61,6 +62,8 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 - [Phase 05-03]: Build Docker images with --platform linux/amd64 on Apple Silicon — Cloud Run requires amd64
 - [Phase 05-03]: Add ENV PATH="/app/.venv/bin:$PATH" to Dockerfile — uv venv not in PATH by default
 - [Phase 05-03]: Cloud Run service URL: https://finance-tracker-rntookejza-uc.a.run.app
+- [Phase 06-01]: No migration needed — DB was empty; deleted stale migrate_test_user.py
+- [Phase 06-01]: get_or_create_user called as side-effect only (no return value assignment)
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-03
-Stopped at: Completed quick-3 (fix null values for missing history data)
-Resume file: .planning/phases/05-cloud-run-deployment/05-CONTEXT.md
+Last session: 2026-03-05
+Stopped at: Completed 06-01-PLAN.md (auth/deployment cleanup — v1.0 audit gap closure)
+Resume file: .planning/phases/06-auth-deployment-cleanup/06-01-SUMMARY.md
