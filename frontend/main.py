@@ -120,7 +120,7 @@ def _auth_gate() -> None:
         # Validate user ID
         session = next(get_session())
         try:
-            user_id = get_or_create_user(session, uid, email, name)
+            get_or_create_user(session, uid, email, name)
         except ValueError as e:
             st.error(f"Authentication error: {e}")
             st.stop()
