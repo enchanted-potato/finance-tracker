@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-milestone_name: milestone
-status: executing
-stopped_at: Completed 06-01-PLAN.md (auth/deployment cleanup — v1.0 audit gap closure)
-last_updated: "2026-03-05T22:39:02.487Z"
-last_activity: 2026-03-05 — Completed 06-01 (v1.0 audit gap closure)
+milestone_name: Ship
+status: milestone_complete
+stopped_at: v1.0 milestone complete — shipped 2026-03-05
+last_updated: "2026-03-05T00:00:00.000Z"
+last_activity: 2026-03-05 — v1.0 milestone archived
 progress:
   total_phases: 3
   completed_phases: 3
@@ -18,19 +18,18 @@ progress:
 
 ## Current Position
 
-Phase: 6 of 6 (Auth/Deployment Cleanup) — in progress
-Plan: 01 of 01 — Complete
-Status: Executing Phase 6 plans
-Last activity: 2026-03-05 — Completed 06-01 (v1.0 audit gap closure)
+Milestone: v1.0 — Ship — COMPLETE
+Status: Milestone archived. Ready for next milestone.
+Last activity: 2026-03-05 — v1.0 archived to .planning/milestones/
 
-Progress: [██████████] ~100%  (phases 4-6; phases 1-3 pre-GSD complete)
+Progress: [██████████] 100% — all 7 plans complete
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-17)
+See: .planning/PROJECT.md (updated 2026-03-05 after v1.0)
 
 **Core value:** Seeing your net worth trend over time at a glance, without the overhead of transaction tracking.
-**Current focus:** Phase 6 — Auth/Deployment Cleanup (v1.0 complete)
+**Current focus:** Planning next milestone (v1.1)
 
 ## Performance Metrics
 
