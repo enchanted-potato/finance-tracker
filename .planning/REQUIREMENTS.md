@@ -103,10 +103,10 @@
 | CONF-01 | Phase 8 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 15 total
-- Mapped to phases: 15
+- v1.0 requirements: 11 total, 11 mapped ✓
+- v1.1 requirements: 15 total, 15 mapped ✓
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-17*
-*Last updated: 2026-03-05 after v1.1 milestone definition*
+*Last updated: 2026-03-05 after v1.1 roadmap created (Phases 6-8)*

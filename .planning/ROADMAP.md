@@ -2,12 +2,13 @@
 
 ## Overview
 
-Phases 1-3 are pre-GSD foundation (complete): database models, service layer, and Streamlit UI — all working locally behind a hardcoded test user. This milestone (v1.0 — Ship) adds the two remaining capabilities to make the app production-ready: Firebase Authentication (Phase 4) and Cloud Run deployment (Phase 5). Auth must be complete and validated locally before deployment begins; you cannot safely expose financial data on a public URL without the auth gate in place.
+Phases 1-3 are pre-GSD foundation (complete): database models, service layer, and Streamlit UI — all working locally behind a hardcoded test user. v1.0 (Phases 4-5) added Firebase Authentication and Cloud Run deployment, making the app production-ready. v1.1 (Phases 6-8) polishes and extends the UI: dashboard cosmetics, date-aware balance entry with backfilling across all three data types, and history/configure page improvements.
 
 ## Milestones
 
 - [x] **Phases 1-3: Foundation** — Pre-GSD (complete). Models, services, UI working locally.
-- [ ] **v1.0 — Ship (Phases 4-5)** — Firebase Auth + Cloud Run deployment.
+- [x] **v1.0 — Ship (Phases 4-5)** — Firebase Auth + Cloud Run deployment.
+- [ ] **v1.1 — UI Overhaul (Phases 6-8)** — Dashboard polish, date-aware entry, history and configure improvements.
 
 ## Phases
 
@@ -18,8 +19,11 @@ Phases 1-3 are pre-GSD foundation (complete): database models, service layer, an
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1-3: Foundation** - Pre-GSD complete (models, services, Streamlit UI)
-- [ ] **Phase 4: Firebase Authentication** - Replace TEST_USER_ID with real Firebase auth, validated locally
-- [ ] **Phase 5: Cloud Run Deployment** - Deploy app to Cloud Run + Cloud SQL, credentials via Secret Manager
+- [x] **Phase 4: Firebase Authentication** - Replace TEST_USER_ID with real Firebase auth, validated locally
+- [x] **Phase 5: Cloud Run Deployment** - Deploy app to Cloud Run + Cloud SQL, credentials via Secret Manager
+- [ ] **Phase 6: Dashboard and Navigation Polish** - Metric card styling, chart improvements, sidebar active color
+- [ ] **Phase 7: Date-Aware Balance Entry** - Date picker + history view on Accounts, Liabilities, and Pension pages
+- [ ] **Phase 8: History and Configure Improvements** - Styled history table, date formatting, expanded row actions, inline delete
 
 ## Phase Details
 
@@ -60,20 +64,65 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Prepare Docker configuration (.dockerignore, PORT-aware Dockerfile)
-- [ ] 05-02-PLAN.md — Set up GCP infrastructure (Cloud SQL, Secret Manager, IAM)
-- [~] 05-03-PLAN.md — Deploy to Cloud Run with Cloud SQL and Secret Manager integration (checkpoint: awaiting human verification)
-- [ ] 05-04-PLAN.md — Migrate test-user data to production Firebase UID
+- [x] 05-01-PLAN.md — Prepare Docker configuration (.dockerignore, PORT-aware Dockerfile)
+- [x] 05-02-PLAN.md — Set up GCP infrastructure (Cloud SQL, Secret Manager, IAM)
+- [x] 05-03-PLAN.md — Deploy to Cloud Run with Cloud SQL and Secret Manager integration
+- [x] 05-04-PLAN.md — Migrate test-user data to production Firebase UID
+
+---
+
+### Phase 6: Dashboard and Navigation Polish
+**Goal**: The dashboard communicates financial position clearly with visual hierarchy; the sidebar reliably shows which page is active
+**Depends on**: Phase 5 (app is live; this is pure frontend — no backend changes)
+**Requirements**: DASH-01, DASH-02, DASH-03, DASH-04, NAV-01
+**Success Criteria** (what must be TRUE):
+  1. Net Worth, Assets, and Liabilities metric cards render as rounded boxes with distinct soft-colored backgrounds (blue, green, red) — not plain text
+  2. A negative Net Worth delta is shown in red, not green
+  3. The line chart y-axis labels include thousands comma separators (e.g., "1,250" not "1250")
+  4. The pension bar chart displays with drop shadows that give visual depth
+  5. The sidebar highlights the active page with a color clearly distinct from orange
+**Plans**: TBD
+
+---
+
+### Phase 7: Date-Aware Balance Entry
+**Goal**: Users can enter balances for any past date on the Accounts, Liabilities, and Pension pages, and can see the entry history per page
+**Depends on**: Phase 6 (polish first; Phase 7 adds backend changes)
+**Requirements**: ENTRY-01, ENTRY-02, ENTRY-03, ENTRY-04, ENTRY-05, ENTRY-06
+**Success Criteria** (what must be TRUE):
+  1. The Accounts page balance entry form has a date picker that defaults to today; submitting with a past date saves a backfilled snapshot for that date
+  2. The Accounts page shows an entry history table with daily totals and expandable rows revealing per-account balances for that day
+  3. The Liabilities page balance entry form has a date picker that defaults to today; submitting with a past date saves a backfilled snapshot for that date
+  4. The Liabilities page shows an entry history table with daily totals and expandable rows revealing per-liability balances for that day
+  5. The Pension page balance entry form has a date picker that defaults to today; submitting with a past date saves a backfilled snapshot for that date
+  6. The Pension page shows an entry history table with daily totals and expandable rows revealing per-provider balances for that day
+**Plans**: TBD
+
+---
+
+### Phase 8: History and Configure Improvements
+**Goal**: The History page uses a properly styled table with readable date formatting and full per-item breakdown; the Configure page allows inline deletion of unused types
+**Depends on**: Phase 7 (history improvements build on the snapshot data that backfilling enables)
+**Requirements**: HIST-01, HIST-02, HIST-03, CONF-01
+**Success Criteria** (what must be TRUE):
+  1. The History page snapshot table renders using a styled table component — not a manual column layout
+  2. Dates in the history table are displayed as "Jan 2025" format (month + abbreviated year)
+  3. Expanding a history row shows asset and liability item names with their values, plus edit and delete action buttons per item
+  4. The Configure page account type and liability type rows each have an inline delete button; the button is disabled (not absent) when the type is in use
+**Plans**: TBD
 
 ---
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 4 → 5
+Phases execute in numeric order: 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1-3. Foundation (pre-GSD) | — | Complete | Pre-2026-02-17 |
 | 4. Firebase Authentication | 2/2 | Complete | 2026-02-21 |
-| 5. Cloud Run Deployment | 3/4 | In Progress|  |
+| 5. Cloud Run Deployment | 4/4 | Complete | 2026-03-01 |
+| 6. Dashboard and Navigation Polish | 0/TBD | Not started | - |
+| 7. Date-Aware Balance Entry | 0/TBD | Not started | - |
+| 8. History and Configure Improvements | 0/TBD | Not started | - |
