@@ -9,12 +9,12 @@ Requirements for initial live release (auth + deployment). Phases 1-3 (foundatio
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can sign in with Google Sign-In via Firebase OAuth popup
-- [ ] **AUTH-02**: App verifies Firebase ID token server-side before granting access to any page
-- [ ] **AUTH-03**: User session persists across page reruns (survives Streamlit navigation, lost on browser close or container cold start)
+- [x] **AUTH-01**: User can sign in with Google Sign-In via Firebase OAuth popup
+- [x] **AUTH-02**: App verifies Firebase ID token server-side before granting access to any page
+- [x] **AUTH-03**: User session persists across page reruns (survives Streamlit navigation, lost on browser close or container cold start)
 - [ ] **AUTH-04**: App shows login screen with no page content if user is not authenticated
-- [ ] **AUTH-05**: User can log out, clearing session state and returning to the login screen
-- [ ] **AUTH-06**: User account is auto-created on first successful login (satisfies FK constraint on accounts, liabilities, snapshots)
+- [x] **AUTH-05**: User can log out, clearing session state and returning to the login screen
+- [x] **AUTH-06**: User account is auto-created on first successful login (satisfies FK constraint on accounts, liabilities, snapshots)
 
 ### Deployment
 
@@ -49,21 +49,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 4 | Pending |
-| AUTH-02 | Phase 4 | Pending |
-| AUTH-03 | Phase 4 | Pending |
-| AUTH-04 | Phase 4 | Pending |
-| AUTH-05 | Phase 4 | Pending |
-| AUTH-06 | Phase 4 | Pending |
+| AUTH-01 | Phase 4 | Complete |
+| AUTH-02 | Phase 4 | Complete |
+| AUTH-03 | Phase 4 | Complete |
+| AUTH-04 | Phase 6 | Pending |
+| AUTH-05 | Phase 4 | Complete |
+| AUTH-06 | Phase 4 | Complete |
 | DEPLOY-01 | Phase 5 | Complete |
 | DEPLOY-02 | Phase 5 | Complete |
 | DEPLOY-03 | Phase 5 | Complete |
 | DEPLOY-04 | Phase 5 | Pending |
-| DEPLOY-05 | Phase 5 | Complete |
+| DEPLOY-05 | Phase 6 | Pending |
 
 **Coverage:**
 - v1.0 requirements: 11 total
-- Mapped to phases: 11 (Phase 4: 6, Phase 5: 5)
+- Mapped to phases: 11 (Phase 4: 5, Phase 5: 5, Phase 6: 1 gap closure + DEPLOY-05 reassigned)
 - Unmapped: 0
 
 ---

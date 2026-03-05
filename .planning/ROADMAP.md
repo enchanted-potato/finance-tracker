@@ -20,6 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1-3: Foundation** - Pre-GSD complete (models, services, Streamlit UI)
 - [ ] **Phase 4: Firebase Authentication** - Replace TEST_USER_ID with real Firebase auth, validated locally
 - [ ] **Phase 5: Cloud Run Deployment** - Deploy app to Cloud Run + Cloud SQL, credentials via Secret Manager
+- [ ] **Phase 6: Auth & Deployment Cleanup** - Close audit gaps: remove AUTH-04 debug blocker, fix stale migration artifact, update documentation
 
 ## Phase Details
 
@@ -65,6 +66,21 @@ Plans:
 - [~] 05-03-PLAN.md — Deploy to Cloud Run with Cloud SQL and Secret Manager integration (checkpoint: awaiting human verification)
 - [ ] 05-04-PLAN.md — Migrate test-user data to production Firebase UID
 
+### Phase 6: Auth & Deployment Cleanup
+**Goal**: All v1.0 audit gaps closed — AUTH-04 blocker removed, deployment artifacts consistent, documentation up to date
+**Depends on**: Phase 5 (deployed app)
+**Requirements**: AUTH-04 (fix), DEPLOY-05 (stale artifact)
+**Gap Closure**: Closes gaps from v1.0-MILESTONE-AUDIT.md
+**Success Criteria** (what must be TRUE):
+  1. `frontend/main.py` has no debug output on the login screen — the sidebar shows nothing to unauthenticated users
+  2. `scripts/migrate_test_user.py` is deleted (users table no longer exists; Cloud SQL is empty; migration is a no-op)
+  3. REQUIREMENTS.md checkboxes for AUTH-01–AUTH-06 are checked `[x]` and traceability statuses updated to Complete
+  4. `auth_service.py` `get_or_create_user` function has accurate docstring reflecting that it validates (not creates) the user
+  5. Phase 04 SUMMARY.md files (04-01, 04-02) include `requirements-completed` frontmatter fields
+  6. 05-01-SUMMARY.md frontmatter uses `requirements-completed` key (not `requirements`)
+
+**Plans:** 1 plan (to be created)
+
 ---
 
 ## Progress
@@ -77,3 +93,4 @@ Phases execute in numeric order: 4 → 5
 | 1-3. Foundation (pre-GSD) | — | Complete | Pre-2026-02-17 |
 | 4. Firebase Authentication | 2/2 | Complete | 2026-02-21 |
 | 5. Cloud Run Deployment | 3/4 | In Progress|  |
+| 6. Auth & Deployment Cleanup | 0/1 | Planned | |
