@@ -1,0 +1,24 @@
+# Security - prevent credential leakage
+.env
+.env.*
+*.json
+!pyproject.json
+.git
+
+# Development
+.venv
+__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+
+# Planning/documentation
+docker-compose.yml
+README.md
+.planning/
+.claude/
+tests/

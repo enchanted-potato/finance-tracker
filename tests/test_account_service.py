@@ -79,11 +79,7 @@ class TestListAccounts:
         assert len(accounts) == 2
 
     def test_list_accounts_scoped_to_user(self, db_session, test_user, account_type):
-        from app.models import User
-
-        other_user = User(id="other-user", email="other@example.com")
-        db_session.add(other_user)
-        db_session.flush()
+        other_user_id = "other-user"
 
         create_account(
             session=db_session,
@@ -93,7 +89,7 @@ class TestListAccounts:
         )
         create_account(
             session=db_session,
-            user_id=other_user.id,
+            user_id=other_user_id,
             account_type_id=account_type.id,
             name="Other Account",
         )

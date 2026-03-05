@@ -14,7 +14,7 @@ from app.services.auth_service import (
     init_firebase_admin,
     verify_firebase_token,
 )
-from frontend.pages import accounts, configure, dashboard, history, liabilities
+from frontend.pages import accounts, configure, dashboard, history, liabilities, pension
 
 # Declare custom Firebase auth component
 _AUTH_COMPONENT_DIR = os.path.join(os.path.dirname(__file__), "auth_component")
@@ -48,6 +48,13 @@ def _auth_gate() -> None:
         "authDomain": settings.firebase_auth_domain,
         "projectId": settings.firebase_project_id,
     }
+
+    # Bypass auth in local dev
+    if settings.dev_user_id and not st.session_state.get("user_id"):
+        st.session_state["user_id"] = settings.dev_user_id
+        st.session_state["user_email"] = "dev@local"
+        st.session_state["user_name"] = "Dev User"
+        return
 
     # Handle logout request BEFORE checking auth status
     if st.session_state.get("_logout_requested"):
@@ -110,10 +117,13 @@ def _auth_gate() -> None:
         email = decoded.get("email", "")
         name = decoded.get("name", "")
 
-        # Create or get user in database
+        # Validate user ID
         session = next(get_session())
         try:
-            get_or_create_user(session, uid, email, name)
+            user_id = get_or_create_user(session, uid, email, name)
+        except ValueError as e:
+            st.error(f"Authentication error: {e}")
+            st.stop()
         finally:
             session.close()
 
@@ -159,6 +169,19 @@ def main() -> None:
             /* Apply Poppins font everywhere except icons */
             *:not(span.material-icons):not(.material-icons) {
                 font-family: 'Poppins', Arial, sans-serif !important;
+            }
+
+            /* Ensure Material Icons font is never overridden by inheritance */
+            .material-icons, span.material-icons {
+                font-family: 'Material Icons' !important;
+            }
+
+            /* Hide sidebar collapse button (uses Material Symbols which conflict with font override) */
+            [data-testid="collapsedControl"],
+            [data-testid="stSidebarCollapseButton"],
+            [data-testid="stSidebarCollapsedControl"],
+            button[kind="header"] {
+                display: none !important;
             }
 
             /* Main background color - Anthropic Light */
@@ -238,6 +261,7 @@ def main() -> None:
         "Dashboard": "📊",
         "Accounts": "💰",
         "Liabilities": "💳",
+        "Pension": "🏦",
         "History": "📈",
         "Configure": "⚙️",
     }
@@ -267,6 +291,8 @@ def main() -> None:
             accounts.render()
         case "Liabilities":
             liabilities.render()
+        case "Pension":
+            pension.render()
         case "History":
             history.render()
         case "Configure":

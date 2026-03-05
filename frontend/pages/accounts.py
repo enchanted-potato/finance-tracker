@@ -9,7 +9,7 @@ from app.services.account_service import (
     create_account,
     deactivate_account,
     list_account_types,
-    list_accounts,
+    list_non_pension_accounts,
     update_balance,
 )
 from app.services.snapshot_service import capture_snapshot
@@ -27,11 +27,14 @@ def render() -> None:
     session = next(get_session())
     try:
         account_types = list_account_types(session=session, user_id=user_id)
-        accounts = list_accounts(session=session, user_id=user_id)
+        accounts = list_non_pension_accounts(session=session, user_id=user_id)
     finally:
         session.close()
 
     type_map = {at.id: at.name for at in account_types}
+
+    # Exclude Pension type from account creation — pension has its own dedicated page
+    non_pension_types = [at for at in account_types if at.name != "Pension"]
 
     # --- Add new account ---
     st.subheader("Add Account")
@@ -40,7 +43,7 @@ def render() -> None:
         with col1:
             account_type = st.selectbox(
                 "Type",
-                options=account_types,
+                options=non_pension_types,
                 format_func=lambda at: at.name,
                 key="new_account_type",
             )

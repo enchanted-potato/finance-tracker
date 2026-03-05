@@ -7,21 +7,6 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
 
-class User(SQLModel, table=True):
-    """Mirrors Firebase auth user."""
-
-    __tablename__ = "users"
-    __table_args__ = {"extend_existing": True}
-
-    id: str = Field(primary_key=True, max_length=128)
-    email: str = Field(max_length=255)
-    display_name: str = Field(default="", max_length=255)
-    created_at: datetime = Field(
-        default=None,
-        sa_column_kwargs={"server_default": sa_text("now()")},
-    )
-
-
 class AccountType(SQLModel, table=True):
     """Predefined or user-custom account categories."""
 
@@ -30,7 +15,7 @@ class AccountType(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(max_length=100)
-    user_id: str | None = Field(default=None, foreign_key="users.id", max_length=128)
+    user_id: str | None = Field(default=None, max_length=128)
 
 
 class Account(SQLModel, table=True):
@@ -40,7 +25,7 @@ class Account(SQLModel, table=True):
     __table_args__ = (Index("ix_accounts_user_active", "user_id", "is_active"), {"extend_existing": True})
 
     id: int | None = Field(default=None, primary_key=True)
-    user_id: str = Field(foreign_key="users.id", max_length=128)
+    user_id: str = Field(max_length=128)
     account_type_id: int = Field(foreign_key="account_types.id")
     name: str = Field(max_length=255)
     balance: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
@@ -67,7 +52,7 @@ class LiabilityType(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(max_length=100)
-    user_id: str | None = Field(default=None, foreign_key="users.id", max_length=128)
+    user_id: str | None = Field(default=None, max_length=128)
 
 
 class Liability(SQLModel, table=True):
@@ -77,7 +62,7 @@ class Liability(SQLModel, table=True):
     __table_args__ = (Index("ix_liabilities_user_active", "user_id", "is_active"), {"extend_existing": True})
 
     id: int | None = Field(default=None, primary_key=True)
-    user_id: str = Field(foreign_key="users.id", max_length=128)
+    user_id: str = Field(max_length=128)
     liability_type_id: int = Field(foreign_key="liability_types.id")
     name: str = Field(max_length=255)
     balance: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
@@ -107,12 +92,10 @@ class Snapshot(SQLModel, table=True):
     )
 
     id: int | None = Field(default=None, primary_key=True)
-    user_id: str = Field(foreign_key="users.id", max_length=128)
-    total_assets: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
-    total_liabilities: Decimal = Field(
-        default=Decimal("0"), max_digits=14, decimal_places=2
-    )
-    net_worth: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
+    user_id: str = Field(max_length=128)
+    total_assets: Decimal | None = Field(default=None, max_digits=14, decimal_places=2)
+    total_liabilities: Decimal | None = Field(default=None, max_digits=14, decimal_places=2)
+    net_worth: Decimal | None = Field(default=None, max_digits=14, decimal_places=2)
     snapshot_date: datetime = Field()
     detail_json: dict | None = Field(default=None, sa_column=Column(JSONB))
     created_at: datetime = Field(
