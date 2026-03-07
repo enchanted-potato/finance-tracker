@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 6 context gathered
-last_updated: "2026-03-07T18:20:26.247Z"
+stopped_at: Completed 06-03-PLAN.md
+last_updated: "2026-03-07T18:47:36.978Z"
 last_activity: 2026-03-05 — v1.1 roadmap created (Phases 6-8 defined)
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 10
+  completed_plans: 8
   percent: 60
 ---
 
@@ -47,6 +47,8 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 | 05 | 4 | 7576s | 1894s |
 
 *Updated after each plan completion*
+| Phase 06 P03 | 81 | 2 tasks | 1 files |
+| Phase 06 P01 | 84 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -57,6 +59,8 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 - [Phase 05-03]: Cloud Run service URL: https://finance-tracker-rntookejza-uc.a.run.app
 - [Phase 05]: Remove users table entirely — single-user app, use Firebase UID directly in accounts/liabilities/snapshots
 - [Phase 05]: Store Firebase UID directly as string in user_id fields with no FK constraints
+- [Phase 06-01]: Deferred imports inside test bodies (not module-level) to allow pytest collection even before _build_net_worth_card_html exists
+- [Phase 06-03]: Keep type='primary' for active sidebar buttons and restyle CSS rule (transparent + border-left) rather than switching to secondary — preserves existing CSS hook
 
 ### Pending Todos
 
@@ -76,6 +80,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-07T18:20:26.235Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-dashboard-and-navigation-polish/06-CONTEXT.md
+Last session: 2026-03-07T18:47:36.974Z
+Stopped at: Completed 06-03-PLAN.md
+Resume file: None

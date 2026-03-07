@@ -27,8 +27,8 @@
 ### Dashboard
 
 - [ ] **DASH-01**: Metric cards display as styled rounded boxes with soft colored backgrounds (Net Worth=blue, Assets=green, Liabilities=red)
-- [ ] **DASH-02**: Net Worth delta is shown in red when negative (not green)
-- [ ] **DASH-03**: Line chart y-axis displays values with thousands comma separator
+- [x] **DASH-02**: Net Worth delta is shown in red when negative (not green)
+- [x] **DASH-03**: Line chart y-axis displays values with thousands comma separator
 - [ ] **DASH-04**: Pension bar chart has drop shadows for visual depth
 
 ### Balance Entry
@@ -87,8 +87,8 @@
 | DEPLOY-04 | Phase 5 | Complete |
 | DEPLOY-05 | Phase 5 | Complete |
 | DASH-01 | Phase 6 | Pending |
-| DASH-02 | Phase 6 | Pending |
-| DASH-03 | Phase 6 | Pending |
+| DASH-02 | Phase 6 | Complete |
+| DASH-03 | Phase 6 | Complete |
 | DASH-04 | Phase 6 | Pending |
 | NAV-01 | Phase 6 | Pending |
 | ENTRY-01 | Phase 7 | Pending |
