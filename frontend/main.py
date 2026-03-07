@@ -223,15 +223,24 @@ def main() -> None:
                 background-color: #b0aea5 !important;
             }
 
-            /* Active state for primary buttons - Anthropic Orange accent */
-            .stButton > button[kind="primary"] {
-                background-color: #d97757 !important;
-                color: #faf9f5 !important;
-                font-weight: 500 !important;
+            /* Active sidebar nav: left border accent, no background */
+            [data-testid="stSidebar"] .stButton > button[kind="primary"] {
+                background-color: transparent !important;
+                color: #141413 !important;
+                font-weight: 600 !important;
+                border-left: 3px solid #141413 !important;
+                padding-left: 13px !important;
             }
 
-            .stButton > button[kind="primary"]:hover {
-                background-color: #c46647 !important;
+            [data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
+                background-color: #e8e6dc !important;
+            }
+
+            /* Drop shadow on all Plotly chart containers */
+            .stPlotlyChart {
+                box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                border-radius: 8px;
+                overflow: hidden;
             }
         </style>
         """,
