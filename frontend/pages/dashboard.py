@@ -106,6 +106,31 @@ def _net_worth_delta(snapshots: list, current_net_worth: Decimal) -> str | None:
     return f"£{delta:,.2f}"
 
 
+def _build_net_worth_card_html(net_worth: Decimal, delta: Decimal) -> str:
+    """Build styled HTML for the Net Worth metric card.
+
+    :param net_worth: Current net worth value.
+    :param delta: Change from previous snapshot (positive = gain, negative = loss).
+    :returns: HTML string for rendering via st.markdown(unsafe_allow_html=True).
+    """
+    delta_color = "red" if delta < 0 else "green"
+    sign = "+" if delta >= 0 else ""
+    delta_str = f"{sign}£{abs(delta):,.2f}"
+    return f"""
+<div style="
+    background: rgba(33, 150, 243, 0.10);
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    height: 100%;
+">
+    <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">Net Worth</div>
+    <div style="font-size: 26px; font-weight: 700; color: #141413;">£{net_worth:,.2f}</div>
+    <div style="font-size: 13px; color: {delta_color}; font-weight: 500; margin-top: 4px;">{delta_str}</div>
+</div>
+"""
+
+
 def _filter_snapshots(snapshots: list, range_option: str) -> list:
     """Filter snapshots by the selected time range."""
     if range_option == "All Time":
@@ -168,8 +193,11 @@ def _render_line_chart(snapshots: list) -> None:
 
     fig.update_layout(
         xaxis_title="Date",
-        yaxis_title="Amount (£)",
-        yaxis_tickformat="£,.0f",
+        yaxis=dict(
+            title="Amount (£)",
+            tickprefix="£",
+            tickformat=",.0f",
+        ),
         hovermode="x unified",
         margin={"l": 60, "r": 20, "t": 20, "b": 40},
         paper_bgcolor="rgba(0,0,0,0)",
