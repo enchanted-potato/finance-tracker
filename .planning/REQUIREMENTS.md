@@ -29,7 +29,7 @@
 - [ ] **DASH-01**: Metric cards display as styled rounded boxes with soft colored backgrounds (Net Worth=blue, Assets=green, Liabilities=red)
 - [x] **DASH-02**: Net Worth delta is shown in red when negative (not green)
 - [x] **DASH-03**: Line chart y-axis displays values with thousands comma separator
-- [ ] **DASH-04**: Pension bar chart has drop shadows for visual depth
+- [x] **DASH-04**: Pension bar chart has drop shadows for visual depth
 
 ### Balance Entry
 
@@ -52,7 +52,7 @@
 
 ### Navigation
 
-- [ ] **NAV-01**: Sidebar active page indicator uses a color other than orange
+- [x] **NAV-01**: Sidebar active page indicator uses a color other than orange
 
 ## Future Requirements (v2+)
 
@@ -89,8 +89,8 @@
 | DASH-01 | Phase 6 | Pending |
 | DASH-02 | Phase 6 | Complete |
 | DASH-03 | Phase 6 | Complete |
-| DASH-04 | Phase 6 | Pending |
-| NAV-01 | Phase 6 | Pending |
+| DASH-04 | Phase 6 | Complete |
+| NAV-01 | Phase 6 | Complete |
 | ENTRY-01 | Phase 7 | Pending |
 | ENTRY-02 | Phase 7 | Pending |
 | ENTRY-03 | Phase 7 | Pending |
