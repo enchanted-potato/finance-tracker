@@ -237,7 +237,8 @@ def main() -> None:
             }
 
             /* Drop shadow on all Plotly chart containers */
-            .stPlotlyChart {
+            .stPlotlyChart,
+            [data-testid="stPlotlyChart"] {
                 box-shadow: 0 4px 12px rgba(0,0,0,0.08);
                 border-radius: 8px;
                 overflow: hidden;

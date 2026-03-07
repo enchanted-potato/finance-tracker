@@ -56,25 +56,28 @@ def render() -> None:
 
     with col2:
         st.markdown(f"""
-<div style="background: rgba(20, 167, 96, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); height: 100%;">
+<div style="background: rgba(20, 167, 96, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
     <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">Total Assets</div>
     <div style="font-size: 26px; font-weight: 700; color: #141413;">£{total_assets:,.2f}</div>
+    <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
 </div>
 """, unsafe_allow_html=True)
 
     with col3:
         st.markdown(f"""
-<div style="background: rgba(232, 33, 33, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); height: 100%;">
+<div style="background: rgba(232, 33, 33, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
     <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">Total Liabilities</div>
     <div style="font-size: 26px; font-weight: 700; color: #141413;">£{total_liabilities:,.2f}</div>
+    <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
 </div>
 """, unsafe_allow_html=True)
 
     with col4:
         st.markdown(f"""
-<div style="background: rgba(100, 100, 100, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); height: 100%;">
+<div style="background: rgba(100, 100, 100, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
     <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">Total Pension</div>
     <div style="font-size: 26px; font-weight: 700; color: #141413;">£{total_pension:,.2f}</div>
+    <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -141,7 +144,7 @@ def _build_net_worth_card_html(net_worth: Decimal, delta: Decimal) -> str:
     border-radius: 12px;
     padding: 20px 24px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    height: 100%;
+    min-height: 100px;
 ">
     <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">Net Worth</div>
     <div style="font-size: 26px; font-weight: 700; color: #141413;">£{net_worth:,.2f}</div>
