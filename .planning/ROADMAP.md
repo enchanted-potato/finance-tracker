@@ -81,7 +81,13 @@ Plans:
   3. The line chart y-axis labels include thousands comma separators (e.g., "1,250" not "1250")
   4. The pension bar chart displays with drop shadows that give visual depth
   5. The sidebar highlights the active page with a color clearly distinct from orange
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Test scaffold for delta sign logic and chart axis format (Wave 1)
+- [ ] 06-02-PLAN.md — Dashboard metric cards + chart fixes in dashboard.py (Wave 2)
+- [ ] 06-03-PLAN.md — CSS injection + sidebar active border in main.py (Wave 1)
+- [ ] 06-04-PLAN.md — Visual verification checkpoint (Wave 3)
 
 ---
 
@@ -123,6 +129,6 @@ Phases execute in numeric order: 6 → 7 → 8
 | 1-3. Foundation (pre-GSD) | — | Complete | Pre-2026-02-17 |
 | 4. Firebase Authentication | 2/2 | Complete | 2026-02-21 |
 | 5. Cloud Run Deployment | 4/4 | Complete | 2026-03-01 |
-| 6. Dashboard and Navigation Polish | 0/TBD | Not started | - |
+| 6. Dashboard and Navigation Polish | 0/4 | Not started | - |
 | 7. Date-Aware Balance Entry | 0/TBD | Not started | - |
 | 8. History and Configure Improvements | 0/TBD | Not started | - |
