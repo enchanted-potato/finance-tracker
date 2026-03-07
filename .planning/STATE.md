@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 06-02-PLAN.md
-last_updated: "2026-03-07T19:10:00.000Z"
+stopped_at: Completed 06-04-PLAN.md
+last_updated: "2026-03-07T21:52:46.377Z"
 last_activity: 2026-03-05 — v1.1 roadmap created (Phases 6-8 defined)
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 10
   percent: 60
 ---
 
@@ -50,6 +50,7 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 | Phase 06 P03 | 81 | 2 tasks | 1 files |
 | Phase 06 P01 | 84 | 1 tasks | 1 files |
 | Phase 06 P02 | 480 | 2 tasks | 1 files |
+| Phase 06 P04 | 900 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,8 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 - [Phase 06-03]: Keep type='primary' for active sidebar buttons and restyle CSS rule (transparent + border-left) rather than switching to secondary — preserves existing CSS hook
 - [Phase 06-02]: yaxis=dict(tickprefix, tickformat) is the correct Plotly API — combined yaxis_tickformat="£,.0f" is a bug (prefix+format can't be combined this way)
 - [Phase 06-02]: HTML metric cards use st.markdown(f-string, unsafe_allow_html=True) with inline styles
+- [Phase 06-04]: Equal card height via hidden placeholder div (visibility:hidden) rather than fixed px height
+- [Phase 06-04]: Dual CSS selector (.stPlotlyChart + data-testid) for Plotly shadow — handles Streamlit version differences
 
 ### Pending Todos
 
@@ -83,6 +86,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-07T18:47:36.974Z
-Stopped at: Completed 06-03-PLAN.md
+Last session: 2026-03-07T21:52:46.374Z
+Stopped at: Completed 06-04-PLAN.md
 Resume file: None

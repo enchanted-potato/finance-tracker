@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1-3: Foundation** - Pre-GSD complete (models, services, Streamlit UI)
 - [x] **Phase 4: Firebase Authentication** - Replace TEST_USER_ID with real Firebase auth, validated locally
 - [x] **Phase 5: Cloud Run Deployment** - Deploy app to Cloud Run + Cloud SQL, credentials via Secret Manager
-- [ ] **Phase 6: Dashboard and Navigation Polish** - Metric card styling, chart improvements, sidebar active color
+- [x] **Phase 6: Dashboard and Navigation Polish** - Metric card styling, chart improvements, sidebar active color (completed 2026-03-07)
 - [ ] **Phase 7: Date-Aware Balance Entry** - Date picker + history view on Accounts, Liabilities, and Pension pages
 - [ ] **Phase 8: History and Configure Improvements** - Styled history table, date formatting, expanded row actions, inline delete
 
@@ -129,6 +129,6 @@ Phases execute in numeric order: 6 → 7 → 8
 | 1-3. Foundation (pre-GSD) | — | Complete | Pre-2026-02-17 |
 | 4. Firebase Authentication | 2/2 | Complete | 2026-02-21 |
 | 5. Cloud Run Deployment | 4/4 | Complete | 2026-03-01 |
-| 6. Dashboard and Navigation Polish | 2/4 | In Progress|  |
+| 6. Dashboard and Navigation Polish | 4/4 | Complete   | 2026-03-07 |
 | 7. Date-Aware Balance Entry | 0/TBD | Not started | - |
 | 8. History and Configure Improvements | 0/TBD | Not started | - |
