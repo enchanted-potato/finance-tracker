@@ -67,6 +67,9 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 - [Phase 06-02]: HTML metric cards use st.markdown(f-string, unsafe_allow_html=True) with inline styles
 - [Phase 06-04]: Equal card height via hidden placeholder div (visibility:hidden) rather than fixed px height
 - [Phase 06-04]: Dual CSS selector (.stPlotlyChart + data-testid) for Plotly shadow — handles Streamlit version differences
+- [Quick-4]: LiabilityEntry uses UniqueConstraint(user_id, entry_date, liability_type_id) enabling upsert semantics
+- [Quick-4]: capture_snapshot filters LiabilityEntry by entry_date == snapshot_date (not is_active flag)
+- [Quick-4]: Deletion in st.data_editor detected by diffing original _id set vs edited _id set (hidden column pattern)
 
 ### Pending Todos
 
@@ -83,9 +86,10 @@ None.
 | 1 | Add pension as separate category with dedicated page and dashboard chart | 4194ef8, 7ed7004 | 2026-03-01 |
 | 2 | Add liabilities CSV upload to history page | 449efe2, 5106830 | 2026-03-02 |
 | 3 | Fix NULL values for missing history data (nullable snapshot fields, gap charts, dash display) | 6c98f39, 96b9a07, 096b69b | 2026-03-03 |
+| 4 | Refactor liabilities to date-keyed LiabilityEntry model with st.data_editor UI | 38db8ee, 675ea64 | 2026-03-09 |
 
 ## Session Continuity
 
-Last session: 2026-03-07T21:52:46.374Z
-Stopped at: Completed 06-04-PLAN.md
+Last session: 2026-03-09T20:43:07Z
+Stopped at: Completed quick-4-PLAN.md
 Resume file: None
