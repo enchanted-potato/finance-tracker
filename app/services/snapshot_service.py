@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 from loguru import logger
 from sqlmodel import Session, select
 
-from app.models import Account, Liability, Snapshot
+from app.models import Account, LiabilityEntry, Snapshot
 from app.services.account_service import _get_pension_type_id
 
 
@@ -34,7 +34,10 @@ def capture_snapshot(
     )
     liabilities = list(
         session.exec(
-            select(Liability).where(Liability.user_id == user_id, Liability.is_active.is_(True))
+            select(LiabilityEntry).where(
+                LiabilityEntry.user_id == user_id,
+                LiabilityEntry.entry_date == snapshot_date,
+            )
         ).all()
     )
 
@@ -49,7 +52,7 @@ def capture_snapshot(
     total_assets = sum((a.balance for a in non_pension_accounts), Decimal("0"))
     total_pension = sum((a.balance for a in pension_accounts), Decimal("0"))
     total_liabilities = (
-        sum((lb.balance for lb in liabilities), Decimal("0")) if liabilities else None
+        sum((lb.amount for lb in liabilities), Decimal("0")) if liabilities else None
     )
     net_worth = (total_assets - total_liabilities) if total_liabilities is not None else None
 
@@ -65,8 +68,8 @@ def capture_snapshot(
         "liabilities": [
             {
                 "id": lb.id,
-                "name": lb.name,
-                "balance": str(lb.balance),
+                "entry_date": str(lb.entry_date),
+                "amount": str(lb.amount),
                 "type_id": lb.liability_type_id,
             }
             for lb in liabilities

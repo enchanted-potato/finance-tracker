@@ -1,3 +1,4 @@
+from datetime import date as date_type
 from datetime import datetime
 from decimal import Decimal
 
@@ -55,19 +56,21 @@ class LiabilityType(SQLModel, table=True):
     user_id: str | None = Field(default=None, max_length=128)
 
 
-class Liability(SQLModel, table=True):
-    """User liability with current outstanding balance."""
+class LiabilityEntry(SQLModel, table=True):
+    """One balance record per (user, date, liability_type)."""
 
-    __tablename__ = "liabilities"
-    __table_args__ = (Index("ix_liabilities_user_active", "user_id", "is_active"), {"extend_existing": True})
+    __tablename__ = "liability_entries"
+    __table_args__ = (
+        UniqueConstraint("user_id", "entry_date", "liability_type_id"),
+        {"extend_existing": True},
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     user_id: str = Field(max_length=128)
     liability_type_id: int = Field(foreign_key="liability_types.id")
-    name: str = Field(max_length=255)
-    balance: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
+    entry_date: date_type = Field()
+    amount: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
     currency: str = Field(default="GBP", max_length=3)
-    is_active: bool = Field(default=True)
     created_at: datetime = Field(
         default=None,
         sa_column_kwargs={"server_default": sa_text("now()")},
