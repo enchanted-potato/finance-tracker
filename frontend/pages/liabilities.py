@@ -1,16 +1,15 @@
-"""Liability management page — list, add, edit balance, deactivate."""
+"""Liability entries page — date-based editable table."""
 
-from decimal import Decimal, InvalidOperation
-
+import pandas as pd
 import streamlit as st
+from datetime import date
 
 from app.database import get_session
 from app.services.liability_service import (
-    create_liability,
-    deactivate_liability,
-    list_liabilities,
+    delete_liability_entry,
+    list_liability_entries,
     list_liability_types,
-    update_balance,
+    upsert_liability_entry,
 )
 from app.services.snapshot_service import capture_snapshot
 
@@ -20,153 +19,130 @@ def _get_user_id() -> str:
 
 
 def render() -> None:
-    """Render the liabilities management page."""
     st.header("Liabilities")
     user_id = _get_user_id()
 
     session = next(get_session())
     try:
         liability_types = list_liability_types(session=session, user_id=user_id)
-        liabilities = list_liabilities(session=session, user_id=user_id)
+        entries = list_liability_entries(session=session, user_id=user_id)
     finally:
         session.close()
 
-    type_map = {lt.id: lt.name for lt in liability_types}
+    type_name_to_id = {lt.name: lt.id for lt in liability_types}
+    type_id_to_name = {lt.id: lt.name for lt in liability_types}
+    type_names = [lt.name for lt in liability_types]
 
-    # --- Add new liability ---
-    st.subheader("Add Liability")
-    with st.form("add_liability", clear_on_submit=True):
-        col1, col2, col3 = st.columns([2, 2, 1])
-        with col1:
-            liability_type = st.selectbox(
-                "Type",
-                options=liability_types,
-                format_func=lambda lt: lt.name,
-                key="new_liability_type",
-            )
-        with col2:
-            liability_name = st.text_input("Name", placeholder="e.g. Home Mortgage")
-        with col3:
-            initial_balance = st.text_input("Balance", value="0.00")
+    # Build DataFrame from existing entries
+    rows = []
+    for e in entries:
+        rows.append({
+            "_id": e.id,
+            "Month": e.entry_date.strftime("%b %Y"),
+            "Date": e.entry_date.strftime("%d/%m/%Y"),
+            "_entry_date": e.entry_date,
+            "Type": type_id_to_name.get(e.liability_type_id, ""),
+            "Amount (£)": float(e.amount),
+        })
 
-        submitted = st.form_submit_button("Add Liability")
-        if submitted and liability_name and liability_type:
-            try:
-                balance = Decimal(initial_balance)
-            except InvalidOperation:
-                st.error("Invalid balance amount.")
-            else:
-                session = next(get_session())
+    df = pd.DataFrame(rows, columns=["_id", "Month", "Date", "_entry_date", "Type", "Amount (£)"])
+
+    # Column config for data_editor
+    column_config = {
+        "_id": None,            # hidden
+        "_entry_date": None,    # hidden
+        "Month": st.column_config.TextColumn("Month", disabled=True),
+        "Date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
+        "Type": st.column_config.SelectboxColumn("Type", options=type_names, required=True),
+        "Amount (£)": st.column_config.NumberColumn("Amount (£)", min_value=0, format="£%.2f"),
+    }
+
+    st.caption("Edit amounts inline. Use the checkbox column to delete rows. Add rows at the bottom.")
+
+    edited = st.data_editor(
+        df,
+        column_config=column_config,
+        num_rows="dynamic",
+        use_container_width=True,
+        key="liabilities_editor",
+    )
+
+    if st.button("Save changes", type="primary"):
+        affected_dates: set[date] = set()
+        errors: list[str] = []
+
+        session = next(get_session())
+        try:
+            # Detect deletions: rows in original df not in edited (by _id)
+            original_ids = set(df["_id"].dropna().astype(int))
+            edited_ids = set(edited["_id"].dropna().astype(int)) if "_id" in edited.columns else set()
+            deleted_ids = original_ids - edited_ids
+
+            for del_id in deleted_ids:
                 try:
-                    create_liability(
-                        session=session,
-                        user_id=user_id,
-                        liability_type_id=liability_type.id,
-                        name=liability_name,
-                        balance=balance,
+                    affected = delete_liability_entry(
+                        session=session, entry_id=int(del_id), user_id=user_id
                     )
-                    capture_snapshot(session=session, user_id=user_id)
-                    st.success(f"Liability '{liability_name}' created.")
-                    st.rerun()
-                finally:
-                    session.close()
+                    if affected:
+                        affected_dates.add(affected)
+                except ValueError as exc:
+                    errors.append(str(exc))
 
-    # --- List liabilities grouped by type ---
-    st.subheader("Your Liabilities")
+            # Upsert all rows in edited df
+            for _, row in edited.iterrows():
+                type_name = row.get("Type", "")
+                if not type_name or type_name not in type_name_to_id:
+                    errors.append(f"Unknown type '{type_name}' — skipping row.")
+                    continue
 
-    if not liabilities:
-        st.info("No liabilities yet. Add one above.")
-        return
-
-    grouped: dict[str, list] = {}
-    for liab in liabilities:
-        type_name = type_map.get(liab.liability_type_id, "Unknown")
-        grouped.setdefault(type_name, []).append(liab)
-
-    # Batch update form
-    with st.form("batch_update_liabilities"):
-        updates_to_process = []
-        deactivations_to_process = []
-
-        for type_name, type_liabilities in sorted(grouped.items()):
-            st.markdown(f"**{type_name}**")
-            for liab in type_liabilities:
-                col_select, col_name, col_current, col_new, col_deactivate = st.columns(
-                    [0.5, 2.5, 1.5, 1.5, 0.5]
-                )
-                with col_select:
-                    selected = st.checkbox(
-                        "Select",
-                        key=f"liab_select_{liab.id}",
-                        label_visibility="collapsed",
-                    )
-                with col_name:
-                    st.text(liab.name)
-                with col_current:
-                    st.text(f"£{liab.balance:,.2f}")
-                with col_new:
-                    new_bal = st.text_input(
-                        "New balance",
-                        key=f"liab_bal_{liab.id}",
-                        placeholder="New balance",
-                        label_visibility="collapsed",
-                    )
-                with col_deactivate:
-                    deactivate = st.checkbox(
-                        "Deactivate",
-                        key=f"liab_deactivate_{liab.id}",
-                        label_visibility="collapsed",
-                        help="Deactivate liability",
-                    )
-
-                if selected and new_bal:
-                    updates_to_process.append((liab.id, new_bal))
-                if deactivate:
-                    deactivations_to_process.append(liab.id)
-
-            st.divider()
-
-        # Submit button for batch update
-        col1, col2 = st.columns([1, 3])
-        with col1:
-            submitted = st.form_submit_button("Update Selected")
-
-        if submitted:
-            errors = []
-            success_count = 0
-
-            session = next(get_session())
-            try:
-                # Process updates
-                for liability_id, balance_str in updates_to_process:
+                # Parse date from "Date" column (data_editor returns date objects for DateColumn)
+                raw_date = row.get("Date") or row.get("_entry_date")
+                if raw_date is None:
+                    errors.append("Row missing date — skipping.")
+                    continue
+                if isinstance(raw_date, str):
                     try:
-                        parsed = Decimal(balance_str)
-                        update_balance(
-                            session=session,
-                            liability_id=liability_id,
-                            user_id=user_id,
-                            new_balance=parsed,
-                        )
-                        success_count += 1
-                    except InvalidOperation:
-                        errors.append(f"Invalid balance for liability ID {liability_id}")
+                        from datetime import datetime as _dt
+                        raw_date = _dt.strptime(raw_date, "%d/%m/%Y").date()
+                    except ValueError:
+                        errors.append(f"Could not parse date '{raw_date}' — skipping.")
+                        continue
+                entry_date = raw_date if isinstance(raw_date, date) else raw_date.date()
 
-                # Process deactivations
-                for liability_id in deactivations_to_process:
-                    deactivate_liability(session=session, liability_id=liability_id, user_id=user_id)
-                    success_count += 1
+                amount = row.get("Amount (£)", 0) or 0
+                from decimal import Decimal
+                upsert_liability_entry(
+                    session=session,
+                    user_id=user_id,
+                    liability_type_id=type_name_to_id[type_name],
+                    entry_date=entry_date,
+                    amount=Decimal(str(amount)),
+                )
+                affected_dates.add(entry_date)
 
-                if success_count > 0:
-                    capture_snapshot(session=session, user_id=user_id)
+            # Sync snapshot for each affected date
+            for snap_date in affected_dates:
+                capture_snapshot(session=session, user_id=user_id, snapshot_date=snap_date)
 
-                if errors:
-                    for error in errors:
-                        st.error(error)
-                if success_count > 0:
-                    st.success(f"Updated {success_count} liability/liabilities.")
-                    st.rerun()
-            finally:
-                session.close()
+        finally:
+            session.close()
 
-    total = sum(lb.balance for lb in liabilities)
-    st.metric("Total Liabilities", f"£{total:,.2f}")
+        if errors:
+            for err in errors:
+                st.error(err)
+        if affected_dates:
+            st.success(f"Saved. Snapshots updated for {len(affected_dates)} date(s).")
+            st.rerun()
+
+    # Summary
+    if not entries:
+        st.info("No liabilities yet. Add a row above and save.")
+    else:
+        total = sum(float(e.amount) for e in entries)
+        # Show total for most recent date only (most useful summary)
+        latest_date = max(e.entry_date for e in entries)
+        latest_total = sum(float(e.amount) for e in entries if e.entry_date == latest_date)
+        st.metric(
+            f"Total Liabilities ({latest_date.strftime('%b %Y')})",
+            f"£{latest_total:,.2f}",
+        )
