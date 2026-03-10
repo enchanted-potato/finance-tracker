@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
-from app.models import Account, AccountType, Liability, LiabilityType
+from app.models import Account, AccountType, LiabilityEntry, LiabilityType
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -88,16 +88,17 @@ def make_liability(db_session, test_user, liability_type):
 
     def _make(
         *,
-        name: str = "Home Mortgage",
-        balance: Decimal = Decimal("200000"),
+        entry_date=None,
+        amount: Decimal = Decimal("200000"),
         user_id: str | None = None,
         liability_type_id: int | None = None,
-    ) -> Liability:
-        liability = Liability(
+    ) -> LiabilityEntry:
+        from datetime import date
+        liability = LiabilityEntry(
             user_id=user_id or test_user.id,
             liability_type_id=liability_type_id or liability_type.id,
-            name=name,
-            balance=balance,
+            entry_date=entry_date or date.today(),
+            amount=amount,
         )
         db_session.add(liability)
         db_session.flush()

@@ -1,7 +1,7 @@
 from loguru import logger
 from sqlmodel import Session, select
 
-from app.models import Account, AccountType, Liability, LiabilityType
+from app.models import Account, AccountType, LiabilityEntry, LiabilityType
 
 
 def create_account_type(*, session: Session, name: str, user_id: str | None = None) -> AccountType:
@@ -121,7 +121,7 @@ def delete_liability_type(*, session: Session, type_id: int) -> None:
     if liability_type is None:
         raise ValueError(f"Liability type {type_id} not found")
     in_use = session.exec(
-        select(Liability).where(Liability.liability_type_id == type_id)
+        select(LiabilityEntry).where(LiabilityEntry.liability_type_id == type_id)
     ).first()
     if in_use is not None:
         raise ValueError(
@@ -141,6 +141,6 @@ def liability_type_usage_count(*, session: Session, type_id: int) -> int:
     """
     return len(
         session.exec(
-            select(Liability).where(Liability.liability_type_id == type_id)
+            select(LiabilityEntry).where(LiabilityEntry.liability_type_id == type_id)
         ).all()
     )

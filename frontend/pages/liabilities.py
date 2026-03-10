@@ -38,21 +38,19 @@ def render() -> None:
     for e in entries:
         rows.append({
             "_id": e.id,
+            "Date": e.entry_date,
             "Month": e.entry_date.strftime("%b %Y"),
-            "Date": e.entry_date.strftime("%d/%m/%Y"),
-            "_entry_date": e.entry_date,
             "Type": type_id_to_name.get(e.liability_type_id, ""),
             "Amount (£)": float(e.amount),
         })
 
-    df = pd.DataFrame(rows, columns=["_id", "Month", "Date", "_entry_date", "Type", "Amount (£)"])
+    df = pd.DataFrame(rows, columns=["_id", "Date", "Month", "Type", "Amount (£)"])
 
     # Column config for data_editor
     column_config = {
         "_id": None,            # hidden
-        "_entry_date": None,    # hidden
-        "Month": st.column_config.TextColumn("Month", disabled=True),
         "Date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
+        "Month": st.column_config.TextColumn("Month", disabled=True),
         "Type": st.column_config.SelectboxColumn("Type", options=type_names, required=True),
         "Amount (£)": st.column_config.NumberColumn("Amount (£)", min_value=0, format="£%.2f"),
     }
@@ -95,16 +93,20 @@ def render() -> None:
                     errors.append(f"Unknown type '{type_name}' — skipping row.")
                     continue
 
-                # Parse date from "Date" column (data_editor returns date objects for DateColumn)
-                raw_date = row.get("Date") or row.get("_entry_date")
-                if raw_date is None:
+                # Parse date — DateColumn returns date objects, strings, or Timestamps
+                raw_date = row.get("Date")
+                if raw_date is None or (isinstance(raw_date, float) and pd.isna(raw_date)):
                     errors.append("Row missing date — skipping.")
                     continue
                 if isinstance(raw_date, str):
-                    try:
-                        from datetime import datetime as _dt
-                        raw_date = _dt.strptime(raw_date, "%d/%m/%Y").date()
-                    except ValueError:
+                    from datetime import datetime as _dt
+                    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+                        try:
+                            raw_date = _dt.strptime(raw_date, fmt).date()
+                            break
+                        except ValueError:
+                            continue
+                    else:
                         errors.append(f"Could not parse date '{raw_date}' — skipping.")
                         continue
                 entry_date = raw_date if isinstance(raw_date, date) else raw_date.date()

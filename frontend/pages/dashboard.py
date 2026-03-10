@@ -6,7 +6,7 @@ import streamlit as st
 
 from app.database import get_session
 from app.services.account_service import list_account_types, list_non_pension_accounts, list_pension_accounts
-from app.services.liability_service import list_liabilities, list_liability_types
+from app.services.liability_service import list_liability_entries, list_liability_types
 from app.services.snapshot_service import get_snapshot_history
 
 
@@ -23,7 +23,10 @@ def render() -> None:
     try:
         accounts = list_non_pension_accounts(session=session, user_id=user_id)
         pension_accounts = list_pension_accounts(session=session, user_id=user_id)
-        liabilities = list_liabilities(session=session, user_id=user_id)
+        all_liability_entries = list_liability_entries(session=session, user_id=user_id)
+        # Use only the most recent date's entries for current totals/pie
+        latest_liab_date = all_liability_entries[0].entry_date if all_liability_entries else None
+        liabilities = [e for e in all_liability_entries if e.entry_date == latest_liab_date]
         account_types = list_account_types(session=session, user_id=user_id)
         liability_types = list_liability_types(session=session, user_id=user_id)
         all_snapshots = get_snapshot_history(session=session, user_id=user_id)
@@ -37,7 +40,7 @@ def render() -> None:
     # Prefer live account/liability balances; fall back to latest snapshot
     # when no active records exist (e.g. data imported as snapshots only).
     total_assets = sum((a.balance for a in accounts), Decimal("0"))
-    total_liabilities = sum((lb.balance for lb in liabilities), Decimal("0"))
+    total_liabilities = sum((lb.amount for lb in liabilities), Decimal("0"))
     total_pension = sum((a.balance for a in pension_accounts), Decimal("0"))
     if total_assets == 0 and total_liabilities == 0 and all_snapshots:
         latest = all_snapshots[-1]
@@ -115,17 +118,6 @@ def render() -> None:
     if pension_accounts:
         st.subheader("Pension Breakdown")
         _render_pension_bar(pension_accounts)
-
-
-def _net_worth_delta(snapshots: list, current_net_worth: Decimal) -> str | None:
-    """Compute delta from the previous snapshot."""
-    if len(snapshots) < 2:
-        return None
-    previous = snapshots[-2].net_worth
-    if previous is None:
-        return None
-    delta = current_net_worth - previous
-    return f"£{delta:,.2f}"
 
 
 def _build_net_worth_card_html(net_worth: Decimal, delta: Decimal) -> str:
@@ -216,7 +208,7 @@ def _render_line_chart(snapshots: list) -> None:
     fig.update_layout(
         xaxis_title="Date",
         yaxis=dict(
-            title="Amount (£)",
+            title="Amount",
             tickprefix="£",
             tickformat=",.0f",
         ),
@@ -277,7 +269,7 @@ def _render_liability_pie(liabilities: list, type_map: dict[int, str]) -> None:
     grouped: dict[str, float] = {}
     for liab in liabilities:
         type_name = type_map.get(liab.liability_type_id, "Unknown")
-        grouped[type_name] = grouped.get(type_name, 0) + float(liab.balance)
+        grouped[type_name] = grouped.get(type_name, 0) + float(liab.amount)
 
     # Bright, vibrant color palette
     colors = ["#0973de", "#FFC107", "#10D078", "#FF6B6B", "#A855F7", "#FF8042", "#00D9C9"]
@@ -318,7 +310,7 @@ def _render_pension_bar(pension_accounts: list) -> None:
     fig.update_layout(
         barmode="stack",
         yaxis=dict(
-            title="Amount (£)",
+            title="Amount",
             tickprefix="£",
             tickformat=",.0f",
         ),
