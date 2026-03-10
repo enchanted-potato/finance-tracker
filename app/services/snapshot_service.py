@@ -410,6 +410,37 @@ def update_snapshot(
     return snapshot
 
 
+def sync_snapshot_liabilities(*, session: Session, user_id: str, snapshot_date: date) -> None:
+    """Update an existing snapshot's total_liabilities and net_worth from liability_entries.
+
+    Only touches total_liabilities and net_worth — never overwrites total_assets.
+    If no snapshot exists for this date, does nothing.
+    """
+    liabilities = list(
+        session.exec(
+            select(LiabilityEntry).where(
+                LiabilityEntry.user_id == user_id,
+                LiabilityEntry.entry_date == snapshot_date,
+            )
+        ).all()
+    )
+    total_liabilities = sum((lb.amount for lb in liabilities), Decimal("0")) if liabilities else None
+
+    snapshot_dt = datetime.combine(snapshot_date, datetime.min.time())
+    existing = session.exec(
+        select(Snapshot).where(Snapshot.user_id == user_id, Snapshot.snapshot_date == snapshot_dt)
+    ).first()
+    if existing is None:
+        return
+
+    existing.total_liabilities = total_liabilities
+    assets = existing.total_assets if existing.total_assets is not None else Decimal("0")
+    existing.net_worth = (assets - total_liabilities) if total_liabilities is not None else None
+    session.add(existing)
+    session.commit()
+    logger.info(f"Synced liabilities for snapshot {snapshot_date} user {user_id}")
+
+
 def delete_snapshot(*, session: Session, snapshot_id: int, user_id: str) -> None:
     """Delete a snapshot by ID.
 
