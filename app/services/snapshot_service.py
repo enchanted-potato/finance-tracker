@@ -32,14 +32,7 @@ def capture_snapshot(
             select(Account).where(Account.user_id == user_id, Account.is_active.is_(True))
         ).all()
     )
-    liabilities = list(
-        session.exec(
-            select(LiabilityEntry).where(
-                LiabilityEntry.user_id == user_id,
-                LiabilityEntry.entry_date == snapshot_date,
-            )
-        ).all()
-    )
+    liabilities = _latest_liability_entries(session, user_id, snapshot_date)
 
     # Split pension vs non-pension so pension is excluded from total_assets / net_worth
     pension_accounts = [
@@ -416,14 +409,7 @@ def sync_snapshot_liabilities(*, session: Session, user_id: str, snapshot_date: 
     Only touches total_liabilities and net_worth — never overwrites total_assets.
     If no snapshot exists for this date, does nothing.
     """
-    liabilities = list(
-        session.exec(
-            select(LiabilityEntry).where(
-                LiabilityEntry.user_id == user_id,
-                LiabilityEntry.entry_date == snapshot_date,
-            )
-        ).all()
-    )
+    liabilities = _latest_liability_entries(session, user_id, snapshot_date)
     total_liabilities = sum((lb.amount for lb in liabilities), Decimal("0")) if liabilities else None
 
     snapshot_dt = datetime.combine(snapshot_date, datetime.min.time())
@@ -457,6 +443,40 @@ def delete_snapshot(*, session: Session, snapshot_id: int, user_id: str) -> None
     session.delete(snapshot)
     session.commit()
     logger.info(f"Deleted snapshot {snapshot_id} for user {user_id}")
+
+
+def _latest_liability_entries(
+    session: Session, user_id: str, as_of: date
+) -> list[LiabilityEntry]:
+    """Return the most recent LiabilityEntry per liability type on or before as_of.
+
+    This ensures a snapshot always carries the latest known liability balance
+    even if liabilities and accounts were updated on different days.
+    """
+    from sqlalchemy import func
+    from sqlalchemy.orm import aliased
+
+    # Subquery: latest entry_date per (user, liability_type) on or before as_of
+    sub = (
+        select(
+            LiabilityEntry.liability_type_id,
+            func.max(LiabilityEntry.entry_date).label("max_date"),
+        )
+        .where(
+            LiabilityEntry.user_id == user_id,
+            LiabilityEntry.entry_date <= as_of,
+        )
+        .group_by(LiabilityEntry.liability_type_id)
+        .subquery()
+    )
+
+    stmt = select(LiabilityEntry).join(
+        sub,
+        (LiabilityEntry.liability_type_id == sub.c.liability_type_id)
+        & (LiabilityEntry.entry_date == sub.c.max_date),
+    ).where(LiabilityEntry.user_id == user_id)
+
+    return list(session.exec(stmt).all())
 
 
 def _parse_decimal(raw: str) -> Decimal:

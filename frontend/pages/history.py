@@ -36,8 +36,8 @@ def render() -> None:
         )
         return
 
-    # Reverse to show most recent first
-    snapshots_desc = list(reversed(snapshots))
+    # Collapse to one row per month (latest snapshot in each month), most recent first
+    snapshots_desc = _latest_per_month(snapshots)
 
     # --- CSV actions ---
     tab_export, tab_import_snaps, tab_import_liab = st.tabs(
@@ -147,7 +147,7 @@ def render() -> None:
             col_details.markdown("")
             col_date, col_assets, col_liab, col_nw, col_change, col_details = st.columns([2, 2, 2, 2, 2, 1])
 
-        col_date.text(snap.snapshot_date.strftime("%Y-%m-%d"))
+        col_date.text(snap.snapshot_date.strftime("%b %Y"))
         col_assets.text(f"£{snap.total_assets:,.2f}" if snap.total_assets is not None else "-")
         col_liab.text(f"£{snap.total_liabilities:,.2f}" if snap.total_liabilities is not None else "-")
         col_nw.text(f"£{snap.net_worth:,.2f}" if snap.net_worth is not None else "-")
@@ -213,6 +213,18 @@ def render() -> None:
                         st.markdown("**Liabilities**")
                         for liab in detail["liabilities"]:
                             st.text(f"  {liab['name']}: £{Decimal(liab['balance']):,.2f}")
+
+
+def _latest_per_month(snapshots: list) -> list:
+    """Return one snapshot per calendar month — the latest date in that month.
+
+    Input is ascending by date; output is descending (most recent first).
+    """
+    seen: dict[tuple[int, int], object] = {}
+    for snap in snapshots:
+        key = (snap.snapshot_date.year, snap.snapshot_date.month)
+        seen[key] = snap  # later dates overwrite earlier ones
+    return list(reversed(list(seen.values())))
 
 
 def _format_change(current: Decimal | None, previous: Decimal | None) -> str:
