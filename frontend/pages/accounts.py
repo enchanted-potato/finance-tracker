@@ -11,7 +11,7 @@ from app.services.account_service import (
     deactivate_account,
     list_account_types,
     list_non_pension_accounts,
-    update_balance,
+    update_account,
 )
 from app.services.snapshot_service import capture_snapshot
 
@@ -36,7 +36,7 @@ def render() -> None:
     type_id_to_name = {at.id: at.name for at in non_pension_types}
     type_names = [at.name for at in non_pension_types]
 
-    total = sum(a.balance for a in accounts)
+    total = sum(a.balance * a.exchange_rate for a in accounts)
     col, _ = st.columns([1, 3])
     with col:
         st.markdown(f"""
@@ -54,20 +54,33 @@ def render() -> None:
             "_id": a.id,
             "Name": a.name,
             "Type": type_id_to_name.get(a.account_type_id, ""),
-            "Balance (£)": float(a.balance),
+            "Balance": float(a.balance),
+            "Currency": a.currency,
+            "Rate (to GBP)": float(a.exchange_rate),
         }
         for a in accounts
     ]
-    df = pd.DataFrame(rows, columns=["_id", "Name", "Type", "Balance (£)"])
+    df = pd.DataFrame(rows, columns=["_id", "Name", "Type", "Balance", "Currency", "Rate (to GBP)"])
 
     column_config = {
         "_id": None,  # hidden
         "Name": st.column_config.TextColumn("Name", required=True),
         "Type": st.column_config.SelectboxColumn("Type", options=type_names, required=True),
-        "Balance (£)": st.column_config.NumberColumn("Balance (£)", min_value=0, format="£%.2f"),
+        "Balance": st.column_config.NumberColumn("Balance", min_value=0, format="%.2f"),
+        "Currency": st.column_config.TextColumn("Currency", help="ISO 4217 code, e.g. GBP, EUR, USD"),
+        "Rate (to GBP)": st.column_config.NumberColumn(
+            "Rate (to GBP)",
+            min_value=0,
+            format="%.6f",
+            help="Exchange rate: 1 unit of this currency = X GBP. Use 1.0 for GBP accounts.",
+        ),
     }
 
-    st.caption("Edit balances inline. Use the checkbox column to delete rows. Add rows at the bottom.")
+    st.caption(
+        "Edit balances inline. Set Currency + Rate for foreign accounts "
+        "(e.g. EUR balance × rate = GBP contribution to net worth). "
+        "Use the checkbox column to delete rows."
+    )
 
     edited = st.data_editor(
         df,
@@ -108,9 +121,23 @@ def render() -> None:
                     continue
 
                 try:
-                    balance = Decimal(str(row.get("Balance (£)", 0) or 0))
+                    balance = Decimal(str(row.get("Balance", 0) or 0))
                 except InvalidOperation:
                     errors.append(f"Invalid balance for '{name}' — skipping.")
+                    continue
+
+                raw_currency = row.get("Currency", "GBP")
+                currency = str(raw_currency).strip().upper() if raw_currency else "GBP"
+                if not currency:
+                    currency = "GBP"
+
+                try:
+                    exchange_rate = Decimal(str(row.get("Rate (to GBP)", 1) or 1))
+                    if exchange_rate <= 0:
+                        errors.append(f"Exchange rate for '{name}' must be positive — skipping.")
+                        continue
+                except InvalidOperation:
+                    errors.append(f"Invalid exchange rate for '{name}' — skipping.")
                     continue
 
                 raw_id = row.get("_id")
@@ -122,24 +149,35 @@ def render() -> None:
                         account_type_id=type_name_to_id[type_name],
                         name=str(name),
                         balance=balance,
+                        currency=currency,
+                        exchange_rate=exchange_rate,
                     )
                     changed = True
                 else:
                     account_id = int(raw_id)
                     original = next((a for a in accounts if a.id == account_id), None)
                     if original:
-                        if original.name != str(name):
-                            original.name = str(name)
-                            session.add(original)
-                            session.commit()
-                            changed = True
-                        if original.balance != balance:
-                            update_balance(
+                        if (
+                            original.name != str(name)
+                            or original.balance != balance
+                            or original.currency != currency
+                            or original.exchange_rate != exchange_rate
+                        ):
+                            update_account(
                                 session=session,
                                 account_id=account_id,
                                 user_id=user_id,
-                                new_balance=balance,
+                                name=str(name),
+                                balance=balance,
+                                currency=currency,
+                                exchange_rate=exchange_rate,
                             )
+                            changed = True
+
+                        if original.account_type_id != type_name_to_id[type_name]:
+                            original.account_type_id = type_name_to_id[type_name]
+                            session.add(original)
+                            session.commit()
                             changed = True
 
             if changed:

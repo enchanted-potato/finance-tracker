@@ -70,6 +70,7 @@ def create_account(
     name: str,
     balance: Decimal = Decimal("0"),
     currency: str = "GBP",
+    exchange_rate: Decimal = Decimal("1"),
 ) -> Account:
     """Create a new asset account.
 
@@ -77,8 +78,9 @@ def create_account(
     :param user_id: Firebase UID of the owner.
     :param account_type_id: FK to account_types.
     :param name: Display name for the account.
-    :param balance: Initial balance.
+    :param balance: Initial balance in native currency.
     :param currency: ISO 4217 currency code.
+    :param exchange_rate: Exchange rate to GBP (balance_gbp = balance * exchange_rate).
     :returns: The newly created account.
     """
     account = Account(
@@ -87,6 +89,7 @@ def create_account(
         name=name,
         balance=balance,
         currency=currency,
+        exchange_rate=exchange_rate,
     )
     session.add(account)
     session.commit()
@@ -148,6 +151,48 @@ def update_balance(
     session.commit()
     session.refresh(account)
     logger.info(f"Updated account {account_id} balance to {new_balance}")
+    return account
+
+
+def update_account(
+    *,
+    session: Session,
+    account_id: int,
+    user_id: str,
+    name: str | None = None,
+    balance: Decimal | None = None,
+    currency: str | None = None,
+    exchange_rate: Decimal | None = None,
+) -> Account:
+    """Update an account's name, balance, currency, and/or exchange rate.
+
+    :param session: Database session.
+    :param account_id: Primary key of the account.
+    :param user_id: Firebase UID of the owner.
+    :param name: New display name, or None to leave unchanged.
+    :param balance: New balance in native currency, or None to leave unchanged.
+    :param currency: New ISO 4217 currency code, or None to leave unchanged.
+    :param exchange_rate: New exchange rate to GBP, or None to leave unchanged.
+    :returns: The updated account.
+    :raises ValueError: If the account is not found or inactive.
+    """
+    account = get_account(session=session, account_id=account_id, user_id=user_id)
+    if account is None:
+        raise ValueError(f"Account {account_id} not found for user {user_id}")
+    if not account.is_active:
+        raise ValueError(f"Account {account_id} is deactivated")
+    if name is not None:
+        account.name = name
+    if balance is not None:
+        account.balance = balance
+    if currency is not None:
+        account.currency = currency
+    if exchange_rate is not None:
+        account.exchange_rate = exchange_rate
+    session.add(account)
+    session.commit()
+    session.refresh(account)
+    logger.info(f"Updated account {account_id}")
     return account
 
 

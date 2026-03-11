@@ -208,11 +208,16 @@ def render() -> None:
                     if detail.get("accounts"):
                         st.markdown("**Accounts**")
                         for acct in detail["accounts"]:
-                            st.text(f"  {acct['name']}: £{Decimal(acct['balance']):,.2f}")
+                            balance_gbp = Decimal(acct.get("balance_gbp") or acct["balance"])
+                            currency = acct.get("currency", "GBP")
+                            suffix = f" ({currency} {Decimal(acct['balance']):,.2f})" if currency != "GBP" else ""
+                            st.text(f"  {acct['name']}: £{balance_gbp:,.2f}{suffix}")
                     if detail.get("liabilities"):
                         st.markdown("**Liabilities**")
                         for liab in detail["liabilities"]:
-                            st.text(f"  {liab['name']}: £{Decimal(liab['balance']):,.2f}")
+                            name = liab.get("name") or f"Type {liab.get('type_id', '?')}"
+                            amount = Decimal(liab.get("amount") or liab.get("balance", "0"))
+                            st.text(f"  {name}: £{amount:,.2f}")
 
 
 def _latest_per_month(snapshots: list) -> list:

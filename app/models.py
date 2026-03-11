@@ -31,6 +31,7 @@ class Account(SQLModel, table=True):
     name: str = Field(max_length=255)
     balance: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
     currency: str = Field(default="GBP", max_length=3)
+    exchange_rate: Decimal = Field(default=Decimal("1"), max_digits=10, decimal_places=6)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(
         default=None,

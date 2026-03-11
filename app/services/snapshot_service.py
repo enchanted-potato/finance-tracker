@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 from loguru import logger
 from sqlmodel import Session, select
 
-from app.models import Account, LiabilityEntry, Snapshot
+from app.models import Account, LiabilityEntry, LiabilityType, Snapshot
 from app.services.account_service import _get_pension_type_id
 
 
@@ -34,6 +34,15 @@ def capture_snapshot(
     )
     liabilities = _latest_liability_entries(session, user_id, snapshot_date)
 
+    # Build a lookup of liability type names for detail_json
+    liability_type_ids = {lb.liability_type_id for lb in liabilities}
+    liability_type_names: dict[int, str] = {}
+    if liability_type_ids:
+        lt_rows = session.exec(
+            select(LiabilityType).where(LiabilityType.id.in_(liability_type_ids))
+        ).all()
+        liability_type_names = {lt.id: lt.name for lt in lt_rows}
+
     # Split pension vs non-pension so pension is excluded from total_assets / net_worth
     pension_accounts = [
         a for a in all_accounts if pension_type_id and a.account_type_id == pension_type_id
@@ -42,8 +51,8 @@ def capture_snapshot(
         a for a in all_accounts if not (pension_type_id and a.account_type_id == pension_type_id)
     ]
 
-    total_assets = sum((a.balance for a in non_pension_accounts), Decimal("0"))
-    total_pension = sum((a.balance for a in pension_accounts), Decimal("0"))
+    total_assets = sum((a.balance * a.exchange_rate for a in non_pension_accounts), Decimal("0"))
+    total_pension = sum((a.balance * a.exchange_rate for a in pension_accounts), Decimal("0"))
     total_liabilities = (
         sum((lb.amount for lb in liabilities), Decimal("0")) if liabilities else None
     )
@@ -51,16 +60,33 @@ def capture_snapshot(
 
     detail = {
         "accounts": [
-            {"id": a.id, "name": a.name, "balance": str(a.balance), "type_id": a.account_type_id}
+            {
+                "id": a.id,
+                "name": a.name,
+                "balance": str(a.balance),
+                "currency": a.currency,
+                "exchange_rate": str(a.exchange_rate),
+                "balance_gbp": str(a.balance * a.exchange_rate),
+                "type_id": a.account_type_id,
+            }
             for a in non_pension_accounts
         ],
         "pension_accounts": [
-            {"id": a.id, "name": a.name, "balance": str(a.balance), "type_id": a.account_type_id}
+            {
+                "id": a.id,
+                "name": a.name,
+                "balance": str(a.balance),
+                "currency": a.currency,
+                "exchange_rate": str(a.exchange_rate),
+                "balance_gbp": str(a.balance * a.exchange_rate),
+                "type_id": a.account_type_id,
+            }
             for a in pension_accounts
         ],
         "liabilities": [
             {
                 "id": lb.id,
+                "name": liability_type_names.get(lb.liability_type_id, ""),
                 "entry_date": str(lb.entry_date),
                 "amount": str(lb.amount),
                 "type_id": lb.liability_type_id,

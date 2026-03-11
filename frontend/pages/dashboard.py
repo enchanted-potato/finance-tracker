@@ -24,9 +24,14 @@ def render() -> None:
         accounts = list_non_pension_accounts(session=session, user_id=user_id)
         pension_accounts = list_pension_accounts(session=session, user_id=user_id)
         all_liability_entries = list_liability_entries(session=session, user_id=user_id)
-        # Use only the most recent date's entries for current totals/pie
-        latest_liab_date = all_liability_entries[0].entry_date if all_liability_entries else None
-        liabilities = [e for e in all_liability_entries if e.entry_date == latest_liab_date]
+        # Use the latest entry per liability type (carry-forward: types updated on
+        # different dates are all included, not just entries from the single latest date)
+        seen_types: set[int] = set()
+        liabilities = []
+        for entry in all_liability_entries:  # sorted newest-first
+            if entry.liability_type_id not in seen_types:
+                seen_types.add(entry.liability_type_id)
+                liabilities.append(entry)
         account_types = list_account_types(session=session, user_id=user_id)
         liability_types = list_liability_types(session=session, user_id=user_id)
         all_snapshots = get_snapshot_history(session=session, user_id=user_id)
