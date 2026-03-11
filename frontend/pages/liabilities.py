@@ -19,7 +19,6 @@ def _get_user_id() -> str:
 
 
 def render() -> None:
-    st.header("Liabilities")
     user_id = _get_user_id()
 
     session = next(get_session())
@@ -32,6 +31,20 @@ def render() -> None:
     type_name_to_id = {lt.name: lt.id for lt in liability_types}
     type_id_to_name = {lt.id: lt.name for lt in liability_types}
     type_names = [lt.name for lt in liability_types]
+
+    latest_date = max((e.entry_date for e in entries), default=None)
+    latest_total = sum(float(e.amount) for e in entries if e.entry_date == latest_date) if latest_date else 0.0
+    label = f"Total Liabilities ({latest_date.strftime('%b %Y')})" if latest_date else "Total Liabilities"
+    col, _ = st.columns([1, 3])
+    with col:
+        st.markdown(f"""
+<div style="background: rgba(232, 33, 33, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
+    <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">{label}</div>
+    <div style="font-size: 26px; font-weight: 700; color: #141413;">£{latest_total:,.2f}</div>
+    <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
+</div>
+<div style="margin-bottom: 16px;"></div>
+""", unsafe_allow_html=True)
 
     # Build DataFrame from existing entries
     rows = []
@@ -136,15 +149,5 @@ def render() -> None:
             st.success(f"Saved. Snapshots updated for {len(affected_dates)} date(s).")
             st.rerun()
 
-    # Summary
     if not entries:
         st.info("No liabilities yet. Add a row above and save.")
-    else:
-        total = sum(float(e.amount) for e in entries)
-        # Show total for most recent date only (most useful summary)
-        latest_date = max(e.entry_date for e in entries)
-        latest_total = sum(float(e.amount) for e in entries if e.entry_date == latest_date)
-        st.metric(
-            f"Total Liabilities ({latest_date.strftime('%b %Y')})",
-            f"£{latest_total:,.2f}",
-        )
