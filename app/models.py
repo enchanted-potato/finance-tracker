@@ -23,12 +23,17 @@ class Account(SQLModel, table=True):
     """User asset account with current balance."""
 
     __tablename__ = "accounts"
-    __table_args__ = (Index("ix_accounts_user_active", "user_id", "is_active"), {"extend_existing": True})
+    __table_args__ = (
+        Index("ix_accounts_user_active", "user_id", "is_active"),
+        UniqueConstraint("user_id", "name", "entry_date"),
+        {"extend_existing": True},
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     user_id: str = Field(max_length=128)
     account_type_id: int = Field(foreign_key="account_types.id")
     name: str = Field(max_length=255)
+    entry_date: date_type = Field(default_factory=date_type.today)
     balance: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
     currency: str = Field(default="GBP", max_length=3)
     exchange_rate: Decimal = Field(default=Decimal("1"), max_digits=10, decimal_places=6)

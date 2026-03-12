@@ -11,7 +11,7 @@ from app.services.liability_service import (
     list_liability_types,
     upsert_liability_entry,
 )
-from app.services.snapshot_service import sync_snapshot_liabilities
+from app.services.snapshot_service import capture_snapshot
 
 
 def _get_user_id() -> str:
@@ -135,9 +135,8 @@ def render() -> None:
                 )
                 affected_dates.add(entry_date)
 
-            # Sync snapshot liabilities for each affected date (preserves total_assets)
             for snap_date in affected_dates:
-                sync_snapshot_liabilities(session=session, user_id=user_id, snapshot_date=snap_date)
+                capture_snapshot(session=session, user_id=user_id, snapshot_date=snap_date)
 
         finally:
             session.close()

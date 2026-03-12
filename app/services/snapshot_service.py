@@ -27,11 +27,7 @@ def capture_snapshot(
         snapshot_date = date.today()
 
     pension_type_id = _get_pension_type_id(session, user_id)
-    all_accounts = list(
-        session.exec(
-            select(Account).where(Account.user_id == user_id, Account.is_active.is_(True))
-        ).all()
-    )
+    all_accounts = _latest_account_entries(session, user_id, snapshot_date)
     liabilities = _latest_liability_entries(session, user_id, snapshot_date)
 
     # Build a lookup of liability type names for detail_json
@@ -503,6 +499,45 @@ def _latest_liability_entries(
     ).where(LiabilityEntry.user_id == user_id)
 
     return list(session.exec(stmt).all())
+
+
+def _latest_account_entries(session: Session, user_id: str, as_of: date) -> list[Account]:
+    """Return the most recent Account entry per account name on or before as_of.
+
+    This ensures a snapshot always carries the latest known account balance
+    even if accounts and liabilities were updated on different days.
+    """
+    from sqlalchemy import func
+
+    sub = (
+        select(
+            Account.name,
+            func.max(Account.entry_date).label("max_date"),
+        )
+        .where(
+            Account.user_id == user_id,
+            Account.is_active.is_(True),
+            Account.entry_date <= as_of,
+        )
+        .group_by(Account.name)
+        .subquery()
+    )
+
+    stmt = select(Account).join(
+        sub,
+        (Account.name == sub.c.name) & (Account.entry_date == sub.c.max_date),
+    ).where(Account.user_id == user_id, Account.is_active.is_(True))
+
+    return list(session.exec(stmt).all())
+
+
+def sync_snapshot_assets(*, session: Session, user_id: str, snapshot_date: date) -> None:
+    """Update an existing snapshot's total_assets and net_worth from account entries.
+
+    Only touches total_assets and net_worth — never overwrites total_liabilities.
+    If no snapshot exists for this date, creates one.
+    """
+    capture_snapshot(session=session, user_id=user_id, snapshot_date=snapshot_date)
 
 
 def _parse_decimal(raw: str) -> Decimal:

@@ -1,5 +1,6 @@
-"""Account management page — editable table."""
+"""Account management page — date-based editable table."""
 
+from datetime import date
 from decimal import Decimal, InvalidOperation
 
 import pandas as pd
@@ -7,11 +8,10 @@ import streamlit as st
 
 from app.database import get_session
 from app.services.account_service import (
-    create_account,
-    deactivate_account,
+    delete_account_entry,
     list_account_types,
     list_non_pension_accounts,
-    update_account,
+    upsert_account_entry,
 )
 from app.services.snapshot_service import capture_snapshot
 
@@ -36,13 +36,17 @@ def render() -> None:
     type_id_to_name = {at.id: at.name for at in non_pension_types}
     type_names = [at.name for at in non_pension_types]
 
-    total = sum(a.balance * a.exchange_rate for a in accounts)
+    latest_date = max((a.entry_date for a in accounts), default=None)
+    latest_accounts = [a for a in accounts if a.entry_date == latest_date] if latest_date else []
+    latest_total = sum(float(a.balance * a.exchange_rate) for a in latest_accounts)
+    label = f"Total Assets ({latest_date.strftime('%b %Y')})" if latest_date else "Total Assets"
+
     col, _ = st.columns([1, 3])
     with col:
         st.markdown(f"""
 <div style="background: rgba(20, 167, 96, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
-    <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">Total Assets</div>
-    <div style="font-size: 26px; font-weight: 700; color: #141413;">£{total:,.2f}</div>
+    <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">{label}</div>
+    <div style="font-size: 26px; font-weight: 700; color: #141413;">£{latest_total:,.2f}</div>
     <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
 </div>
 <div style="margin-bottom: 16px;"></div>
@@ -52,6 +56,8 @@ def render() -> None:
     rows = [
         {
             "_id": a.id,
+            "Date": a.entry_date,
+            "Month": a.entry_date.strftime("%b %Y"),
             "Name": a.name,
             "Type": type_id_to_name.get(a.account_type_id, ""),
             "Balance": float(a.balance),
@@ -60,10 +66,12 @@ def render() -> None:
         }
         for a in accounts
     ]
-    df = pd.DataFrame(rows, columns=["_id", "Name", "Type", "Balance", "Currency", "Rate (to GBP)"])
+    df = pd.DataFrame(rows, columns=["_id", "Date", "Month", "Name", "Type", "Balance", "Currency", "Rate (to GBP)"])
 
     column_config = {
         "_id": None,  # hidden
+        "Date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
+        "Month": st.column_config.TextColumn("Month", disabled=True),
         "Name": st.column_config.TextColumn("Name", required=True),
         "Type": st.column_config.SelectboxColumn("Type", options=type_names, required=True),
         "Balance": st.column_config.NumberColumn("Balance", min_value=0, format="%.2f"),
@@ -91,24 +99,27 @@ def render() -> None:
     )
 
     if st.button("Save changes", type="primary"):
+        affected_dates: set[date] = set()
         errors: list[str] = []
-        changed = False
 
         session = next(get_session())
         try:
-            # Detect deletions
+            # Detect deletions: rows in original df not in edited (by _id)
             original_ids = set(df["_id"].dropna().astype(int))
             edited_ids = set(edited["_id"].dropna().astype(int)) if "_id" in edited.columns else set()
             deleted_ids = original_ids - edited_ids
 
             for del_id in deleted_ids:
                 try:
-                    deactivate_account(session=session, account_id=int(del_id), user_id=user_id)
-                    changed = True
+                    affected = delete_account_entry(
+                        session=session, entry_id=int(del_id), user_id=user_id
+                    )
+                    if affected:
+                        affected_dates.add(affected)
                 except ValueError as exc:
                     errors.append(str(exc))
 
-            # Update or create rows
+            # Upsert all rows in edited df
             for _, row in edited.iterrows():
                 name = row.get("Name", "")
                 if not name or (isinstance(name, float) and pd.isna(name)):
@@ -119,6 +130,24 @@ def render() -> None:
                 if not type_name or type_name not in type_name_to_id:
                     errors.append(f"Unknown type '{type_name}' — skipping row.")
                     continue
+
+                # Parse date — DateColumn returns date objects, strings, or Timestamps
+                raw_date = row.get("Date")
+                if raw_date is None or (isinstance(raw_date, float) and pd.isna(raw_date)):
+                    errors.append("Row missing date — skipping.")
+                    continue
+                if isinstance(raw_date, str):
+                    from datetime import datetime as _dt
+                    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+                        try:
+                            raw_date = _dt.strptime(raw_date, fmt).date()
+                            break
+                        except ValueError:
+                            continue
+                    else:
+                        errors.append(f"Could not parse date '{raw_date}' — skipping.")
+                        continue
+                entry_date = raw_date if isinstance(raw_date, date) else raw_date.date()
 
                 try:
                     balance = Decimal(str(row.get("Balance", 0) or 0))
@@ -140,48 +169,21 @@ def render() -> None:
                     errors.append(f"Invalid exchange rate for '{name}' — skipping.")
                     continue
 
-                raw_id = row.get("_id")
-                if raw_id is None or (isinstance(raw_id, float) and pd.isna(raw_id)):
-                    # New row
-                    create_account(
-                        session=session,
-                        user_id=user_id,
-                        account_type_id=type_name_to_id[type_name],
-                        name=str(name),
-                        balance=balance,
-                        currency=currency,
-                        exchange_rate=exchange_rate,
-                    )
-                    changed = True
-                else:
-                    account_id = int(raw_id)
-                    original = next((a for a in accounts if a.id == account_id), None)
-                    if original:
-                        if (
-                            original.name != str(name)
-                            or original.balance != balance
-                            or original.currency != currency
-                            or original.exchange_rate != exchange_rate
-                        ):
-                            update_account(
-                                session=session,
-                                account_id=account_id,
-                                user_id=user_id,
-                                name=str(name),
-                                balance=balance,
-                                currency=currency,
-                                exchange_rate=exchange_rate,
-                            )
-                            changed = True
+                upsert_account_entry(
+                    session=session,
+                    user_id=user_id,
+                    name=str(name),
+                    account_type_id=type_name_to_id[type_name],
+                    entry_date=entry_date,
+                    balance=balance,
+                    currency=currency,
+                    exchange_rate=exchange_rate,
+                )
+                affected_dates.add(entry_date)
 
-                        if original.account_type_id != type_name_to_id[type_name]:
-                            original.account_type_id = type_name_to_id[type_name]
-                            session.add(original)
-                            session.commit()
-                            changed = True
-
-            if changed:
-                capture_snapshot(session=session, user_id=user_id)
+            # Sync snapshots for each affected date
+            for snap_date in affected_dates:
+                capture_snapshot(session=session, user_id=user_id, snapshot_date=snap_date)
 
         finally:
             session.close()
@@ -189,8 +191,8 @@ def render() -> None:
         if errors:
             for err in errors:
                 st.error(err)
-        if changed:
-            st.success("Saved.")
+        if affected_dates:
+            st.success(f"Saved. Snapshots updated for {len(affected_dates)} date(s).")
             st.rerun()
 
     if not accounts:

@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 
 from loguru import logger
@@ -40,7 +41,7 @@ def list_pension_accounts(*, session: Session, user_id: str, active_only: bool =
     )
     if active_only:
         statement = statement.where(Account.is_active.is_(True))
-    statement = statement.order_by(Account.name)
+    statement = statement.order_by(Account.entry_date.desc(), Account.name)
     return list(session.exec(statement).all())
 
 
@@ -58,8 +59,82 @@ def list_non_pension_accounts(*, session: Session, user_id: str, active_only: bo
         statement = statement.where(Account.account_type_id != pension_type_id)
     if active_only:
         statement = statement.where(Account.is_active.is_(True))
-    statement = statement.order_by(Account.account_type_id, Account.name)
+    statement = statement.order_by(Account.entry_date.desc(), Account.name)
     return list(session.exec(statement).all())
+
+
+def upsert_account_entry(
+    *,
+    session: Session,
+    user_id: str,
+    name: str,
+    account_type_id: int,
+    entry_date: date,
+    balance: Decimal = Decimal("0"),
+    currency: str = "GBP",
+    exchange_rate: Decimal = Decimal("1"),
+) -> Account:
+    """Insert or update an account entry by (user_id, name, entry_date).
+
+    :param session: Database session.
+    :param user_id: Firebase UID of the owner.
+    :param name: Display name for the account.
+    :param account_type_id: FK to account_types.
+    :param entry_date: The date this balance entry is for.
+    :param balance: Balance in native currency.
+    :param currency: ISO 4217 currency code.
+    :param exchange_rate: Exchange rate to GBP.
+    :returns: The created or updated account entry.
+    """
+    existing = session.exec(
+        select(Account).where(
+            Account.user_id == user_id,
+            Account.name == name,
+            Account.entry_date == entry_date,
+        )
+    ).first()
+    if existing:
+        existing.account_type_id = account_type_id
+        existing.balance = balance
+        existing.currency = currency
+        existing.exchange_rate = exchange_rate
+        session.add(existing)
+        session.commit()
+        session.refresh(existing)
+        return existing
+    account = Account(
+        user_id=user_id,
+        account_type_id=account_type_id,
+        name=name,
+        entry_date=entry_date,
+        balance=balance,
+        currency=currency,
+        exchange_rate=exchange_rate,
+    )
+    session.add(account)
+    session.commit()
+    session.refresh(account)
+    return account
+
+
+def delete_account_entry(*, session: Session, entry_id: int, user_id: str) -> date:
+    """Hard-delete an account entry. Returns the affected entry_date.
+
+    :param session: Database session.
+    :param entry_id: Primary key of the account entry.
+    :param user_id: Firebase UID of the owner.
+    :returns: The entry_date of the deleted entry.
+    :raises ValueError: If the entry is not found.
+    """
+    account = session.exec(
+        select(Account).where(Account.id == entry_id, Account.user_id == user_id)
+    ).first()
+    if account is None:
+        raise ValueError(f"Account entry {entry_id} not found for user {user_id}")
+    date_affected = account.entry_date
+    session.delete(account)
+    session.commit()
+    return date_affected
 
 
 def create_account(
