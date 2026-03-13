@@ -21,7 +21,7 @@ progress:
 Phase: 6 of 8 (Dashboard and Navigation Polish) — ready to plan
 Plan: —
 Status: Roadmap created; ready to plan Phase 6
-Last activity: 2026-03-12 - Completed quick task 5: Refactor accounts to type-keyed AccountEntry model matching liabilities pattern
+Last activity: 2026-03-13 - Completed quick task 6: Apply Midnight colour scheme to entire Streamlit app
 
 Progress: [██████░░░░] 60%
 
@@ -88,9 +88,10 @@ None.
 | 3 | Fix NULL values for missing history data (nullable snapshot fields, gap charts, dash display) | 6c98f39, 96b9a07, 096b69b | 2026-03-03 |
 | 4 | Refactor liabilities to date-keyed LiabilityEntry model with st.data_editor UI | 38db8ee, 675ea64 | 2026-03-09 |
 | 5 | Refactor accounts to type-keyed AccountEntry model matching liabilities pattern | 1905305, 9f75a20, 79acd4b, b4d5e4e, ab1d06e | 2026-03-12 |
+| 6 | Apply Midnight colour scheme to entire Streamlit app | 52b57a9, 07bc3e0, 3ea417a | 2026-03-13 |
 
 ## Session Continuity
 
-Last session: 2026-03-12T23:58:21Z
-Stopped at: Completed quick-5-PLAN.md
+Last session: 2026-03-13T00:00:00Z
+Stopped at: Completed quick-6-PLAN.md
 Resume file: None
