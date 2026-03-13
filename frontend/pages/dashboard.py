@@ -65,8 +65,8 @@ def render() -> None:
     with col2:
         st.markdown(f"""
 <div style="background: rgba(20, 167, 96, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
-    <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">Total Assets</div>
-    <div style="font-size: 26px; font-weight: 700; color: #141413;">£{total_assets:,.2f}</div>
+    <div style="font-size: 13px; color: #8b949e; font-weight: 500; margin-bottom: 4px;">Total Assets</div>
+    <div style="font-size: 26px; font-weight: 700; color: #e6edf3;">£{total_assets:,.2f}</div>
     <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
 </div>
 """, unsafe_allow_html=True)
@@ -74,8 +74,8 @@ def render() -> None:
     with col3:
         st.markdown(f"""
 <div style="background: rgba(232, 33, 33, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
-    <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">Total Liabilities</div>
-    <div style="font-size: 26px; font-weight: 700; color: #141413;">£{total_liabilities:,.2f}</div>
+    <div style="font-size: 13px; color: #8b949e; font-weight: 500; margin-bottom: 4px;">Total Liabilities</div>
+    <div style="font-size: 26px; font-weight: 700; color: #e6edf3;">£{total_liabilities:,.2f}</div>
     <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
 </div>
 """, unsafe_allow_html=True)
@@ -83,8 +83,8 @@ def render() -> None:
     with col4:
         st.markdown(f"""
 <div style="background: rgba(100, 100, 100, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
-    <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">Total Pension</div>
-    <div style="font-size: 26px; font-weight: 700; color: #141413;">£{total_pension:,.2f}</div>
+    <div style="font-size: 13px; color: #8b949e; font-weight: 500; margin-bottom: 4px;">Total Pension</div>
+    <div style="font-size: 26px; font-weight: 700; color: #e6edf3;">£{total_pension:,.2f}</div>
     <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
 </div>
 """, unsafe_allow_html=True)
@@ -132,7 +132,7 @@ def _build_net_worth_card_html(net_worth: Decimal, delta: Decimal) -> str:
     :param delta: Change from previous snapshot (positive = gain, negative = loss).
     :returns: HTML string for rendering via st.markdown(unsafe_allow_html=True).
     """
-    delta_color = "red" if delta < 0 else "green"
+    delta_color = "#f85149" if delta < 0 else "#3fb950"
     sign = "+" if delta >= 0 else ""
     delta_str = f"{sign}£{abs(delta):,.2f}"
     return f"""
@@ -143,8 +143,8 @@ def _build_net_worth_card_html(net_worth: Decimal, delta: Decimal) -> str:
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     min-height: 100px;
 ">
-    <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">Net Worth</div>
-    <div style="font-size: 26px; font-weight: 700; color: #141413;">£{net_worth:,.2f}</div>
+    <div style="font-size: 13px; color: #8b949e; font-weight: 500; margin-bottom: 4px;">Net Worth</div>
+    <div style="font-size: 26px; font-weight: 700; color: #e6edf3;">£{net_worth:,.2f}</div>
     <div style="font-size: 13px; color: {delta_color}; font-weight: 500; margin-top: 4px;">{delta_str}</div>
 </div>
 """
@@ -212,11 +212,16 @@ def _render_line_chart(snapshots: list) -> None:
 
     fig.update_layout(
         xaxis_title="Date",
+        xaxis=dict(gridcolor="#30363d", zerolinecolor="#30363d", color="#8b949e"),
         yaxis=dict(
             title="Amount",
             tickprefix="£",
             tickformat=",.0f",
+            gridcolor="#30363d",
+            zerolinecolor="#30363d",
+            color="#8b949e",
         ),
+        font=dict(color="#8b949e"),
         hovermode="x unified",
         margin={"l": 60, "r": 20, "t": 20, "b": 40},
         paper_bgcolor="rgba(0,0,0,0)",
@@ -261,6 +266,7 @@ def _render_asset_pie(accounts: list, type_map: dict[int, str]) -> None:
         margin={"l": 20, "r": 20, "t": 20, "b": 20},
         showlegend=False,
         paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#8b949e"),
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -294,6 +300,7 @@ def _render_liability_pie(liabilities: list, type_map: dict[int, str]) -> None:
         margin={"l": 20, "r": 20, "t": 20, "b": 20},
         showlegend=False,
         paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#8b949e"),
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -315,11 +322,16 @@ def _render_pension_bar(pension_accounts: list) -> None:
         )
     fig.update_layout(
         barmode="stack",
+        xaxis=dict(gridcolor="#30363d", zerolinecolor="#30363d"),
         yaxis=dict(
             title="Amount",
             tickprefix="£",
             tickformat=",.0f",
+            gridcolor="#30363d",
+            zerolinecolor="#30363d",
+            color="#8b949e",
         ),
+        font=dict(color="#8b949e"),
         margin={"l": 60, "r": 20, "t": 20, "b": 40},
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
