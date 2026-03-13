@@ -3,8 +3,8 @@ runOnSave = true
 fileWatcherType = "poll"
 
 [theme]
-primaryColor = "#5ebd6cff"
-backgroundColor = "#faf9f5"
-secondaryBackgroundColor = "#d6d4c5ff"
-textColor = "#141413"
+primaryColor = "#58a6ff"
+backgroundColor = "#161b22"
+secondaryBackgroundColor = "#21262d"
+textColor = "#e6edf3"
 font = "sans serif"

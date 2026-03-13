@@ -194,9 +194,9 @@ def main() -> None:
                 display: none !important;
             }
 
-            /* Main background color - Anthropic Light */
+            /* Main background color - Midnight */
             .stApp {
-                background-color: #faf9f5 !important;
+                background-color: #161b22 !important;
             }
 
             /* Hide default Streamlit navigation */
@@ -213,14 +213,14 @@ def main() -> None:
                 width: 100% !important;
                 text-align: left !important;
                 border-radius: 8px !important;
-                color: #141413 !important;
+                color: #e6edf3 !important;
                 font-size: 16px !important;
                 font-weight: 400 !important;
                 transition: background-color 0.2s !important;
             }
 
             .stButton > button:hover {
-                background-color: #e8e6dc !important;
+                background-color: rgba(255,255,255,0.05) !important;
                 border: none !important;
             }
 
@@ -230,26 +230,26 @@ def main() -> None:
             }
 
             .stButton > button:active {
-                background-color: #b0aea5 !important;
+                background-color: #30363d !important;
             }
 
             /* Active sidebar nav: left border accent, no background */
             [data-testid="stSidebar"] .stButton > button[kind="primary"] {
-                background-color: transparent !important;
-                color: #141413 !important;
+                background-color: rgba(88,166,255,0.1) !important;
+                color: #58a6ff !important;
                 font-weight: 600 !important;
-                border-left: 3px solid #141413 !important;
+                border-left: 3px solid #58a6ff !important;
                 padding-left: 13px !important;
             }
 
             [data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
-                background-color: #e8e6dc !important;
+                background-color: rgba(88,166,255,0.15) !important;
             }
 
             /* Drop shadow on all Plotly chart containers */
             .stPlotlyChart,
             [data-testid="stPlotlyChart"] {
-                box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.4);
                 border-radius: 8px;
                 overflow: hidden;
             }
