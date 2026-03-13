@@ -43,8 +43,8 @@ def render() -> None:
     with col:
         st.markdown(f"""
 <div style="background: rgba(100, 100, 100, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
-    <div style="font-size: 13px; color: #555; font-weight: 500; margin-bottom: 4px;">{label}</div>
-    <div style="font-size: 26px; font-weight: 700; color: #141413;">£{latest_total:,.2f}</div>
+    <div style="font-size: 13px; color: #8b949e; font-weight: 500; margin-bottom: 4px;">{label}</div>
+    <div style="font-size: 26px; font-weight: 700; color: #e6edf3;">£{latest_total:,.2f}</div>
     <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
 </div>
 <div style="margin-bottom: 16px;"></div>

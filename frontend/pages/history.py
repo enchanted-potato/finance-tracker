@@ -28,14 +28,14 @@ def _inject_styles() -> None:
             display: grid;
             grid-template-columns: 14% 18% 18% 18% 18% 14%;
             padding: 10px 4px;
-            border-bottom: 1px solid rgba(20,20,19,0.12);
+            border-bottom: 1px solid rgba(230,237,243,0.12);
             margin-bottom: 2px;
         }
         .hist-th {
             font-family: monospace;
             font-size: 10px;
             letter-spacing: 0.12em;
-            color: rgba(20,20,19,0.4);
+            color: #8b949e;
             text-transform: uppercase;
             font-weight: 500;
         }
@@ -51,35 +51,35 @@ def _inject_styles() -> None:
         .year-label {
             font-family: monospace;
             font-size: 11px;
-            color: #a07830;
+            color: #58a6ff;
             letter-spacing: 0.18em;
             font-weight: 600;
         }
         .year-line {
             flex: 1;
             height: 1px;
-            background: rgba(20,20,19,0.1);
+            background: rgba(230,237,243,0.1);
         }
 
         /* Cell styles */
         .cell-date {
             font-family: monospace;
             font-size: 13px;
-            color: rgba(20,20,19,0.55);
+            color: #8b949e;
             font-weight: 500;
             padding: 6px 4px;
         }
         .cell-money {
             font-family: monospace;
             font-size: 13px;
-            color: rgba(20,20,19,0.8);
+            color: #e6edf3;
             text-align: right;
             padding: 6px 8px 6px 4px;
         }
         .cell-nw {
             font-family: monospace;
             font-size: 13px;
-            color: rgba(20,20,19,0.95);
+            color: #e6edf3;
             font-weight: 600;
             text-align: right;
             padding: 6px 8px 6px 4px;
@@ -95,8 +95,8 @@ def _inject_styles() -> None:
             font-family: monospace;
             font-size: 12px;
             font-weight: 500;
-            color: #1e8c57;
-            background: rgba(30,140,87,0.1);
+            color: #3fb950;
+            background: rgba(63,185,80,0.12);
             padding: 3px 8px;
             border-radius: 3px;
         }
@@ -105,8 +105,8 @@ def _inject_styles() -> None:
             font-family: monospace;
             font-size: 12px;
             font-weight: 500;
-            color: #c0392b;
-            background: rgba(192,57,43,0.08);
+            color: #f85149;
+            background: rgba(248,81,73,0.12);
             padding: 3px 8px;
             border-radius: 3px;
         }
@@ -114,8 +114,8 @@ def _inject_styles() -> None:
             display: inline-block;
             font-family: monospace;
             font-size: 12px;
-            color: rgba(20,20,19,0.35);
-            background: rgba(20,20,19,0.05);
+            color: rgba(230,237,243,0.35);
+            background: rgba(230,237,243,0.05);
             padding: 3px 8px;
             border-radius: 3px;
         }
@@ -123,13 +123,13 @@ def _inject_styles() -> None:
         /* Row separator */
         .row-sep {
             border: none;
-            border-top: 1px solid rgba(20,20,19,0.07);
+            border-top: 1px solid rgba(230,237,243,0.07);
             margin: 2px 0;
         }
 
         /* Detail panel */
         .detail-wrap {
-            background: rgba(20,20,19,0.04);
+            background: rgba(230,237,243,0.04);
             border-radius: 6px;
             padding: 14px 18px;
             margin: 2px 0 6px 0;
@@ -138,7 +138,7 @@ def _inject_styles() -> None:
             font-family: monospace;
             font-size: 10px;
             letter-spacing: 0.14em;
-            color: rgba(20,20,19,0.4);
+            color: #8b949e;
             text-transform: uppercase;
             margin-bottom: 8px;
         }
@@ -146,17 +146,17 @@ def _inject_styles() -> None:
             display: flex;
             justify-content: space-between;
             padding: 5px 0;
-            border-bottom: 1px solid rgba(20,20,19,0.06);
+            border-bottom: 1px solid rgba(230,237,243,0.06);
             font-size: 13px;
         }
         .detail-row:last-child { border-bottom: none; }
-        .detail-name { color: rgba(20,20,19,0.5); }
+        .detail-name { color: #8b949e; }
         .detail-val {
             font-family: monospace;
-            color: rgba(20,20,19,0.85);
+            color: #e6edf3;
         }
         .detail-suffix {
-            color: rgba(20,20,19,0.35);
+            color: rgba(230,237,243,0.35);
             font-size: 11px;
             margin-left: 4px;
         }
@@ -180,7 +180,7 @@ def _change_badge(current: Decimal | None, previous: Decimal | None) -> str:
 @st.dialog("Edit Snapshot")
 def _edit_modal(snap, user_id: str) -> None:
     st.markdown(
-        f"<span style='font-family:IBM Plex Mono,monospace;color:#a07830;font-size:14px'>"
+        f"<span style='font-family:IBM Plex Mono,monospace;color:#58a6ff;font-size:14px'>"
         f"{snap.snapshot_date.strftime('%B %Y')}</span>",
         unsafe_allow_html=True,
     )
