@@ -10,7 +10,7 @@ from app.database import get_session
 from app.services.account_service import (
     _get_pension_type_id,
     delete_account_entry,
-    list_pension_accounts,
+    list_pension_entries,
     upsert_account_entry,
 )
 from app.services.snapshot_service import capture_snapshot
@@ -27,7 +27,7 @@ def render() -> None:
     session = next(get_session())
     try:
         pension_type_id = _get_pension_type_id(session, user_id)
-        pension_accounts = list_pension_accounts(session=session, user_id=user_id)
+        entries = list_pension_entries(session=session, user_id=user_id)
     finally:
         session.close()
 
@@ -35,9 +35,8 @@ def render() -> None:
         st.error("Pension account type not found. Please ensure the database is seeded.")
         return
 
-    latest_date = max((a.entry_date for a in pension_accounts), default=None)
-    latest_accounts = [a for a in pension_accounts if a.entry_date == latest_date] if latest_date else []
-    latest_total = sum(float(a.balance) for a in latest_accounts)
+    latest_date = max((e.entry_date for e in entries), default=None)
+    latest_total = sum(float(e.balance) for e in entries if e.entry_date == latest_date) if latest_date else 0.0
     label = f"Total Pension ({latest_date.strftime('%b %Y')})" if latest_date else "Total Pension"
 
     col, _ = st.columns([1, 3])
@@ -51,28 +50,26 @@ def render() -> None:
 <div style="margin-bottom: 16px;"></div>
 """, unsafe_allow_html=True)
 
-    # Build DataFrame from existing accounts
+    # Build DataFrame from existing entries
     rows = [
         {
-            "_id": a.id,
-            "Date": a.entry_date,
-            "Month": a.entry_date.strftime("%b %Y"),
-            "Provider": a.name,
-            "Balance (£)": float(a.balance),
+            "_id": e.id,
+            "Date": e.entry_date,
+            "Month": e.entry_date.strftime("%b %Y"),
+            "Balance (£)": float(e.balance),
         }
-        for a in pension_accounts
+        for e in entries
     ]
-    df = pd.DataFrame(rows, columns=["_id", "Date", "Month", "Provider", "Balance (£)"])
+    df = pd.DataFrame(rows, columns=["_id", "Date", "Month", "Balance (£)"])
 
     column_config = {
         "_id": None,  # hidden
         "Date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
         "Month": st.column_config.TextColumn("Month", disabled=True),
-        "Provider": st.column_config.TextColumn("Provider", required=True),
         "Balance (£)": st.column_config.NumberColumn("Balance (£)", min_value=0, format="£%.2f"),
     }
 
-    st.caption("Edit balances inline. Use the checkbox column to delete rows. Add rows at the bottom.")
+    st.caption("Enter your total pension balance per date. Use the checkbox column to delete rows.")
 
     edited = st.data_editor(
         df,
@@ -105,11 +102,6 @@ def render() -> None:
 
             # Upsert all rows in edited df
             for _, row in edited.iterrows():
-                provider = row.get("Provider", "")
-                if not provider or (isinstance(provider, float) and pd.isna(provider)):
-                    errors.append("Row missing provider name — skipping.")
-                    continue
-
                 # Parse date — DateColumn returns date objects, strings, or Timestamps
                 raw_date = row.get("Date")
                 if raw_date is None or (isinstance(raw_date, float) and pd.isna(raw_date)):
@@ -131,18 +123,15 @@ def render() -> None:
                 try:
                     balance = Decimal(str(row.get("Balance (£)", 0) or 0))
                 except InvalidOperation:
-                    errors.append(f"Invalid balance for '{provider}' — skipping.")
+                    errors.append(f"Invalid balance for {entry_date} — skipping.")
                     continue
 
                 upsert_account_entry(
                     session=session,
                     user_id=user_id,
-                    name=str(provider),
                     account_type_id=pension_type_id,
                     entry_date=entry_date,
                     balance=balance,
-                    currency="GBP",
-                    exchange_rate=Decimal("1"),
                 )
                 affected_dates.add(entry_date)
 
@@ -160,5 +149,5 @@ def render() -> None:
             st.success(f"Saved. Snapshots updated for {len(affected_dates)} date(s).")
             st.rerun()
 
-    if not pension_accounts:
-        st.info("No pension providers yet. Add a row above and save.")
+    if not entries:
+        st.info("No pension entries yet. Add a row above and save.")

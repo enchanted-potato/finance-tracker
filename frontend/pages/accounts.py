@@ -10,7 +10,7 @@ from app.database import get_session
 from app.services.account_service import (
     delete_account_entry,
     list_account_types,
-    list_non_pension_accounts,
+    list_non_pension_entries,
     upsert_account_entry,
 )
 from app.services.snapshot_service import capture_snapshot
@@ -27,7 +27,7 @@ def render() -> None:
     session = next(get_session())
     try:
         account_types = list_account_types(session=session, user_id=user_id)
-        accounts = list_non_pension_accounts(session=session, user_id=user_id)
+        entries = list_non_pension_entries(session=session, user_id=user_id)
     finally:
         session.close()
 
@@ -36,9 +36,8 @@ def render() -> None:
     type_id_to_name = {at.id: at.name for at in non_pension_types}
     type_names = [at.name for at in non_pension_types]
 
-    latest_date = max((a.entry_date for a in accounts), default=None)
-    latest_accounts = [a for a in accounts if a.entry_date == latest_date] if latest_date else []
-    latest_total = sum(float(a.balance * a.exchange_rate) for a in latest_accounts)
+    latest_date = max((e.entry_date for e in entries), default=None)
+    latest_total = sum(float(e.balance) for e in entries if e.entry_date == latest_date) if latest_date else 0.0
     label = f"Total Assets ({latest_date.strftime('%b %Y')})" if latest_date else "Total Assets"
 
     col, _ = st.columns([1, 3])
@@ -52,41 +51,29 @@ def render() -> None:
 <div style="margin-bottom: 16px;"></div>
 """, unsafe_allow_html=True)
 
-    # Build DataFrame from existing accounts
+    # Build DataFrame from existing entries
     rows = [
         {
-            "_id": a.id,
-            "Date": a.entry_date,
-            "Month": a.entry_date.strftime("%b %Y"),
-            "Name": a.name,
-            "Type": type_id_to_name.get(a.account_type_id, ""),
-            "Balance": float(a.balance),
-            "Currency": a.currency,
-            "Rate (to GBP)": float(a.exchange_rate),
+            "_id": e.id,
+            "Date": e.entry_date,
+            "Month": e.entry_date.strftime("%b %Y"),
+            "Type": type_id_to_name.get(e.account_type_id, ""),
+            "Balance (£)": float(e.balance),
         }
-        for a in accounts
+        for e in entries
     ]
-    df = pd.DataFrame(rows, columns=["_id", "Date", "Month", "Name", "Type", "Balance", "Currency", "Rate (to GBP)"])
+    df = pd.DataFrame(rows, columns=["_id", "Date", "Month", "Type", "Balance (£)"])
 
     column_config = {
         "_id": None,  # hidden
         "Date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
         "Month": st.column_config.TextColumn("Month", disabled=True),
-        "Name": st.column_config.TextColumn("Name", required=True),
         "Type": st.column_config.SelectboxColumn("Type", options=type_names, required=True),
-        "Balance": st.column_config.NumberColumn("Balance", min_value=0, format="%.2f"),
-        "Currency": st.column_config.TextColumn("Currency", help="ISO 4217 code, e.g. GBP, EUR, USD"),
-        "Rate (to GBP)": st.column_config.NumberColumn(
-            "Rate (to GBP)",
-            min_value=0,
-            format="%.6f",
-            help="Exchange rate: 1 unit of this currency = X GBP. Use 1.0 for GBP accounts.",
-        ),
+        "Balance (£)": st.column_config.NumberColumn("Balance (£)", min_value=0, format="£%.2f"),
     }
 
     st.caption(
-        "Edit balances inline. Set Currency + Rate for foreign accounts "
-        "(e.g. EUR balance × rate = GBP contribution to net worth). "
+        "Edit balances inline. One row per account type per date. "
         "Use the checkbox column to delete rows."
     )
 
@@ -121,11 +108,6 @@ def render() -> None:
 
             # Upsert all rows in edited df
             for _, row in edited.iterrows():
-                name = row.get("Name", "")
-                if not name or (isinstance(name, float) and pd.isna(name)):
-                    errors.append("Row missing name — skipping.")
-                    continue
-
                 type_name = row.get("Type", "")
                 if not type_name or type_name not in type_name_to_id:
                     errors.append(f"Unknown type '{type_name}' — skipping row.")
@@ -150,34 +132,17 @@ def render() -> None:
                 entry_date = raw_date if isinstance(raw_date, date) else raw_date.date()
 
                 try:
-                    balance = Decimal(str(row.get("Balance", 0) or 0))
+                    balance = Decimal(str(row.get("Balance (£)", 0) or 0))
                 except InvalidOperation:
-                    errors.append(f"Invalid balance for '{name}' — skipping.")
-                    continue
-
-                raw_currency = row.get("Currency", "GBP")
-                currency = str(raw_currency).strip().upper() if raw_currency else "GBP"
-                if not currency:
-                    currency = "GBP"
-
-                try:
-                    exchange_rate = Decimal(str(row.get("Rate (to GBP)", 1) or 1))
-                    if exchange_rate <= 0:
-                        errors.append(f"Exchange rate for '{name}' must be positive — skipping.")
-                        continue
-                except InvalidOperation:
-                    errors.append(f"Invalid exchange rate for '{name}' — skipping.")
+                    errors.append(f"Invalid balance for type '{type_name}' — skipping.")
                     continue
 
                 upsert_account_entry(
                     session=session,
                     user_id=user_id,
-                    name=str(name),
                     account_type_id=type_name_to_id[type_name],
                     entry_date=entry_date,
                     balance=balance,
-                    currency=currency,
-                    exchange_rate=exchange_rate,
                 )
                 affected_dates.add(entry_date)
 
@@ -195,5 +160,5 @@ def render() -> None:
             st.success(f"Saved. Snapshots updated for {len(affected_dates)} date(s).")
             st.rerun()
 
-    if not accounts:
+    if not entries:
         st.info("No accounts yet. Add a row above and save.")
