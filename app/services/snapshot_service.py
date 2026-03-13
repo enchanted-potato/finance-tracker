@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 from loguru import logger
 from sqlmodel import Session, select
 
-from app.models import Account, LiabilityEntry, LiabilityType, Snapshot
+from app.models import AccountEntry, AccountType, LiabilityEntry, LiabilityType, Snapshot
 from app.services.account_service import _get_pension_type_id
 
 
@@ -39,6 +39,15 @@ def capture_snapshot(
         ).all()
         liability_type_names = {lt.id: lt.name for lt in lt_rows}
 
+    # Build a lookup of account type names for detail_json
+    account_type_ids = {a.account_type_id for a in all_accounts}
+    account_type_names: dict[int, str] = {}
+    if account_type_ids:
+        at_rows = session.exec(
+            select(AccountType).where(AccountType.id.in_(account_type_ids))
+        ).all()
+        account_type_names = {at.id: at.name for at in at_rows}
+
     # Split pension vs non-pension so pension is excluded from total_assets / net_worth
     pension_accounts = [
         a for a in all_accounts if pension_type_id and a.account_type_id == pension_type_id
@@ -47,8 +56,8 @@ def capture_snapshot(
         a for a in all_accounts if not (pension_type_id and a.account_type_id == pension_type_id)
     ]
 
-    total_assets = sum((a.balance * a.exchange_rate for a in non_pension_accounts), Decimal("0"))
-    total_pension = sum((a.balance * a.exchange_rate for a in pension_accounts), Decimal("0"))
+    total_assets = sum((a.balance for a in non_pension_accounts), Decimal("0"))
+    total_pension = sum((a.balance for a in pension_accounts), Decimal("0"))
     total_liabilities = (
         sum((lb.amount for lb in liabilities), Decimal("0")) if liabilities else None
     )
@@ -58,24 +67,18 @@ def capture_snapshot(
         "accounts": [
             {
                 "id": a.id,
-                "name": a.name,
-                "balance": str(a.balance),
-                "currency": a.currency,
-                "exchange_rate": str(a.exchange_rate),
-                "balance_gbp": str(a.balance * a.exchange_rate),
                 "type_id": a.account_type_id,
+                "type_name": account_type_names.get(a.account_type_id, ""),
+                "balance": str(a.balance),
             }
             for a in non_pension_accounts
         ],
         "pension_accounts": [
             {
                 "id": a.id,
-                "name": a.name,
-                "balance": str(a.balance),
-                "currency": a.currency,
-                "exchange_rate": str(a.exchange_rate),
-                "balance_gbp": str(a.balance * a.exchange_rate),
                 "type_id": a.account_type_id,
+                "type_name": account_type_names.get(a.account_type_id, ""),
+                "balance": str(a.balance),
             }
             for a in pension_accounts
         ],
@@ -501,8 +504,8 @@ def _latest_liability_entries(
     return list(session.exec(stmt).all())
 
 
-def _latest_account_entries(session: Session, user_id: str, as_of: date) -> list[Account]:
-    """Return the most recent Account entry per account name on or before as_of.
+def _latest_account_entries(session: Session, user_id: str, as_of: date) -> list[AccountEntry]:
+    """Return the most recent AccountEntry per account type on or before as_of.
 
     This ensures a snapshot always carries the latest known account balance
     even if accounts and liabilities were updated on different days.
@@ -511,22 +514,22 @@ def _latest_account_entries(session: Session, user_id: str, as_of: date) -> list
 
     sub = (
         select(
-            Account.name,
-            func.max(Account.entry_date).label("max_date"),
+            AccountEntry.account_type_id,
+            func.max(AccountEntry.entry_date).label("max_date"),
         )
         .where(
-            Account.user_id == user_id,
-            Account.is_active.is_(True),
-            Account.entry_date <= as_of,
+            AccountEntry.user_id == user_id,
+            AccountEntry.entry_date <= as_of,
         )
-        .group_by(Account.name)
+        .group_by(AccountEntry.account_type_id)
         .subquery()
     )
 
-    stmt = select(Account).join(
+    stmt = select(AccountEntry).join(
         sub,
-        (Account.name == sub.c.name) & (Account.entry_date == sub.c.max_date),
-    ).where(Account.user_id == user_id, Account.is_active.is_(True))
+        (AccountEntry.account_type_id == sub.c.account_type_id)
+        & (AccountEntry.entry_date == sub.c.max_date),
+    ).where(AccountEntry.user_id == user_id)
 
     return list(session.exec(stmt).all())
 
