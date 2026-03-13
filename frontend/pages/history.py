@@ -211,7 +211,8 @@ def render() -> None:
                             balance_gbp = Decimal(acct.get("balance_gbp") or acct["balance"])
                             currency = acct.get("currency", "GBP")
                             suffix = f" ({currency} {Decimal(acct['balance']):,.2f})" if currency != "GBP" else ""
-                            st.text(f"  {acct['name']}: £{balance_gbp:,.2f}{suffix}")
+                            name = acct.get("name") or acct.get("type_name", "Unknown")
+                            st.text(f"  {name}: £{balance_gbp:,.2f}{suffix}")
                     if detail.get("liabilities"):
                         st.markdown("**Liabilities**")
                         for liab in detail["liabilities"]:

@@ -11,7 +11,7 @@ from app.services.liability_service import (
     list_liability_types,
     upsert_liability_entry,
 )
-from app.services.snapshot_service import capture_snapshot
+from app.services.snapshot_service import capture_snapshot, get_snapshot_history
 
 
 def _get_user_id() -> str:
@@ -134,6 +134,19 @@ def render() -> None:
                     amount=Decimal(str(amount)),
                 )
                 affected_dates.add(entry_date)
+
+            # Also recapture any later snapshots in the same months so the History page
+            # (which shows the latest snapshot per month) reflects the change.
+            all_snapshots = get_snapshot_history(session=session, user_id=user_id)
+            for snap in all_snapshots:
+                snap_date = snap.snapshot_date.date()
+                for affected_date in list(affected_dates):
+                    if (
+                        snap_date.year == affected_date.year
+                        and snap_date.month == affected_date.month
+                        and snap_date > affected_date
+                    ):
+                        affected_dates.add(snap_date)
 
             for snap_date in affected_dates:
                 capture_snapshot(session=session, user_id=user_id, snapshot_date=snap_date)
