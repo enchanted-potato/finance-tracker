@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app.database import get_session
-from app.services.account_service import list_account_types, list_non_pension_accounts, list_pension_accounts
+from app.services.account_service import list_account_types, list_non_pension_entries, list_pension_entries
 from app.services.liability_service import list_liability_entries, list_liability_types
 from app.services.snapshot_service import get_snapshot_history
 
@@ -21,8 +21,8 @@ def render() -> None:
 
     session = next(get_session())
     try:
-        accounts = list_non_pension_accounts(session=session, user_id=user_id)
-        pension_accounts = list_pension_accounts(session=session, user_id=user_id)
+        accounts = list_non_pension_entries(session=session, user_id=user_id)
+        pension_accounts = list_pension_entries(session=session, user_id=user_id)
         all_liability_entries = list_liability_entries(session=session, user_id=user_id)
         # Use the latest entry per liability type (carry-forward: types updated on
         # different dates are all included, not just entries from the single latest date)
@@ -299,13 +299,14 @@ def _render_liability_pie(liabilities: list, type_map: dict[int, str]) -> None:
 
 
 def _render_pension_bar(pension_accounts: list) -> None:
-    """Render a stacked bar chart of pension value per provider."""
+    """Render a stacked bar chart of pension value by entry date."""
     colors = ["#A855F7", "#7C3AED", "#6D28D9", "#5B21B6", "#4C1D95", "#C084FC", "#DDD6FE"]
     fig = go.Figure()
     for i, account in enumerate(pension_accounts):
+        label = account.entry_date.strftime("%b %Y") if hasattr(account, "entry_date") else str(i)
         fig.add_trace(
             go.Bar(
-                name=account.name,
+                name=label,
                 x=["Pension"],
                 y=[float(account.balance)],
                 marker_color=colors[i % len(colors)],

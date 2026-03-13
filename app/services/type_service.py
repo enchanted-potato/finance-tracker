@@ -1,7 +1,7 @@
 from loguru import logger
 from sqlmodel import Session, select
 
-from app.models import Account, AccountType, LiabilityEntry, LiabilityType
+from app.models import AccountEntry, AccountType, LiabilityEntry, LiabilityType
 
 
 def create_account_type(*, session: Session, name: str, user_id: str | None = None) -> AccountType:
@@ -51,7 +51,7 @@ def delete_account_type(*, session: Session, type_id: int) -> None:
     if account_type is None:
         raise ValueError(f"Account type {type_id} not found")
     in_use = session.exec(
-        select(Account).where(Account.account_type_id == type_id)
+        select(AccountEntry).where(AccountEntry.account_type_id == type_id)
     ).first()
     if in_use is not None:
         raise ValueError(f"Cannot delete account type '{account_type.name}': accounts still reference it")
@@ -68,7 +68,7 @@ def account_type_usage_count(*, session: Session, type_id: int) -> int:
     :returns: Number of accounts using this type.
     """
     return len(
-        session.exec(select(Account).where(Account.account_type_id == type_id)).all()
+        session.exec(select(AccountEntry).where(AccountEntry.account_type_id == type_id)).all()
     )
 
 

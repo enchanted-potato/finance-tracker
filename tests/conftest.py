@@ -1,11 +1,12 @@
 import os
+from datetime import date
 from decimal import Decimal
 from types import SimpleNamespace
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
-from app.models import Account, AccountType, LiabilityEntry, LiabilityType
+from app.models import AccountEntry, AccountType, LiabilityEntry, LiabilityType
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -60,24 +61,24 @@ def liability_type(db_session):
 
 @pytest.fixture
 def make_account(db_session, test_user, account_type):
-    """Factory fixture for creating accounts."""
+    """Factory fixture for creating account entries."""
 
     def _make(
         *,
-        name: str = "Savings",
         balance: Decimal = Decimal("1000"),
         user_id: str | None = None,
         account_type_id: int | None = None,
-    ) -> Account:
-        account = Account(
+        entry_date: date | None = None,
+    ) -> AccountEntry:
+        entry = AccountEntry(
             user_id=user_id or test_user.id,
             account_type_id=account_type_id or account_type.id,
-            name=name,
+            entry_date=entry_date or date.today(),
             balance=balance,
         )
-        db_session.add(account)
+        db_session.add(entry)
         db_session.flush()
-        return account
+        return entry
 
     return _make
 
@@ -93,7 +94,6 @@ def make_liability(db_session, test_user, liability_type):
         user_id: str | None = None,
         liability_type_id: int | None = None,
     ) -> LiabilityEntry:
-        from datetime import date
         liability = LiabilityEntry(
             user_id=user_id or test_user.id,
             liability_type_id=liability_type_id or liability_type.id,
