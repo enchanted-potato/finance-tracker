@@ -273,7 +273,7 @@ def main() -> None:
     # Sidebar header with authenticated user info
     st.sidebar.title("Net Worth Tracker")
     user_display = st.session_state.get("user_name") or st.session_state.get("user_email", "")
-    st.sidebar.markdown(f"Logged in as **{user_display}**")
+    st.sidebar.markdown(f"<span style='color:#8b949e;font-size:15px'>Logged in: {user_display}</span>", unsafe_allow_html=True)
     st.sidebar.divider()
 
     # Navigation menu with icons

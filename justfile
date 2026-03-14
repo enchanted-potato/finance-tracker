@@ -1,3 +1,10 @@
+dev:
+    docker compose up db -d
+    DATABASE_URL=postgresql://finance:finance@localhost:5432/finance_tracker \
+    DEBUG=true \
+    DEV_USER_ID=local-dev-user \
+    python -m streamlit run frontend/main.py
+
 ui:
     python -m streamlit run frontend/main.py
 

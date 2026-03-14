@@ -64,7 +64,6 @@ def _inject_styles() -> None:
         /* Tighten Streamlit's default block gap between rows */
         [data-testid="stHorizontalBlock"] {
             gap: 0 !important;
-            margin-bottom: -1rem !important;
         }
         [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] {
             padding-top: 0 !important;
