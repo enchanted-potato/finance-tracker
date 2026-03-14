@@ -33,6 +33,8 @@ class AccountEntry(SQLModel, table=True):
     account_type_id: int = Field(foreign_key="account_types.id")
     entry_date: date_type = Field()
     balance: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
+    currency: str = Field(default="GBP", max_length=3)
+    exchange_rate: Decimal = Field(default=Decimal("1"), max_digits=10, decimal_places=6)
     created_at: datetime = Field(
         default=None,
         sa_column_kwargs={"server_default": sa_text("now()")},

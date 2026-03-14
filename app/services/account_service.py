@@ -30,6 +30,8 @@ def upsert_account_entry(
     account_type_id: int,
     entry_date: date,
     balance: Decimal = Decimal("0"),
+    currency: str = "GBP",
+    exchange_rate: Decimal = Decimal("1"),
 ) -> AccountEntry:
     """Insert or update an account entry by (user_id, entry_date, account_type_id).
 
@@ -49,6 +51,8 @@ def upsert_account_entry(
     ).first()
     if existing:
         existing.balance = balance
+        existing.currency = currency
+        existing.exchange_rate = exchange_rate
         session.add(existing)
         session.commit()
         session.refresh(existing)
@@ -58,6 +62,8 @@ def upsert_account_entry(
         account_type_id=account_type_id,
         entry_date=entry_date,
         balance=balance,
+        currency=currency,
+        exchange_rate=exchange_rate,
     )
     session.add(entry)
     session.commit()

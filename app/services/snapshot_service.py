@@ -56,8 +56,8 @@ def capture_snapshot(
         a for a in all_accounts if not (pension_type_id and a.account_type_id == pension_type_id)
     ]
 
-    total_assets = sum((a.balance for a in non_pension_accounts), Decimal("0"))
-    total_pension = sum((a.balance for a in pension_accounts), Decimal("0"))
+    total_assets = sum((a.balance * a.exchange_rate for a in non_pension_accounts), Decimal("0"))
+    total_pension = sum((a.balance * a.exchange_rate for a in pension_accounts), Decimal("0"))
     total_liabilities = (
         sum((lb.amount for lb in liabilities), Decimal("0")) if liabilities else None
     )
@@ -70,6 +70,9 @@ def capture_snapshot(
                 "type_id": a.account_type_id,
                 "type_name": account_type_names.get(a.account_type_id, ""),
                 "balance": str(a.balance),
+                "currency": a.currency,
+                "exchange_rate": str(a.exchange_rate),
+                "balance_gbp": str(a.balance * a.exchange_rate),
             }
             for a in non_pension_accounts
         ],
@@ -79,6 +82,9 @@ def capture_snapshot(
                 "type_id": a.account_type_id,
                 "type_name": account_type_names.get(a.account_type_id, ""),
                 "balance": str(a.balance),
+                "currency": a.currency,
+                "exchange_rate": str(a.exchange_rate),
+                "balance_gbp": str(a.balance * a.exchange_rate),
             }
             for a in pension_accounts
         ],

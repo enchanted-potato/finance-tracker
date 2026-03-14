@@ -58,22 +58,27 @@ def render() -> None:
             "Date": e.entry_date,
             "Month": e.entry_date.strftime("%b %Y"),
             "Type": type_id_to_name.get(e.account_type_id, ""),
-            "Balance (£)": float(e.balance),
+            "Currency": e.currency,
+            "Balance": float(e.balance),
+            "Rate (to £)": float(e.exchange_rate),
         }
         for e in entries
     ]
-    df = pd.DataFrame(rows, columns=["_id", "Date", "Month", "Type", "Balance (£)"])
+    df = pd.DataFrame(rows, columns=["_id", "Date", "Month", "Type", "Currency", "Balance", "Rate (to £)"])
 
     column_config = {
         "_id": None,  # hidden
         "Date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
         "Month": st.column_config.TextColumn("Month", disabled=True),
         "Type": st.column_config.SelectboxColumn("Type", options=type_names, required=True),
-        "Balance (£)": st.column_config.NumberColumn("Balance (£)", min_value=0, format="£%.2f"),
+        "Currency": st.column_config.TextColumn("Currency", max_chars=3),
+        "Balance": st.column_config.NumberColumn("Balance", min_value=0, format="%.2f"),
+        "Rate (to £)": st.column_config.NumberColumn("Rate (to £)", min_value=0, format="%.6f"),
     }
 
     st.caption(
         "Edit balances inline. One row per account type per date. "
+        "For foreign currency accounts set Currency and Rate (to £). "
         "Use the checkbox column to delete rows."
     )
 
@@ -132,10 +137,16 @@ def render() -> None:
                 entry_date = raw_date if isinstance(raw_date, date) else raw_date.date()
 
                 try:
-                    balance = Decimal(str(row.get("Balance (£)", 0) or 0))
+                    balance = Decimal(str(row.get("Balance", 0) or 0))
                 except InvalidOperation:
                     errors.append(f"Invalid balance for type '{type_name}' — skipping.")
                     continue
+
+                currency = str(row.get("Currency") or "GBP").strip().upper() or "GBP"
+                try:
+                    exchange_rate = Decimal(str(row.get("Rate (to £)", 1) or 1))
+                except InvalidOperation:
+                    exchange_rate = Decimal("1")
 
                 upsert_account_entry(
                     session=session,
@@ -143,6 +154,8 @@ def render() -> None:
                     account_type_id=type_name_to_id[type_name],
                     entry_date=entry_date,
                     balance=balance,
+                    currency=currency,
+                    exchange_rate=exchange_rate,
                 )
                 affected_dates.add(entry_date)
 
