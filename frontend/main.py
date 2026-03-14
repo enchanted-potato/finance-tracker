@@ -109,7 +109,9 @@ def _auth_gate() -> None:
         # Verify token with Firebase Admin SDK
         decoded = verify_firebase_token(token)
         if not decoded:
-            st.error("Authentication failed. Please try again.")
+            # Sign out of Firebase so the login screen reappears
+            _firebase_auth_widget(firebase_config, action="logout")
+            st.error("Access denied. Please sign in with an authorised account.")
             st.stop()
 
         # Extract user info from token
