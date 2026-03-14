@@ -8,9 +8,9 @@ import streamlit as st
 
 from app.database import get_session
 from app.services.account_service import (
-    _get_pension_type_id,
     delete_account_entry,
     list_pension_entries,
+    list_pension_types,
     upsert_account_entry,
 )
 from app.services.snapshot_service import capture_snapshot
@@ -26,14 +26,18 @@ def render() -> None:
 
     session = next(get_session())
     try:
-        pension_type_id = _get_pension_type_id(session, user_id)
+        pension_types = list_pension_types(session=session, user_id=user_id)
         entries = list_pension_entries(session=session, user_id=user_id)
     finally:
         session.close()
 
-    if pension_type_id is None:
-        st.error("Pension account type not found. Please ensure the database is seeded.")
+    if not pension_types:
+        st.error("No pension account types found. Mark an account type as pension in Configure.")
         return
+
+    type_name_to_id = {pt.name: pt.id for pt in pension_types}
+    type_id_to_name = {pt.id: pt.name for pt in pension_types}
+    type_names = [pt.name for pt in pension_types]
 
     latest_date = max((e.entry_date for e in entries), default=None)
     latest_total = sum(float(e.balance) for e in entries if e.entry_date == latest_date) if latest_date else 0.0
@@ -56,20 +60,22 @@ def render() -> None:
             "_id": e.id,
             "Date": e.entry_date,
             "Month": e.entry_date.strftime("%b %Y"),
+            "Type": type_id_to_name.get(e.account_type_id, ""),
             "Balance (£)": float(e.balance),
         }
         for e in entries
     ]
-    df = pd.DataFrame(rows, columns=["_id", "Date", "Month", "Balance (£)"])
+    df = pd.DataFrame(rows, columns=["_id", "Date", "Month", "Type", "Balance (£)"])
 
     column_config = {
         "_id": None,  # hidden
         "Date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
         "Month": st.column_config.TextColumn("Month", disabled=True),
+        "Type": st.column_config.SelectboxColumn("Type", options=type_names, required=True),
         "Balance (£)": st.column_config.NumberColumn("Balance (£)", min_value=0, format="£%.2f"),
     }
 
-    st.caption("Enter your total pension balance per date. Use the checkbox column to delete rows.")
+    st.caption("Enter your pension balances per date and type. Use the checkbox column to delete rows.")
 
     edited = st.data_editor(
         df,
@@ -102,6 +108,11 @@ def render() -> None:
 
             # Upsert all rows in edited df
             for _, row in edited.iterrows():
+                type_name = row.get("Type", "")
+                if not type_name or type_name not in type_name_to_id:
+                    errors.append(f"Unknown pension type '{type_name}' — skipping row.")
+                    continue
+
                 # Parse date — DateColumn returns date objects, strings, or Timestamps
                 raw_date = row.get("Date")
                 if raw_date is None or (isinstance(raw_date, float) and pd.isna(raw_date)):
@@ -129,7 +140,7 @@ def render() -> None:
                 upsert_account_entry(
                     session=session,
                     user_id=user_id,
-                    account_type_id=pension_type_id,
+                    account_type_id=type_name_to_id[type_name],
                     entry_date=entry_date,
                     balance=balance,
                 )

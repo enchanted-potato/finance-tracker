@@ -31,7 +31,7 @@ def render() -> None:
     finally:
         session.close()
 
-    non_pension_types = [at for at in account_types if at.name != "Pension"]
+    non_pension_types = [at for at in account_types if not at.is_pension]
     type_name_to_id = {at.name: at.id for at in non_pension_types}
     type_id_to_name = {at.id: at.name for at in non_pension_types}
     type_names = [at.name for at in non_pension_types]

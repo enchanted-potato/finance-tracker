@@ -4,19 +4,42 @@ from sqlmodel import Session, select
 from app.models import AccountEntry, AccountType, LiabilityEntry, LiabilityType
 
 
-def create_account_type(*, session: Session, name: str, user_id: str | None = None) -> AccountType:
+def create_account_type(
+    *, session: Session, name: str, user_id: str | None = None, is_pension: bool = False
+) -> AccountType:
     """Create a new account type.
 
     :param session: Database session.
     :param name: Display name for the type.
     :param user_id: Owner UID, or None for a system default.
+    :param is_pension: Whether this type counts as pension.
     :returns: The newly created account type.
     """
-    account_type = AccountType(name=name, user_id=user_id)
+    account_type = AccountType(name=name, user_id=user_id, is_pension=is_pension)
     session.add(account_type)
     session.commit()
     session.refresh(account_type)
     logger.info(f"Created account type '{name}' (id={account_type.id})")
+    return account_type
+
+
+def set_account_type_pension(*, session: Session, type_id: int, is_pension: bool) -> AccountType:
+    """Set the is_pension flag on an account type.
+
+    :param session: Database session.
+    :param type_id: Primary key of the account type.
+    :param is_pension: New value for the flag.
+    :returns: The updated account type.
+    :raises ValueError: If the type is not found.
+    """
+    account_type = session.get(AccountType, type_id)
+    if account_type is None:
+        raise ValueError(f"Account type {type_id} not found")
+    account_type.is_pension = is_pension
+    session.add(account_type)
+    session.commit()
+    session.refresh(account_type)
+    logger.info(f"Set is_pension={is_pension} on account type {type_id} ('{account_type.name}')")
     return account_type
 
 

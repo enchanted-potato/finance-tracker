@@ -17,6 +17,7 @@ class AccountType(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(max_length=100)
     user_id: str | None = Field(default=None, max_length=128)
+    is_pension: bool = Field(default=False)
 
 
 class AccountEntry(SQLModel, table=True):

@@ -7,7 +7,7 @@ from loguru import logger
 from sqlmodel import Session, select
 
 from app.models import AccountEntry, AccountType, LiabilityEntry, LiabilityType, Snapshot
-from app.services.account_service import _get_pension_type_id
+from app.services.account_service import _get_pension_type_ids
 
 
 def capture_snapshot(
@@ -26,7 +26,7 @@ def capture_snapshot(
     if snapshot_date is None:
         snapshot_date = date.today()
 
-    pension_type_id = _get_pension_type_id(session, user_id)
+    pension_type_ids = _get_pension_type_ids(session, user_id)
     all_accounts = _latest_account_entries(session, user_id, snapshot_date)
     liabilities = _latest_liability_entries(session, user_id, snapshot_date)
 
@@ -49,12 +49,8 @@ def capture_snapshot(
         account_type_names = {at.id: at.name for at in at_rows}
 
     # Split pension vs non-pension so pension is excluded from total_assets / net_worth
-    pension_accounts = [
-        a for a in all_accounts if pension_type_id and a.account_type_id == pension_type_id
-    ]
-    non_pension_accounts = [
-        a for a in all_accounts if not (pension_type_id and a.account_type_id == pension_type_id)
-    ]
+    pension_accounts = [a for a in all_accounts if a.account_type_id in pension_type_ids]
+    non_pension_accounts = [a for a in all_accounts if a.account_type_id not in pension_type_ids]
 
     total_assets = sum((a.balance * a.exchange_rate for a in non_pension_accounts), Decimal("0"))
     total_pension = sum((a.balance * a.exchange_rate for a in pension_accounts), Decimal("0"))

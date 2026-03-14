@@ -5,22 +5,32 @@ from sqlmodel import Session, select
 
 from app.models import AccountEntry, AccountType
 
-PENSION_TYPE_NAME = "Pension"
-
-
-def _get_pension_type_id(session: Session, user_id: str) -> int | None:
-    """Return the AccountType.id for 'Pension' visible to this user, or None.
+def _get_pension_type_ids(session: Session, user_id: str) -> list[int]:
+    """Return all AccountType ids marked as pension visible to this user.
 
     :param session: Database session.
     :param user_id: Firebase UID of the owner.
-    :returns: The id of the Pension account type, or None if not found.
+    :returns: List of pension account type ids (may be empty).
     """
     statement = select(AccountType).where(
-        (AccountType.name == PENSION_TYPE_NAME),
+        AccountType.is_pension.is_(True),
         (AccountType.user_id.is_(None)) | (AccountType.user_id == user_id),
     )
-    at = session.exec(statement).first()
-    return at.id if at else None
+    return [at.id for at in session.exec(statement).all() if at.id is not None]
+
+
+def list_pension_types(*, session: Session, user_id: str) -> list[AccountType]:
+    """Return all account types marked as pension visible to this user.
+
+    :param session: Database session.
+    :param user_id: Firebase UID of the owner.
+    :returns: List of pension account types.
+    """
+    statement = select(AccountType).where(
+        AccountType.is_pension.is_(True),
+        (AccountType.user_id.is_(None)) | (AccountType.user_id == user_id),
+    )
+    return list(session.exec(statement).all())
 
 
 def upsert_account_entry(
@@ -109,37 +119,37 @@ def list_account_entries(*, session: Session, user_id: str) -> list[AccountEntry
 
 
 def list_pension_entries(*, session: Session, user_id: str) -> list[AccountEntry]:
-    """Account entries where account_type_id matches the Pension type.
+    """Account entries where account_type_id belongs to a pension type.
 
     :param session: Database session.
     :param user_id: Firebase UID of the owner.
-    :returns: List of pension entries ordered by entry_date DESC.
+    :returns: List of pension entries ordered by entry_date DESC, account_type_id.
     """
-    pension_type_id = _get_pension_type_id(session, user_id)
-    if pension_type_id is None:
+    pension_type_ids = _get_pension_type_ids(session, user_id)
+    if not pension_type_ids:
         return []
     statement = (
         select(AccountEntry)
         .where(
             AccountEntry.user_id == user_id,
-            AccountEntry.account_type_id == pension_type_id,
+            AccountEntry.account_type_id.in_(pension_type_ids),
         )
-        .order_by(AccountEntry.entry_date.desc())
+        .order_by(AccountEntry.entry_date.desc(), AccountEntry.account_type_id)
     )
     return list(session.exec(statement).all())
 
 
 def list_non_pension_entries(*, session: Session, user_id: str) -> list[AccountEntry]:
-    """Account entries where account_type_id does NOT match the Pension type.
+    """Account entries where account_type_id does NOT belong to a pension type.
 
     :param session: Database session.
     :param user_id: Firebase UID of the owner.
     :returns: List of non-pension entries ordered by entry_date DESC, account_type_id.
     """
-    pension_type_id = _get_pension_type_id(session, user_id)
+    pension_type_ids = _get_pension_type_ids(session, user_id)
     statement = select(AccountEntry).where(AccountEntry.user_id == user_id)
-    if pension_type_id is not None:
-        statement = statement.where(AccountEntry.account_type_id != pension_type_id)
+    if pension_type_ids:
+        statement = statement.where(AccountEntry.account_type_id.not_in(pension_type_ids))
     statement = statement.order_by(AccountEntry.entry_date.desc(), AccountEntry.account_type_id)
     return list(session.exec(statement).all())
 

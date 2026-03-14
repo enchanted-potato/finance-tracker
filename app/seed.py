@@ -3,12 +3,12 @@ from sqlmodel import Session, select
 
 from app.models import AccountType, LiabilityType
 
-DEFAULT_ACCOUNT_TYPES = [
-    "Cash Savings",
-    "Investment Account",
-    "Crypto",
-    "Pension",
-    "Other",
+DEFAULT_ACCOUNT_TYPES: list[tuple[str, bool]] = [
+    ("Cash Savings", False),
+    ("Investment Account", False),
+    ("Crypto", False),
+    ("Pension", True),
+    ("Other", False),
 ]
 
 DEFAULT_LIABILITY_TYPES = [
@@ -40,9 +40,9 @@ def _seed_account_types(*, session: Session) -> None:
         row.name
         for row in session.exec(select(AccountType).where(AccountType.user_id.is_(None))).all()
     }
-    for name in DEFAULT_ACCOUNT_TYPES:
+    for name, is_pension in DEFAULT_ACCOUNT_TYPES:
         if name not in existing:
-            session.add(AccountType(name=name, user_id=None))
+            session.add(AccountType(name=name, user_id=None, is_pension=is_pension))
             logger.debug(f"Seeding account type: {name}")
 
 
