@@ -265,9 +265,8 @@ def render() -> None:
             "No snapshots yet. Update an account or liability balance "
             "to create your first snapshot."
         )
-        return
 
-    snapshots_desc = _latest_per_month(snapshots)
+    snapshots_desc = _latest_per_month(snapshots) if snapshots else []
 
     # Table column header
     st.markdown(
