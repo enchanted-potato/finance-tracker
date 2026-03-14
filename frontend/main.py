@@ -4,7 +4,6 @@ import os
 
 import streamlit as st
 import streamlit.components.v1 as components
-from sqlalchemy import text as sa_text
 from sqlmodel import SQLModel
 
 from app.config import settings
@@ -140,22 +139,11 @@ def _auth_gate() -> None:
 def _init_db() -> None:
     """Create tables, seed defaults, and initialize Firebase Admin SDK."""
     SQLModel.metadata.create_all(engine)
-    # Add columns introduced after initial table creation
-    with engine.connect() as conn:
-        conn.execute(
-            sa_text(
-                "ALTER TABLE accounts ADD COLUMN IF NOT EXISTS "
-                "exchange_rate NUMERIC(10, 6) NOT NULL DEFAULT 1"
-            )
-        )
-        conn.commit()
     session = next(get_session())
     try:
         seed_default_types(session=session)
     finally:
         session.close()
-
-    # Initialize Firebase Admin SDK
     init_firebase_admin()
 
 
