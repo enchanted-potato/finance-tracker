@@ -11,22 +11,20 @@ from app.config import settings
 def init_firebase_admin() -> None:
     """Initialize Firebase Admin SDK with hot-reload protection.
 
-    Skips init if already initialized or if credentials path is not set.
+    Uses a service account key file if FIREBASE_CREDENTIALS_PATH is set (local dev),
+    otherwise uses Application Default Credentials via Cloud Run's metadata server (production).
     """
     if firebase_admin._apps:
         logger.debug("Firebase Admin SDK already initialized, skipping")
         return
 
-    if not settings.firebase_credentials_path:
-        logger.warning(
-            "FIREBASE_CREDENTIALS_PATH not set, skipping Firebase Admin init. "
-            "Auth features will not work."
-        )
-        return
-
     try:
-        cred = credentials.Certificate(settings.firebase_credentials_path)
-        firebase_admin.initialize_app(cred)
+        if settings.firebase_credentials_path:
+            cred = credentials.Certificate(settings.firebase_credentials_path)
+            firebase_admin.initialize_app(cred)
+        else:
+            # Production: ADC — Cloud Run metadata server provides short-lived tokens automatically
+            firebase_admin.initialize_app(options={"projectId": settings.firebase_project_id})
         logger.info("Firebase Admin SDK initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize Firebase Admin SDK: {e}")
@@ -36,15 +34,17 @@ def init_firebase_admin() -> None:
 def verify_firebase_token(id_token: str) -> dict | None:
     """Verify Firebase ID token and return decoded claims.
 
+    Blocks any UID not matching ALLOWED_FIREBASE_UID (if set) immediately after
+    decoding — before any session state or DB calls are made.
+
     Args:
         id_token: Firebase ID token from client
 
     Returns:
-        Decoded token dict with uid, email, name fields, or None if invalid
+        Decoded token dict with uid, email, name fields, or None if invalid/unauthorized
     """
     try:
         decoded_token = auth.verify_id_token(id_token)
-        return decoded_token
     except auth.ExpiredIdTokenError:
         logger.warning("Firebase token expired")
         return None
@@ -54,6 +54,12 @@ def verify_firebase_token(id_token: str) -> dict | None:
     except Exception as e:
         logger.error(f"Error verifying Firebase token: {e}")
         return None
+
+    if settings.allowed_firebase_uid and decoded_token.get("uid") != settings.allowed_firebase_uid:
+        logger.warning(f"Blocked unauthorized UID: {decoded_token.get('uid')}")
+        return None
+
+    return decoded_token
 
 
 def get_or_create_user(

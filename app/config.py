@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     firebase_project_id: str = ""
     debug: bool = False
     dev_user_id: str = ""
+    allowed_firebase_uid: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

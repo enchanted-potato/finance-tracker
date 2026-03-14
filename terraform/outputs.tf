@@ -12,8 +12,3 @@ output "database_name" {
   description = "Database name"
   value       = google_sql_database.database.name
 }
-
-output "secret_id" {
-  description = "Secret Manager secret ID"
-  value       = google_secret_manager_secret.firebase_creds.secret_id
-}
