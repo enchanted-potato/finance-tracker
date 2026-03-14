@@ -61,6 +61,31 @@ def _inject_styles() -> None:
             background: rgba(230,237,243,0.1);
         }
 
+        /* Tighten Streamlit's default block gap between rows */
+        [data-testid="stHorizontalBlock"] {
+            gap: 0 !important;
+            margin-bottom: -1rem !important;
+        }
+        [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+        [data-testid="column"] > [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] {
+            gap: 0 !important;
+        }
+        /* Remove padding from column children */
+        [data-testid="stColumn"] > div {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+        /* Shrink button height */
+        [data-testid="stButton"] button {
+            padding-top: 2px !important;
+            padding-bottom: 2px !important;
+            min-height: 0 !important;
+            line-height: 1.2 !important;
+        }
+
         /* Cell styles */
         .cell-date {
             font-family: monospace;
