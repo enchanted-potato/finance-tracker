@@ -86,6 +86,8 @@ def _auth_gate() -> None:
 
     if result.get("status") == "unauthenticated":
         # User not logged in, component shows login UI
+        if st.session_state.pop("_access_denied", False):
+            st.error("Access denied. Please sign in with an authorised account.")
         # Hide sidebar on login screen
         st.markdown(
             """
@@ -109,10 +111,10 @@ def _auth_gate() -> None:
         # Verify token with Firebase Admin SDK
         decoded = verify_firebase_token(token)
         if not decoded:
-            # Sign out of Firebase so the login screen reappears
-            _firebase_auth_widget(firebase_config, action="logout")
-            st.error("Access denied. Please sign in with an authorised account.")
-            st.stop()
+            # Trigger logout so Firebase resets to login screen on next render
+            st.session_state["_logout_requested"] = True
+            st.session_state["_access_denied"] = True
+            st.rerun()
 
         # Extract user info from token
         uid = decoded["uid"]
