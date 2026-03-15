@@ -263,7 +263,8 @@ def _render_asset_pie(accounts: list, type_map: dict[int, str]) -> None:
         ]
     )
     fig.update_layout(
-        margin={"l": 20, "r": 20, "t": 20, "b": 20},
+        height=350,
+        margin={"l": 5, "r": 20, "t": 20, "b": 20},
         showlegend=False,
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#8b949e"),
@@ -297,7 +298,8 @@ def _render_liability_pie(liabilities: list, type_map: dict[int, str]) -> None:
         ]
     )
     fig.update_layout(
-        margin={"l": 20, "r": 20, "t": 20, "b": 20},
+        height=350,
+        margin={"l": 20, "r": 5, "t": 20, "b": 20},
         showlegend=False,
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#8b949e"),
