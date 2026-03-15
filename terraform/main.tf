@@ -56,6 +56,14 @@ resource "google_sql_database" "database" {
 # Data source for default compute service account
 data "google_compute_default_service_account" "default" {}
 
+# Firebase Hosting site — required for signInWithRedirect auth handler
+# The /__/auth/handler page is served by Firebase Hosting
+resource "google_firebase_hosting_site" "default" {
+  provider = google
+  project  = var.project_id
+  site_id  = var.project_id
+}
+
 # Firebase Auth authorized domains
 # Manages the full list — must include defaults or Terraform will remove them
 resource "google_identity_platform_config" "auth" {

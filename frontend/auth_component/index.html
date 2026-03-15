@@ -113,6 +113,8 @@
         import {
             getAuth,
             signInWithPopup,
+            signInWithRedirect,
+            getRedirectResult,
             signOut,
             GoogleAuthProvider,
             onAuthStateChanged,
@@ -182,6 +184,17 @@
                     // Set persistence to local (survives browser restarts)
                     await setPersistence(auth, browserLocalPersistence);
 
+                    // Handle redirect result (mobile sign-in)
+                    try {
+                        const result = await getRedirectResult(auth);
+                        if (result) {
+                            console.log('Redirect sign-in completed');
+                        }
+                    } catch (error) {
+                        console.error('Redirect result error:', error);
+                        showError('Sign-in failed. Please try again.');
+                    }
+
                     // Set up auth state listener
                     onAuthStateChanged(auth, async (user) => {
                         currentUser = user;
@@ -225,8 +238,13 @@
 
             try {
                 const provider = new GoogleAuthProvider();
-                await signInWithPopup(auth, provider);
-                // onAuthStateChanged will handle the rest
+                // Use redirect on mobile (popup blocked by iOS Safari due to iframe storage partitioning)
+                // Use popup on desktop for better UX
+                if (/webOS|iPhone|iPad/i.test(navigator.userAgent)) {
+                    await signInWithRedirect(auth, provider);
+                } else {
+                    await signInWithPopup(auth, provider);
+                }
             } catch (error) {
                 console.error('Sign-in error:', error);
 
