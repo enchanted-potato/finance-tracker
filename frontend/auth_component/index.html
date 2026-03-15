@@ -113,6 +113,8 @@
         import {
             getAuth,
             signInWithPopup,
+            signInWithRedirect,
+            getRedirectResult,
             signOut,
             GoogleAuthProvider,
             onAuthStateChanged,
@@ -124,6 +126,11 @@
         let firebaseApp = null;
         let auth = null;
         let currentUser = null;
+
+        // Detect mobile browsers
+        function isMobile() {
+            return /webOS|iPhone|iPad/i.test(navigator.userAgent);
+        }
 
         // Send message to Streamlit parent
         function sendMessageToStreamlit(message) {
@@ -182,6 +189,18 @@
                     // Set persistence to local (survives browser restarts)
                     await setPersistence(auth, browserLocalPersistence);
 
+                    // Handle redirect result (mobile sign-in)
+                    try {
+                        const result = await getRedirectResult(auth);
+                        if (result) {
+                            // Redirect sign-in succeeded — onAuthStateChanged will fire next
+                            console.log('Redirect sign-in completed');
+                        }
+                    } catch (error) {
+                        console.error('Redirect result error:', error);
+                        showError('Sign-in failed. Please try again.');
+                    }
+
                     // Set up auth state listener
                     onAuthStateChanged(auth, async (user) => {
                         currentUser = user;
@@ -225,13 +244,20 @@
 
             try {
                 const provider = new GoogleAuthProvider();
-                await signInWithPopup(auth, provider);
-                // onAuthStateChanged will handle the rest
+                if (isMobile()) {
+                    await signInWithRedirect(auth, provider);
+                    // Page will redirect — no further code runs here
+                } else {
+                    await signInWithPopup(auth, provider);
+                    // onAuthStateChanged will handle the rest
+                }
             } catch (error) {
                 console.error('Sign-in error:', error);
 
                 if (error.code === 'auth/popup-blocked') {
-                    showError('Please allow popups for this site to sign in');
+                    // Fallback to redirect if popup was blocked
+                    const provider = new GoogleAuthProvider();
+                    await signInWithRedirect(auth, provider);
                 } else if (error.code === 'auth/popup-closed-by-user') {
                     showError('Sign-in cancelled');
                 } else {
