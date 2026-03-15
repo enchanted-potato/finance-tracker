@@ -4,6 +4,7 @@ import os
 
 import streamlit as st
 import streamlit.components.v1 as components
+from streamlit_option_menu import option_menu
 from sqlmodel import SQLModel
 
 from app.config import settings
@@ -196,47 +197,11 @@ def main() -> None:
                 display: none;
             }
 
-            /* Navigation button styling */
-            .stButton > button {
-                border: none !important;
-                background: none !important;
-                box-shadow: none !important;
-                padding: 12px 16px !important;
-                width: 100% !important;
-                text-align: left !important;
-                border-radius: 8px !important;
-                color: #e6edf3 !important;
-                font-size: 16px !important;
-                font-weight: 400 !important;
-                transition: background-color 0.2s !important;
-            }
-
-            .stButton > button:hover {
-                background-color: rgba(255,255,255,0.05) !important;
-                border: none !important;
-            }
-
-            .stButton > button:focus {
-                box-shadow: none !important;
-                border: none !important;
-            }
-
-            .stButton > button:active {
-                background-color: #30363d !important;
-            }
-
-            /* Active sidebar nav: left border accent, no background */
-            [data-testid="stSidebar"] .stButton > button[kind="primary"] {
-                background-color: rgba(88,166,255,0.1) !important;
+            /* option_menu icon color fix in dark theme */
+            [data-testid="stSidebar"] .nav-link-selected i {
                 color: #58a6ff !important;
-                font-weight: 600 !important;
-                border-left: 3px solid #58a6ff !important;
-                padding-left: 13px !important;
             }
 
-            [data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
-                background-color: rgba(88,166,255,0.15) !important;
-            }
 
             /* Drop shadow on all Plotly chart containers */
             .stPlotlyChart,
@@ -268,30 +233,45 @@ def main() -> None:
     st.sidebar.markdown(f"<span style='color:#8b949e;font-size:15px'>Logged in: {user_display}</span>", unsafe_allow_html=True)
     st.sidebar.divider()
 
-    # Navigation menu with icons
-    pages = {
-        "Dashboard": "📊",
-        "Accounts": "💰",
-        "Liabilities": "💳",
-        "Pension": "🏦",
-        "History": "📈",
-        "Configure": "⚙️",
-    }
+    # Navigation menu with Bootstrap icons
+    page_names = ["Dashboard", "Accounts", "Liabilities", "Pension", "Trends", "Configure"]
+    page_icons = ["grid", "wallet2", "credit-card", "piggy-bank", "graph-up-arrow", "gear"]
+    current_index = page_names.index(st.session_state["selected_page"])
 
-    for page, icon in pages.items():
-        is_active = st.session_state["selected_page"] == page
-        if st.sidebar.button(
-            f"{icon}  {page}",
-            key=f"nav_{page}",
-            use_container_width=True,
-            type="primary" if is_active else "secondary",
-        ):
-            st.session_state["selected_page"] = page
-            st.rerun()
+    with st.sidebar:
+        selected = option_menu(
+            menu_title=None,
+            options=page_names,
+            icons=page_icons,
+            default_index=current_index,
+            styles={
+                "container": {"padding": "0", "background-color": "transparent"},
+                "icon": {"color": "#8b949e", "font-size": "16px"},
+                "nav-link": {
+                    "color": "#e6edf3",
+                    "font-size": "16px",
+                    "font-weight": "400",
+                    "padding": "10px 16px",
+                    "border-radius": "8px",
+                    "--hover-color": "rgba(255,255,255,0.05)",
+                },
+                "nav-link-selected": {
+                    "background-color": "rgba(88,166,255,0.1)",
+                    "color": "#58a6ff",
+                    "font-weight": "600",
+                    "border-left": "3px solid #58a6ff",
+                },
+            },
+            key="nav_menu",
+        )
+
+    if selected != st.session_state["selected_page"]:
+        st.session_state["selected_page"] = selected
+        st.rerun()
 
     # Logout button at bottom of sidebar
     st.sidebar.divider()
-    if st.sidebar.button("🚪  Log out", key="nav_logout", use_container_width=True):
+    if st.sidebar.button("Log out", key="nav_logout", use_container_width=True):
         st.session_state["_logout_requested"] = True
         st.rerun()
 
@@ -305,7 +285,7 @@ def main() -> None:
             liabilities.render()
         case "Pension":
             pension.render()
-        case "History":
+        case "Trends":
             history.render()
         case "Configure":
             configure.render()
