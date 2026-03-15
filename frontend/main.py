@@ -228,7 +228,35 @@ def main() -> None:
         st.session_state["selected_page"] = "Dashboard"
 
     # Sidebar header with authenticated user info
-    st.sidebar.title("Net Worth Tracker")
+    st.sidebar.markdown(
+        """
+        <div style="
+            padding: 8px 0 4px 0;
+            letter-spacing: -0.5px;
+        ">
+            <span style="
+                font-family: 'Poppins', sans-serif;
+                font-size: 26px;
+                font-weight: 700;
+                background: linear-gradient(135deg, #58a6ff 0%, #79c0ff 60%, #a5d6ff 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            ">Worth</span><span style="
+                font-size: 20px;
+                -webkit-text-fill-color: #79c0ff;
+                background: none;
+                font-weight: 700;
+            ">↗</span><span style="
+                font-family: 'Poppins', sans-serif;
+                font-size: 26px;
+                font-weight: 300;
+                color: #8b949e;
+            ">flow</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     user_display = st.session_state.get("user_name") or st.session_state.get("user_email", "")
     st.sidebar.markdown(f"<span style='color:#8b949e;font-size:15px'>Logged in: {user_display}</span>", unsafe_allow_html=True)
     st.sidebar.divider()

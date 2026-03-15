@@ -225,7 +225,7 @@ def _render_line_chart(snapshots: list) -> None:
         hovermode="x unified",
         margin={"l": 60, "r": 20, "t": 20, "b": 40},
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(255,255,255,0.03)",
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -336,7 +336,7 @@ def _render_pension_bar(pension_accounts: list) -> None:
         font=dict(color="#8b949e"),
         margin={"l": 60, "r": 20, "t": 20, "b": 40},
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(255,255,255,0.03)",
         showlegend=True,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
