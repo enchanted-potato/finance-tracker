@@ -118,7 +118,7 @@
             signOut,
             GoogleAuthProvider,
             onAuthStateChanged,
-            browserLocalPersistence,
+            browserSessionPersistence,
             setPersistence
         } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js';
 
@@ -182,7 +182,7 @@
                     auth = getAuth(firebaseApp);
 
                     // Set persistence to local (survives browser restarts)
-                    await setPersistence(auth, browserLocalPersistence);
+                    await setPersistence(auth, browserSessionPersistence);
 
                     // Handle redirect result (mobile sign-in)
                     try {
