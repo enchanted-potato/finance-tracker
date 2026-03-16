@@ -122,7 +122,7 @@ def render() -> None:
     # --- Pension breakdown bar chart ---
     if pension_accounts:
         st.subheader("Pension Breakdown")
-        _render_pension_bar(pension_accounts)
+        _render_pension_bar(pension_accounts, at_map)
 
 
 def _build_net_worth_card_html(net_worth: Decimal, delta: Decimal) -> str:
@@ -307,12 +307,12 @@ def _render_liability_pie(liabilities: list, type_map: dict[int, str]) -> None:
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_pension_bar(pension_accounts: list) -> None:
-    """Render a stacked bar chart of pension value by entry date."""
+def _render_pension_bar(pension_accounts: list, type_map: dict[int, str]) -> None:
+    """Render a stacked bar chart of pension value by pension type."""
     colors = ["#A855F7", "#7C3AED", "#6D28D9", "#5B21B6", "#4C1D95", "#C084FC", "#DDD6FE"]
     fig = go.Figure()
     for i, account in enumerate(pension_accounts):
-        label = account.entry_date.strftime("%b %Y") if hasattr(account, "entry_date") else str(i)
+        label = type_map.get(account.account_type_id, "Unknown")
         fig.add_trace(
             go.Bar(
                 name=label,
