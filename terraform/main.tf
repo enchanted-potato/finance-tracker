@@ -14,6 +14,12 @@ provider "google" {
   user_project_override = true
 }
 
+# Enable Cloud Scheduler API
+resource "google_project_service" "cloud_scheduler" {
+  service            = "cloudscheduler.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Cloud SQL instance
 resource "google_sql_database_instance" "main" {
   name             = "finance-tracker-db"
@@ -55,6 +61,48 @@ resource "google_sql_database" "database" {
 
 # Data source for default compute service account
 data "google_compute_default_service_account" "default" {}
+
+# Cloud Scheduler: start Cloud SQL at 8am
+resource "google_cloud_scheduler_job" "sql_start" {
+  name             = "finance-tracker-sql-start"
+  description      = "Start Cloud SQL instance at 8am"
+  schedule         = "0 8 * * *"
+  time_zone        = var.timezone
+  attempt_deadline = "60s"
+  depends_on       = [google_project_service.cloud_scheduler]
+
+  http_target {
+    http_method = "PATCH"
+    uri         = "https://sqladmin.googleapis.com/sql/v1beta4/projects/${var.project_id}/instances/${google_sql_database_instance.main.name}"
+    body        = base64encode(jsonencode({ settings = { activationPolicy = "ALWAYS" } }))
+    headers     = { "Content-Type" = "application/json" }
+
+    oauth_token {
+      service_account_email = data.google_compute_default_service_account.default.email
+    }
+  }
+}
+
+# Cloud Scheduler: stop Cloud SQL at 11pm
+resource "google_cloud_scheduler_job" "sql_stop" {
+  name             = "finance-tracker-sql-stop"
+  description      = "Stop Cloud SQL instance at 11pm"
+  schedule         = "0 23 * * *"
+  time_zone        = var.timezone
+  attempt_deadline = "60s"
+  depends_on       = [google_project_service.cloud_scheduler]
+
+  http_target {
+    http_method = "PATCH"
+    uri         = "https://sqladmin.googleapis.com/sql/v1beta4/projects/${var.project_id}/instances/${google_sql_database_instance.main.name}"
+    body        = base64encode(jsonencode({ settings = { activationPolicy = "NEVER" } }))
+    headers     = { "Content-Type" = "application/json" }
+
+    oauth_token {
+      service_account_email = data.google_compute_default_service_account.default.email
+    }
+  }
+}
 
 # Firebase Auth authorized domains
 # Manages the full list — must include defaults or Terraform will remove them
