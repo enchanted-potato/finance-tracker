@@ -1,4 +1,4 @@
-# Finance Tracker
+# Worth Flow
 
 A personal net worth tracker — record asset balances and liabilities over time, visualize trends, and understand your financial position at a glance. No transaction tracking; just clean snapshots.
 
@@ -96,7 +96,7 @@ git clone <repo>
 uv sync
 
 # Start PostgreSQL and Streamlit
-docker compose up
+docker ocompose up
 ```
 
 App runs at `http://localhost:8501`. Authentication is bypassed in local dev via `DEV_USER_ID`.
