@@ -1,8 +1,15 @@
+dev:
+    docker compose up db -d
+    DATABASE_URL=postgresql://finance:finance@localhost:5432/finance_tracker \
+    DEBUG=true \
+    DEV_USER_ID=local-dev-user \
+    python -m streamlit run frontend/main.py
+
 ui:
     python -m streamlit run frontend/main.py
 
 deploy:
-    docker build -t gcr.io/wealth-tracker-1eb4d/finance-tracker:latest .
+    docker build --platform linux/amd64 -t gcr.io/wealth-tracker-1eb4d/finance-tracker:latest .
     docker push gcr.io/wealth-tracker-1eb4d/finance-tracker:latest
     gcloud run deploy finance-tracker \
         --image gcr.io/wealth-tracker-1eb4d/finance-tracker:latest \

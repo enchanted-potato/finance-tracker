@@ -15,6 +15,7 @@ from app.services.type_service import (
     liability_type_usage_count,
     rename_account_type,
     rename_liability_type,
+    set_account_type_pension,
 )
 
 
@@ -66,22 +67,30 @@ def _render_account_types(user_id: str) -> None:
         table_data.append({
             "id": at.id,
             "Type Name": at.name,
+            "Pension": at.is_pension,
             "Usage": f"{usage} account{'s' if usage != 1 else ''}",
             "can_delete": usage == 0
         })
 
     df = pd.DataFrame(table_data)
 
-    # Display table with editable names
+    column_config = {
+        "Type Name": st.column_config.TextColumn("Type Name"),
+        "Pension": st.column_config.CheckboxColumn("Pension", help="Count balances as pension (excluded from net worth)"),
+        "Usage": st.column_config.TextColumn("Usage"),
+    }
+
+    # Display table with editable names and pension flag
     edited_df = st.data_editor(
-        df[["Type Name", "Usage"]],
+        df[["Type Name", "Pension", "Usage"]],
         hide_index=True,
         use_container_width=True,
         disabled=["Usage"],
+        column_config=column_config,
         key="account_types_table"
     )
 
-    # Detect renames
+    # Detect renames and pension flag changes
     for idx, row in df.iterrows():
         old_name = row["Type Name"]
         new_name = edited_df.iloc[idx]["Type Name"]
@@ -90,6 +99,20 @@ def _render_account_types(user_id: str) -> None:
             try:
                 rename_account_type(session=session, type_id=row["id"], new_name=new_name)
                 st.success(f"Renamed '{old_name}' to '{new_name}'")
+                st.rerun()
+            except ValueError as e:
+                st.error(str(e))
+            finally:
+                session.close()
+
+        old_pension = row["Pension"]
+        new_pension = bool(edited_df.iloc[idx]["Pension"])
+        if old_pension != new_pension:
+            session = next(get_session())
+            try:
+                set_account_type_pension(session=session, type_id=row["id"], is_pension=new_pension)
+                label = "Marked" if new_pension else "Unmarked"
+                st.success(f"{label} '{old_name}' as pension")
                 st.rerun()
             except ValueError as e:
                 st.error(str(e))

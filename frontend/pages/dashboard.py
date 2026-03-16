@@ -5,8 +5,8 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app.database import get_session
-from app.services.account_service import list_account_types, list_non_pension_accounts, list_pension_accounts
-from app.services.liability_service import list_liabilities, list_liability_types
+from app.services.account_service import list_account_types, list_non_pension_entries, list_pension_entries
+from app.services.liability_service import list_liability_entries, list_liability_types
 from app.services.snapshot_service import get_snapshot_history
 
 
@@ -21,9 +21,17 @@ def render() -> None:
 
     session = next(get_session())
     try:
-        accounts = list_non_pension_accounts(session=session, user_id=user_id)
-        pension_accounts = list_pension_accounts(session=session, user_id=user_id)
-        liabilities = list_liabilities(session=session, user_id=user_id)
+        accounts = list_non_pension_entries(session=session, user_id=user_id)
+        pension_accounts = list_pension_entries(session=session, user_id=user_id)
+        all_liability_entries = list_liability_entries(session=session, user_id=user_id)
+        # Use the latest entry per liability type (carry-forward: types updated on
+        # different dates are all included, not just entries from the single latest date)
+        seen_types: set[int] = set()
+        liabilities = []
+        for entry in all_liability_entries:  # sorted newest-first
+            if entry.liability_type_id not in seen_types:
+                seen_types.add(entry.liability_type_id)
+                liabilities.append(entry)
         account_types = list_account_types(session=session, user_id=user_id)
         liability_types = list_liability_types(session=session, user_id=user_id)
         all_snapshots = get_snapshot_history(session=session, user_id=user_id)
@@ -37,7 +45,7 @@ def render() -> None:
     # Prefer live account/liability balances; fall back to latest snapshot
     # when no active records exist (e.g. data imported as snapshots only).
     total_assets = sum((a.balance for a in accounts), Decimal("0"))
-    total_liabilities = sum((lb.balance for lb in liabilities), Decimal("0"))
+    total_liabilities = sum((lb.amount for lb in liabilities), Decimal("0"))
     total_pension = sum((a.balance for a in pension_accounts), Decimal("0"))
     if total_assets == 0 and total_liabilities == 0 and all_snapshots:
         latest = all_snapshots[-1]
@@ -46,18 +54,40 @@ def render() -> None:
     net_worth = total_assets - total_liabilities
 
     col1, col2, col3, col4 = st.columns(4)
+
+    nw_delta = Decimal("0")
+    if len(all_snapshots) >= 2 and all_snapshots[-2].net_worth is not None:
+        nw_delta = net_worth - all_snapshots[-2].net_worth
+
     with col1:
-        st.metric(
-            "Net Worth",
-            f"£{net_worth:,.2f}",
-            delta=_net_worth_delta(all_snapshots, net_worth),
-        )
+        st.markdown(_build_net_worth_card_html(net_worth, nw_delta), unsafe_allow_html=True)
+
     with col2:
-        st.metric("Total Assets", f"£{total_assets:,.2f}")
+        st.markdown(f"""
+<div style="background: rgba(20, 167, 96, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
+    <div style="font-size: 13px; color: #8b949e; font-weight: 500; margin-bottom: 4px;">Total Assets</div>
+    <div style="font-size: 26px; font-weight: 700; color: #e6edf3;">£{total_assets:,.2f}</div>
+    <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
+</div>
+""", unsafe_allow_html=True)
+
     with col3:
-        st.metric("Total Liabilities", f"£{total_liabilities:,.2f}")
+        st.markdown(f"""
+<div style="background: rgba(232, 33, 33, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
+    <div style="font-size: 13px; color: #8b949e; font-weight: 500; margin-bottom: 4px;">Total Liabilities</div>
+    <div style="font-size: 26px; font-weight: 700; color: #e6edf3;">£{total_liabilities:,.2f}</div>
+    <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
+</div>
+""", unsafe_allow_html=True)
+
     with col4:
-        st.metric("Total Pension", f"£{total_pension:,.2f}")
+        st.markdown(f"""
+<div style="background: rgba(100, 100, 100, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
+    <div style="font-size: 13px; color: #8b949e; font-weight: 500; margin-bottom: 4px;">Total Pension</div>
+    <div style="font-size: 26px; font-weight: 700; color: #e6edf3;">£{total_pension:,.2f}</div>
+    <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
+</div>
+""", unsafe_allow_html=True)
 
     if not all_snapshots:
         st.info(
@@ -92,18 +122,32 @@ def render() -> None:
     # --- Pension breakdown bar chart ---
     if pension_accounts:
         st.subheader("Pension Breakdown")
-        _render_pension_bar(pension_accounts)
+        _render_pension_bar(pension_accounts, at_map)
 
 
-def _net_worth_delta(snapshots: list, current_net_worth: Decimal) -> str | None:
-    """Compute delta from the previous snapshot."""
-    if len(snapshots) < 2:
-        return None
-    previous = snapshots[-2].net_worth
-    if previous is None:
-        return None
-    delta = current_net_worth - previous
-    return f"£{delta:,.2f}"
+def _build_net_worth_card_html(net_worth: Decimal, delta: Decimal) -> str:
+    """Build styled HTML for the Net Worth metric card.
+
+    :param net_worth: Current net worth value.
+    :param delta: Change from previous snapshot (positive = gain, negative = loss).
+    :returns: HTML string for rendering via st.markdown(unsafe_allow_html=True).
+    """
+    delta_color = "#f85149" if delta < 0 else "#3fb950"
+    sign = "+" if delta >= 0 else ""
+    delta_str = f"{sign}£{abs(delta):,.2f}"
+    return f"""
+<div style="
+    background: rgba(33, 150, 243, 0.10);
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    min-height: 100px;
+">
+    <div style="font-size: 13px; color: #8b949e; font-weight: 500; margin-bottom: 4px;">Net Worth</div>
+    <div style="font-size: 26px; font-weight: 700; color: #e6edf3;">£{net_worth:,.2f}</div>
+    <div style="font-size: 13px; color: {delta_color}; font-weight: 500; margin-top: 4px;">{delta_str}</div>
+</div>
+"""
 
 
 def _filter_snapshots(snapshots: list, range_option: str) -> list:
@@ -168,12 +212,20 @@ def _render_line_chart(snapshots: list) -> None:
 
     fig.update_layout(
         xaxis_title="Date",
-        yaxis_title="Amount (£)",
-        yaxis_tickformat="£,.0f",
+        xaxis=dict(gridcolor="#30363d", zerolinecolor="#30363d", color="#8b949e"),
+        yaxis=dict(
+            title="Amount",
+            tickprefix="£",
+            tickformat=",.0f",
+            gridcolor="#30363d",
+            zerolinecolor="#30363d",
+            color="#8b949e",
+        ),
+        font=dict(color="#8b949e"),
         hovermode="x unified",
         margin={"l": 60, "r": 20, "t": 20, "b": 40},
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(255,255,255,0.03)",
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -211,9 +263,11 @@ def _render_asset_pie(accounts: list, type_map: dict[int, str]) -> None:
         ]
     )
     fig.update_layout(
-        margin={"l": 20, "r": 20, "t": 20, "b": 20},
+        height=350,
+        margin={"l": 5, "r": 20, "t": 20, "b": 20},
         showlegend=False,
         paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#8b949e"),
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -227,7 +281,7 @@ def _render_liability_pie(liabilities: list, type_map: dict[int, str]) -> None:
     grouped: dict[str, float] = {}
     for liab in liabilities:
         type_name = type_map.get(liab.liability_type_id, "Unknown")
-        grouped[type_name] = grouped.get(type_name, 0) + float(liab.balance)
+        grouped[type_name] = grouped.get(type_name, 0) + float(liab.amount)
 
     # Bright, vibrant color palette
     colors = ["#0973de", "#FFC107", "#10D078", "#FF6B6B", "#A855F7", "#FF8042", "#00D9C9"]
@@ -244,35 +298,46 @@ def _render_liability_pie(liabilities: list, type_map: dict[int, str]) -> None:
         ]
     )
     fig.update_layout(
-        margin={"l": 20, "r": 20, "t": 20, "b": 20},
+        height=350,
+        margin={"l": 20, "r": 5, "t": 20, "b": 20},
         showlegend=False,
         paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#8b949e"),
     )
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_pension_bar(pension_accounts: list) -> None:
-    """Render a bar chart of pension value per provider (account name)."""
-    names = [a.name for a in pension_accounts]
-    values = [float(a.balance) for a in pension_accounts]
-
-    fig = go.Figure(
-        data=[
+def _render_pension_bar(pension_accounts: list, type_map: dict[int, str]) -> None:
+    """Render a stacked bar chart of pension value by pension type."""
+    colors = ["#A855F7", "#7C3AED", "#6D28D9", "#5B21B6", "#4C1D95", "#C084FC", "#DDD6FE"]
+    fig = go.Figure()
+    for i, account in enumerate(pension_accounts):
+        label = type_map.get(account.account_type_id, "Unknown")
+        fig.add_trace(
             go.Bar(
-                x=names,
-                y=values,
-                marker_color="#A855F7",
-                text=[f"£{v:,.0f}" for v in values],
-                textposition="outside",
+                name=label,
+                x=["Pension"],
+                y=[float(account.balance)],
+                marker_color=colors[i % len(colors)],
+                width=0.3,
             )
-        ]
-    )
+        )
     fig.update_layout(
-        yaxis_title="Amount (£)",
-        yaxis_tickformat="£,.0f",
+        barmode="stack",
+        xaxis=dict(gridcolor="#30363d", zerolinecolor="#30363d"),
+        yaxis=dict(
+            title="Amount",
+            tickprefix="£",
+            tickformat=",.0f",
+            gridcolor="#30363d",
+            zerolinecolor="#30363d",
+            color="#8b949e",
+        ),
+        font=dict(color="#8b949e"),
         margin={"l": 60, "r": 20, "t": 20, "b": 40},
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        showlegend=False,
+        plot_bgcolor="rgba(255,255,255,0.03)",
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
     st.plotly_chart(fig, use_container_width=True)

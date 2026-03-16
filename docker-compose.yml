@@ -22,6 +22,7 @@ services:
       FIREBASE_CREDENTIALS_PATH: ""
       DEBUG: "true"
       DEV_USER_ID: "local-dev-user"
+      STREAMLIT_SERVER_FILE_WATCHER_TYPE: "poll"
     depends_on:
       - db
 

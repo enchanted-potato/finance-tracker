@@ -1,174 +1,157 @@
+from datetime import date
 from decimal import Decimal
 
-from loguru import logger
 from sqlmodel import Session, select
 
-from app.models import Account, AccountType
+from app.models import AccountEntry, AccountType
 
-PENSION_TYPE_NAME = "Pension"
-
-
-def _get_pension_type_id(session: Session, user_id: str) -> int | None:
-    """Return the AccountType.id for 'Pension' visible to this user, or None.
+def _get_pension_type_ids(session: Session, user_id: str) -> list[int]:
+    """Return all AccountType ids marked as pension visible to this user.
 
     :param session: Database session.
     :param user_id: Firebase UID of the owner.
-    :returns: The id of the Pension account type, or None if not found.
+    :returns: List of pension account type ids (may be empty).
     """
     statement = select(AccountType).where(
-        (AccountType.name == PENSION_TYPE_NAME),
+        AccountType.is_pension.is_(True),
         (AccountType.user_id.is_(None)) | (AccountType.user_id == user_id),
     )
-    at = session.exec(statement).first()
-    return at.id if at else None
+    return [at.id for at in session.exec(statement).all() if at.id is not None]
 
 
-def list_pension_accounts(*, session: Session, user_id: str, active_only: bool = True) -> list[Account]:
-    """List accounts whose type is 'Pension'.
+def list_pension_types(*, session: Session, user_id: str) -> list[AccountType]:
+    """Return all account types marked as pension visible to this user.
 
     :param session: Database session.
     :param user_id: Firebase UID of the owner.
-    :param active_only: If True, exclude deactivated accounts.
-    :returns: List of pension accounts ordered by name.
+    :returns: List of pension account types.
     """
-    pension_type_id = _get_pension_type_id(session, user_id)
-    if pension_type_id is None:
-        return []
-    statement = select(Account).where(
-        Account.user_id == user_id,
-        Account.account_type_id == pension_type_id,
+    statement = select(AccountType).where(
+        AccountType.is_pension.is_(True),
+        (AccountType.user_id.is_(None)) | (AccountType.user_id == user_id),
     )
-    if active_only:
-        statement = statement.where(Account.is_active.is_(True))
-    statement = statement.order_by(Account.name)
     return list(session.exec(statement).all())
 
 
-def list_non_pension_accounts(*, session: Session, user_id: str, active_only: bool = True) -> list[Account]:
-    """List accounts whose type is NOT 'Pension' (used for Total Assets).
-
-    :param session: Database session.
-    :param user_id: Firebase UID of the owner.
-    :param active_only: If True, exclude deactivated accounts.
-    :returns: List of non-pension accounts ordered by type and name.
-    """
-    pension_type_id = _get_pension_type_id(session, user_id)
-    statement = select(Account).where(Account.user_id == user_id)
-    if pension_type_id is not None:
-        statement = statement.where(Account.account_type_id != pension_type_id)
-    if active_only:
-        statement = statement.where(Account.is_active.is_(True))
-    statement = statement.order_by(Account.account_type_id, Account.name)
-    return list(session.exec(statement).all())
-
-
-def create_account(
+def upsert_account_entry(
     *,
     session: Session,
     user_id: str,
     account_type_id: int,
-    name: str,
+    entry_date: date,
     balance: Decimal = Decimal("0"),
     currency: str = "GBP",
-) -> Account:
-    """Create a new asset account.
+    exchange_rate: Decimal = Decimal("1"),
+) -> AccountEntry:
+    """Insert or update an account entry by (user_id, entry_date, account_type_id).
 
     :param session: Database session.
     :param user_id: Firebase UID of the owner.
     :param account_type_id: FK to account_types.
-    :param name: Display name for the account.
-    :param balance: Initial balance.
-    :param currency: ISO 4217 currency code.
-    :returns: The newly created account.
+    :param entry_date: The date this balance entry is for.
+    :param balance: Balance in GBP.
+    :returns: The created or updated account entry.
     """
-    account = Account(
+    existing = session.exec(
+        select(AccountEntry).where(
+            AccountEntry.user_id == user_id,
+            AccountEntry.account_type_id == account_type_id,
+            AccountEntry.entry_date == entry_date,
+        )
+    ).first()
+    if existing:
+        existing.balance = balance
+        existing.currency = currency
+        existing.exchange_rate = exchange_rate
+        session.add(existing)
+        session.commit()
+        session.refresh(existing)
+        return existing
+    entry = AccountEntry(
         user_id=user_id,
         account_type_id=account_type_id,
-        name=name,
+        entry_date=entry_date,
         balance=balance,
         currency=currency,
+        exchange_rate=exchange_rate,
     )
-    session.add(account)
+    session.add(entry)
     session.commit()
-    session.refresh(account)
-    logger.info(f"Created account '{name}' (id={account.id}) for user {user_id}")
-    return account
+    session.refresh(entry)
+    return entry
 
 
-def list_accounts(*, session: Session, user_id: str, active_only: bool = True) -> list[Account]:
-    """List accounts for a user.
+def delete_account_entry(*, session: Session, entry_id: int, user_id: str) -> date:
+    """Hard-delete an account entry. Returns the affected entry_date.
+
+    :param session: Database session.
+    :param entry_id: Primary key of the account entry.
+    :param user_id: Firebase UID of the owner.
+    :returns: The entry_date of the deleted entry.
+    :raises ValueError: If the entry is not found.
+    """
+    entry = session.exec(
+        select(AccountEntry).where(
+            AccountEntry.id == entry_id, AccountEntry.user_id == user_id
+        )
+    ).first()
+    if entry is None:
+        raise ValueError(f"Account entry {entry_id} not found for user {user_id}")
+    date_affected = entry.entry_date
+    session.delete(entry)
+    session.commit()
+    return date_affected
+
+
+def list_account_entries(*, session: Session, user_id: str) -> list[AccountEntry]:
+    """All account entries for a user, newest date first.
 
     :param session: Database session.
     :param user_id: Firebase UID of the owner.
-    :param active_only: If True, exclude deactivated accounts.
-    :returns: List of accounts.
+    :returns: List of account entries ordered by entry_date DESC, account_type_id.
     """
-    statement = select(Account).where(Account.user_id == user_id)
-    if active_only:
-        statement = statement.where(Account.is_active.is_(True))
-    statement = statement.order_by(Account.account_type_id, Account.name)
+    statement = (
+        select(AccountEntry)
+        .where(AccountEntry.user_id == user_id)
+        .order_by(AccountEntry.entry_date.desc(), AccountEntry.account_type_id)
+    )
     return list(session.exec(statement).all())
 
 
-def get_account(*, session: Session, account_id: int, user_id: str) -> Account | None:
-    """Fetch a single account by ID.
+def list_pension_entries(*, session: Session, user_id: str) -> list[AccountEntry]:
+    """Account entries where account_type_id belongs to a pension type.
 
     :param session: Database session.
-    :param account_id: Primary key of the account.
     :param user_id: Firebase UID of the owner.
-    :returns: The account or None if not found.
+    :returns: List of pension entries ordered by entry_date DESC, account_type_id.
     """
-    statement = select(Account).where(Account.id == account_id, Account.user_id == user_id)
-    return session.exec(statement).first()
+    pension_type_ids = _get_pension_type_ids(session, user_id)
+    if not pension_type_ids:
+        return []
+    statement = (
+        select(AccountEntry)
+        .where(
+            AccountEntry.user_id == user_id,
+            AccountEntry.account_type_id.in_(pension_type_ids),
+        )
+        .order_by(AccountEntry.entry_date.desc(), AccountEntry.account_type_id)
+    )
+    return list(session.exec(statement).all())
 
 
-def update_balance(
-    *,
-    session: Session,
-    account_id: int,
-    user_id: str,
-    new_balance: Decimal,
-) -> Account:
-    """Update the balance of an account.
+def list_non_pension_entries(*, session: Session, user_id: str) -> list[AccountEntry]:
+    """Account entries where account_type_id does NOT belong to a pension type.
 
     :param session: Database session.
-    :param account_id: Primary key of the account.
     :param user_id: Firebase UID of the owner.
-    :param new_balance: The new balance value.
-    :returns: The updated account.
-    :raises ValueError: If the account is not found or inactive.
+    :returns: List of non-pension entries ordered by entry_date DESC, account_type_id.
     """
-    account = get_account(session=session, account_id=account_id, user_id=user_id)
-    if account is None:
-        raise ValueError(f"Account {account_id} not found for user {user_id}")
-    if not account.is_active:
-        raise ValueError(f"Account {account_id} is deactivated")
-    account.balance = new_balance
-    session.add(account)
-    session.commit()
-    session.refresh(account)
-    logger.info(f"Updated account {account_id} balance to {new_balance}")
-    return account
-
-
-def deactivate_account(*, session: Session, account_id: int, user_id: str) -> Account:
-    """Soft-delete an account by marking it inactive.
-
-    :param session: Database session.
-    :param account_id: Primary key of the account.
-    :param user_id: Firebase UID of the owner.
-    :returns: The deactivated account.
-    :raises ValueError: If the account is not found.
-    """
-    account = get_account(session=session, account_id=account_id, user_id=user_id)
-    if account is None:
-        raise ValueError(f"Account {account_id} not found for user {user_id}")
-    account.is_active = False
-    session.add(account)
-    session.commit()
-    session.refresh(account)
-    logger.info(f"Deactivated account {account_id}")
-    return account
+    pension_type_ids = _get_pension_type_ids(session, user_id)
+    statement = select(AccountEntry).where(AccountEntry.user_id == user_id)
+    if pension_type_ids:
+        statement = statement.where(AccountEntry.account_type_id.not_in(pension_type_ids))
+    statement = statement.order_by(AccountEntry.entry_date.desc(), AccountEntry.account_type_id)
+    return list(session.exec(statement).all())
 
 
 def list_account_types(*, session: Session, user_id: str) -> list[AccountType]:

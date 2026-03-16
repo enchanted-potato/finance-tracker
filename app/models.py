@@ -1,3 +1,4 @@
+from datetime import date as date_type
 from datetime import datetime
 from decimal import Decimal
 
@@ -16,21 +17,25 @@ class AccountType(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(max_length=100)
     user_id: str | None = Field(default=None, max_length=128)
+    is_pension: bool = Field(default=False)
 
 
-class Account(SQLModel, table=True):
-    """User asset account with current balance."""
+class AccountEntry(SQLModel, table=True):
+    """One balance record per (user, date, account_type). Mirrors LiabilityEntry."""
 
-    __tablename__ = "accounts"
-    __table_args__ = (Index("ix_accounts_user_active", "user_id", "is_active"), {"extend_existing": True})
+    __tablename__ = "accounts"  # Keep same table name — migration alters it in place
+    __table_args__ = (
+        UniqueConstraint("user_id", "entry_date", "account_type_id"),
+        {"extend_existing": True},
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     user_id: str = Field(max_length=128)
     account_type_id: int = Field(foreign_key="account_types.id")
-    name: str = Field(max_length=255)
+    entry_date: date_type = Field()
     balance: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
     currency: str = Field(default="GBP", max_length=3)
-    is_active: bool = Field(default=True)
+    exchange_rate: Decimal = Field(default=Decimal("1"), max_digits=10, decimal_places=6)
     created_at: datetime = Field(
         default=None,
         sa_column_kwargs={"server_default": sa_text("now()")},
@@ -55,19 +60,21 @@ class LiabilityType(SQLModel, table=True):
     user_id: str | None = Field(default=None, max_length=128)
 
 
-class Liability(SQLModel, table=True):
-    """User liability with current outstanding balance."""
+class LiabilityEntry(SQLModel, table=True):
+    """One balance record per (user, date, liability_type)."""
 
-    __tablename__ = "liabilities"
-    __table_args__ = (Index("ix_liabilities_user_active", "user_id", "is_active"), {"extend_existing": True})
+    __tablename__ = "liability_entries"
+    __table_args__ = (
+        UniqueConstraint("user_id", "entry_date", "liability_type_id"),
+        {"extend_existing": True},
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     user_id: str = Field(max_length=128)
     liability_type_id: int = Field(foreign_key="liability_types.id")
-    name: str = Field(max_length=255)
-    balance: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
+    entry_date: date_type = Field()
+    amount: Decimal = Field(default=Decimal("0"), max_digits=14, decimal_places=2)
     currency: str = Field(default="GBP", max_length=3)
-    is_active: bool = Field(default=True)
     created_at: datetime = Field(
         default=None,
         sa_column_kwargs={"server_default": sa_text("now()")},

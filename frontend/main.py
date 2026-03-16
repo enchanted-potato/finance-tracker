@@ -4,6 +4,7 @@ import os
 
 import streamlit as st
 import streamlit.components.v1 as components
+from streamlit_option_menu import option_menu
 from sqlmodel import SQLModel
 
 from app.config import settings
@@ -86,6 +87,8 @@ def _auth_gate() -> None:
 
     if result.get("status") == "unauthenticated":
         # User not logged in, component shows login UI
+        if st.session_state.pop("_access_denied", False):
+            st.error("Access denied. Please sign in with an authorised account.")
         # Hide sidebar on login screen
         st.markdown(
             """
@@ -109,8 +112,10 @@ def _auth_gate() -> None:
         # Verify token with Firebase Admin SDK
         decoded = verify_firebase_token(token)
         if not decoded:
-            st.error("Authentication failed. Please try again.")
-            st.stop()
+            # Trigger logout so Firebase resets to login screen on next render
+            st.session_state["_logout_requested"] = True
+            st.session_state["_access_denied"] = True
+            st.rerun()
 
         # Extract user info from token
         uid = decoded["uid"]
@@ -144,8 +149,6 @@ def _init_db() -> None:
         seed_default_types(session=session)
     finally:
         session.close()
-
-    # Initialize Firebase Admin SDK
     init_firebase_admin()
 
 
@@ -184,9 +187,9 @@ def main() -> None:
                 display: none !important;
             }
 
-            /* Main background color - Anthropic Light */
+            /* Main background color - Midnight */
             .stApp {
-                background-color: #faf9f5 !important;
+                background-color: #161b22 !important;
             }
 
             /* Hide default Streamlit navigation */
@@ -194,44 +197,18 @@ def main() -> None:
                 display: none;
             }
 
-            /* Navigation button styling */
-            .stButton > button {
-                border: none !important;
-                background: none !important;
-                box-shadow: none !important;
-                padding: 12px 16px !important;
-                width: 100% !important;
-                text-align: left !important;
-                border-radius: 8px !important;
-                color: #141413 !important;
-                font-size: 16px !important;
-                font-weight: 400 !important;
-                transition: background-color 0.2s !important;
+            /* option_menu icon color fix in dark theme */
+            [data-testid="stSidebar"] .nav-link-selected i {
+                color: #58a6ff !important;
             }
 
-            .stButton > button:hover {
-                background-color: #e8e6dc !important;
-                border: none !important;
-            }
 
-            .stButton > button:focus {
-                box-shadow: none !important;
-                border: none !important;
-            }
-
-            .stButton > button:active {
-                background-color: #b0aea5 !important;
-            }
-
-            /* Active state for primary buttons - Anthropic Orange accent */
-            .stButton > button[kind="primary"] {
-                background-color: #d97757 !important;
-                color: #faf9f5 !important;
-                font-weight: 500 !important;
-            }
-
-            .stButton > button[kind="primary"]:hover {
-                background-color: #c46647 !important;
+            /* Drop shadow on all Plotly chart containers */
+            .stPlotlyChart,
+            [data-testid="stPlotlyChart"] {
+                box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+                border-radius: 8px;
+                overflow: hidden;
             }
         </style>
         """,
@@ -251,35 +228,78 @@ def main() -> None:
         st.session_state["selected_page"] = "Dashboard"
 
     # Sidebar header with authenticated user info
-    st.sidebar.title("Net Worth Tracker")
+    st.sidebar.markdown(
+        """
+        <div style="
+            padding: 8px 0 4px 0;
+            letter-spacing: -0.5px;
+        ">
+            <span style="
+                font-family: 'Poppins', sans-serif;
+                font-size: 26px;
+                font-weight: 700;
+                background: linear-gradient(135deg, #58a6ff 0%, #79c0ff 60%, #a5d6ff 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            ">Worth</span><span style="
+                font-size: 20px;
+                -webkit-text-fill-color: #79c0ff;
+                background: none;
+                font-weight: 700;
+            ">↗</span><span style="
+                font-family: 'Poppins', sans-serif;
+                font-size: 26px;
+                font-weight: 300;
+                color: #8b949e;
+            ">flow</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     user_display = st.session_state.get("user_name") or st.session_state.get("user_email", "")
-    st.sidebar.markdown(f"Logged in as **{user_display}**")
+    st.sidebar.markdown(f"<span style='color:#8b949e;font-size:15px'>Logged in: {user_display}</span>", unsafe_allow_html=True)
     st.sidebar.divider()
 
-    # Navigation menu with icons
-    pages = {
-        "Dashboard": "📊",
-        "Accounts": "💰",
-        "Liabilities": "💳",
-        "Pension": "🏦",
-        "History": "📈",
-        "Configure": "⚙️",
-    }
+    # Navigation menu with Bootstrap icons
+    page_names = ["Dashboard", "Accounts", "Liabilities", "Pension", "Trends", "Configure"]
+    page_icons = ["grid", "wallet2", "credit-card", "piggy-bank", "graph-up-arrow", "gear"]
+    current_index = page_names.index(st.session_state["selected_page"])
 
-    for page, icon in pages.items():
-        is_active = st.session_state["selected_page"] == page
-        if st.sidebar.button(
-            f"{icon}  {page}",
-            key=f"nav_{page}",
-            use_container_width=True,
-            type="primary" if is_active else "secondary",
-        ):
-            st.session_state["selected_page"] = page
-            st.rerun()
+    with st.sidebar:
+        selected = option_menu(
+            menu_title=None,
+            options=page_names,
+            icons=page_icons,
+            default_index=current_index,
+            styles={
+                "container": {"padding": "0", "background-color": "transparent"},
+                "icon": {"color": "#8b949e", "font-size": "16px"},
+                "nav-link": {
+                    "color": "#e6edf3",
+                    "font-size": "16px",
+                    "font-weight": "400",
+                    "padding": "10px 16px",
+                    "border-radius": "8px",
+                    "--hover-color": "rgba(255,255,255,0.05)",
+                },
+                "nav-link-selected": {
+                    "background-color": "rgba(88,166,255,0.1)",
+                    "color": "#58a6ff",
+                    "font-weight": "600",
+                    "border-left": "3px solid #58a6ff",
+                },
+            },
+            key="nav_menu",
+        )
+
+    if selected != st.session_state["selected_page"]:
+        st.session_state["selected_page"] = selected
+        st.rerun()
 
     # Logout button at bottom of sidebar
     st.sidebar.divider()
-    if st.sidebar.button("🚪  Log out", key="nav_logout", use_container_width=True):
+    if st.sidebar.button("Log out", key="nav_logout", use_container_width=True):
         st.session_state["_logout_requested"] = True
         st.rerun()
 
@@ -293,7 +313,7 @@ def main() -> None:
             liabilities.render()
         case "Pension":
             pension.render()
-        case "History":
+        case "Trends":
             history.render()
         case "Configure":
             configure.render()

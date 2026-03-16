@@ -6,8 +6,8 @@ from decimal import Decimal, InvalidOperation
 from loguru import logger
 from sqlmodel import Session, select
 
-from app.models import Account, Liability, Snapshot
-from app.services.account_service import _get_pension_type_id
+from app.models import AccountEntry, AccountType, LiabilityEntry, LiabilityType, Snapshot
+from app.services.account_service import _get_pension_type_ids
 
 
 def capture_snapshot(
@@ -26,47 +26,70 @@ def capture_snapshot(
     if snapshot_date is None:
         snapshot_date = date.today()
 
-    pension_type_id = _get_pension_type_id(session, user_id)
-    all_accounts = list(
-        session.exec(
-            select(Account).where(Account.user_id == user_id, Account.is_active.is_(True))
+    pension_type_ids = _get_pension_type_ids(session, user_id)
+    all_accounts = _latest_account_entries(session, user_id, snapshot_date)
+    liabilities = _latest_liability_entries(session, user_id, snapshot_date)
+
+    # Build a lookup of liability type names for detail_json
+    liability_type_ids = {lb.liability_type_id for lb in liabilities}
+    liability_type_names: dict[int, str] = {}
+    if liability_type_ids:
+        lt_rows = session.exec(
+            select(LiabilityType).where(LiabilityType.id.in_(liability_type_ids))
         ).all()
-    )
-    liabilities = list(
-        session.exec(
-            select(Liability).where(Liability.user_id == user_id, Liability.is_active.is_(True))
+        liability_type_names = {lt.id: lt.name for lt in lt_rows}
+
+    # Build a lookup of account type names for detail_json
+    account_type_ids = {a.account_type_id for a in all_accounts}
+    account_type_names: dict[int, str] = {}
+    if account_type_ids:
+        at_rows = session.exec(
+            select(AccountType).where(AccountType.id.in_(account_type_ids))
         ).all()
-    )
+        account_type_names = {at.id: at.name for at in at_rows}
 
     # Split pension vs non-pension so pension is excluded from total_assets / net_worth
-    pension_accounts = [
-        a for a in all_accounts if pension_type_id and a.account_type_id == pension_type_id
-    ]
-    non_pension_accounts = [
-        a for a in all_accounts if not (pension_type_id and a.account_type_id == pension_type_id)
-    ]
+    pension_accounts = [a for a in all_accounts if a.account_type_id in pension_type_ids]
+    non_pension_accounts = [a for a in all_accounts if a.account_type_id not in pension_type_ids]
 
-    total_assets = sum((a.balance for a in non_pension_accounts), Decimal("0"))
-    total_pension = sum((a.balance for a in pension_accounts), Decimal("0"))
+    total_assets = sum((a.balance * a.exchange_rate for a in non_pension_accounts), Decimal("0"))
+    total_pension = sum((a.balance * a.exchange_rate for a in pension_accounts), Decimal("0"))
     total_liabilities = (
-        sum((lb.balance for lb in liabilities), Decimal("0")) if liabilities else None
+        sum((lb.amount for lb in liabilities), Decimal("0")) if liabilities else None
     )
     net_worth = (total_assets - total_liabilities) if total_liabilities is not None else None
 
     detail = {
         "accounts": [
-            {"id": a.id, "name": a.name, "balance": str(a.balance), "type_id": a.account_type_id}
+            {
+                "id": a.id,
+                "type_id": a.account_type_id,
+                "type_name": account_type_names.get(a.account_type_id, ""),
+                "balance": str(a.balance),
+                "currency": a.currency,
+                "exchange_rate": str(a.exchange_rate),
+                "balance_gbp": str(a.balance * a.exchange_rate),
+            }
             for a in non_pension_accounts
         ],
         "pension_accounts": [
-            {"id": a.id, "name": a.name, "balance": str(a.balance), "type_id": a.account_type_id}
+            {
+                "id": a.id,
+                "type_id": a.account_type_id,
+                "type_name": account_type_names.get(a.account_type_id, ""),
+                "balance": str(a.balance),
+                "currency": a.currency,
+                "exchange_rate": str(a.exchange_rate),
+                "balance_gbp": str(a.balance * a.exchange_rate),
+            }
             for a in pension_accounts
         ],
         "liabilities": [
             {
                 "id": lb.id,
-                "name": lb.name,
-                "balance": str(lb.balance),
+                "name": liability_type_names.get(lb.liability_type_id, ""),
+                "entry_date": str(lb.entry_date),
+                "amount": str(lb.amount),
                 "type_id": lb.liability_type_id,
             }
             for lb in liabilities
@@ -407,6 +430,30 @@ def update_snapshot(
     return snapshot
 
 
+def sync_snapshot_liabilities(*, session: Session, user_id: str, snapshot_date: date) -> None:
+    """Update an existing snapshot's total_liabilities and net_worth from liability_entries.
+
+    Only touches total_liabilities and net_worth — never overwrites total_assets.
+    If no snapshot exists for this date, does nothing.
+    """
+    liabilities = _latest_liability_entries(session, user_id, snapshot_date)
+    total_liabilities = sum((lb.amount for lb in liabilities), Decimal("0")) if liabilities else None
+
+    snapshot_dt = datetime.combine(snapshot_date, datetime.min.time())
+    existing = session.exec(
+        select(Snapshot).where(Snapshot.user_id == user_id, Snapshot.snapshot_date == snapshot_dt)
+    ).first()
+    if existing is None:
+        return
+
+    existing.total_liabilities = total_liabilities
+    assets = existing.total_assets if existing.total_assets is not None else Decimal("0")
+    existing.net_worth = (assets - total_liabilities) if total_liabilities is not None else None
+    session.add(existing)
+    session.commit()
+    logger.info(f"Synced liabilities for snapshot {snapshot_date} user {user_id}")
+
+
 def delete_snapshot(*, session: Session, snapshot_id: int, user_id: str) -> None:
     """Delete a snapshot by ID.
 
@@ -423,6 +470,79 @@ def delete_snapshot(*, session: Session, snapshot_id: int, user_id: str) -> None
     session.delete(snapshot)
     session.commit()
     logger.info(f"Deleted snapshot {snapshot_id} for user {user_id}")
+
+
+def _latest_liability_entries(
+    session: Session, user_id: str, as_of: date
+) -> list[LiabilityEntry]:
+    """Return the most recent LiabilityEntry per liability type on or before as_of.
+
+    This ensures a snapshot always carries the latest known liability balance
+    even if liabilities and accounts were updated on different days.
+    """
+    from sqlalchemy import func
+    from sqlalchemy.orm import aliased
+
+    # Subquery: latest entry_date per (user, liability_type) on or before as_of
+    sub = (
+        select(
+            LiabilityEntry.liability_type_id,
+            func.max(LiabilityEntry.entry_date).label("max_date"),
+        )
+        .where(
+            LiabilityEntry.user_id == user_id,
+            LiabilityEntry.entry_date <= as_of,
+        )
+        .group_by(LiabilityEntry.liability_type_id)
+        .subquery()
+    )
+
+    stmt = select(LiabilityEntry).join(
+        sub,
+        (LiabilityEntry.liability_type_id == sub.c.liability_type_id)
+        & (LiabilityEntry.entry_date == sub.c.max_date),
+    ).where(LiabilityEntry.user_id == user_id)
+
+    return list(session.exec(stmt).all())
+
+
+def _latest_account_entries(session: Session, user_id: str, as_of: date) -> list[AccountEntry]:
+    """Return the most recent AccountEntry per account type on or before as_of.
+
+    This ensures a snapshot always carries the latest known account balance
+    even if accounts and liabilities were updated on different days.
+    """
+    from sqlalchemy import func
+
+    sub = (
+        select(
+            AccountEntry.account_type_id,
+            func.max(AccountEntry.entry_date).label("max_date"),
+        )
+        .where(
+            AccountEntry.user_id == user_id,
+            AccountEntry.entry_date <= as_of,
+        )
+        .group_by(AccountEntry.account_type_id)
+        .subquery()
+    )
+
+    stmt = select(AccountEntry).join(
+        sub,
+        (AccountEntry.account_type_id == sub.c.account_type_id)
+        & (AccountEntry.entry_date == sub.c.max_date),
+    ).where(AccountEntry.user_id == user_id)
+
+    return list(session.exec(stmt).all())
+
+
+def sync_snapshot_assets(*, session: Session, user_id: str, snapshot_date: date) -> None:
+    """Update an existing snapshot's total_assets and net_worth from account entries.
+
+    Only touches total_assets and net_worth — never overwrites total_liabilities.
+    If no snapshot exists for this date, creates one.
+    """
+    capture_snapshot(session=session, user_id=user_id, snapshot_date=snapshot_date)
 
 
 def _parse_decimal(raw: str) -> Decimal:

@@ -1,166 +1,185 @@
+from datetime import date
 from decimal import Decimal
 
 import pytest
 
+from app.models import AccountType
 from app.services.account_service import (
-    create_account,
-    deactivate_account,
-    get_account,
+    delete_account_entry,
+    list_account_entries,
     list_account_types,
-    list_accounts,
-    update_balance,
+    list_non_pension_entries,
+    list_pension_entries,
+    upsert_account_entry,
 )
 
 
-class TestCreateAccount:
-    def test_create_account_basic(self, db_session, test_user, account_type):
-        account = create_account(
+class TestUpsertAccountEntry:
+    def test_create_new_entry(self, db_session, test_user, account_type):
+        entry = upsert_account_entry(
             session=db_session,
             user_id=test_user.id,
             account_type_id=account_type.id,
-            name="Chase Checking",
+            entry_date=date(2025, 1, 1),
             balance=Decimal("5000"),
         )
-        assert account.id is not None
-        assert account.name == "Chase Checking"
-        assert account.balance == Decimal("5000")
-        assert account.currency == "GBP"
-        assert account.is_active is True
+        assert entry.id is not None
+        assert entry.balance == Decimal("5000")
+        assert entry.entry_date == date(2025, 1, 1)
+        assert entry.account_type_id == account_type.id
 
-    def test_create_account_default_balance(self, db_session, test_user, account_type):
-        account = create_account(
+    def test_upsert_updates_existing(self, db_session, test_user, account_type):
+        entry1 = upsert_account_entry(
             session=db_session,
             user_id=test_user.id,
             account_type_id=account_type.id,
-            name="Empty Account",
-        )
-        assert account.balance == Decimal("0")
-
-    def test_create_account_custom_currency(self, db_session, test_user, account_type):
-        account = create_account(
-            session=db_session,
-            user_id=test_user.id,
-            account_type_id=account_type.id,
-            name="Euro Account",
+            entry_date=date(2025, 1, 1),
             balance=Decimal("1000"),
-            currency="EUR",
         )
-        assert account.currency == "EUR"
-
-
-class TestListAccounts:
-    def test_list_accounts_empty(self, db_session, test_user):
-        accounts = list_accounts(session=db_session, user_id=test_user.id)
-        assert accounts == []
-
-    def test_list_accounts_returns_active(self, db_session, test_user, make_account):
-        make_account(name="Account 1")
-        make_account(name="Account 2")
-        accounts = list_accounts(session=db_session, user_id=test_user.id)
-        assert len(accounts) == 2
-
-    def test_list_accounts_excludes_inactive(self, db_session, test_user, make_account):
-        make_account(name="Active")
-        inactive = make_account(name="Inactive")
-        inactive.is_active = False
-        db_session.flush()
-
-        accounts = list_accounts(session=db_session, user_id=test_user.id, active_only=True)
-        assert len(accounts) == 1
-        assert accounts[0].name == "Active"
-
-    def test_list_accounts_includes_inactive(self, db_session, test_user, make_account):
-        make_account(name="Active")
-        inactive = make_account(name="Inactive")
-        inactive.is_active = False
-        db_session.flush()
-
-        accounts = list_accounts(session=db_session, user_id=test_user.id, active_only=False)
-        assert len(accounts) == 2
-
-    def test_list_accounts_scoped_to_user(self, db_session, test_user, account_type):
-        other_user_id = "other-user"
-
-        create_account(
+        entry2 = upsert_account_entry(
             session=db_session,
             user_id=test_user.id,
             account_type_id=account_type.id,
-            name="My Account",
+            entry_date=date(2025, 1, 1),
+            balance=Decimal("2500"),
         )
-        create_account(
+        assert entry2.id == entry1.id
+        assert entry2.balance == Decimal("2500")
+
+    def test_upsert_default_balance(self, db_session, test_user, account_type):
+        entry = upsert_account_entry(
             session=db_session,
-            user_id=other_user_id,
-            account_type_id=account_type.id,
-            name="Other Account",
-        )
-
-        my_accounts = list_accounts(session=db_session, user_id=test_user.id)
-        assert len(my_accounts) == 1
-        assert my_accounts[0].name == "My Account"
-
-
-class TestGetAccount:
-    def test_get_existing_account(self, db_session, test_user, make_account):
-        created = make_account(name="Savings")
-        fetched = get_account(session=db_session, account_id=created.id, user_id=test_user.id)
-        assert fetched is not None
-        assert fetched.id == created.id
-
-    def test_get_nonexistent_account(self, db_session, test_user):
-        fetched = get_account(session=db_session, account_id=99999, user_id=test_user.id)
-        assert fetched is None
-
-    def test_get_account_wrong_user(self, db_session, make_account):
-        created = make_account(name="Savings")
-        fetched = get_account(session=db_session, account_id=created.id, user_id="wrong-user")
-        assert fetched is None
-
-
-class TestUpdateBalance:
-    def test_update_balance_success(self, db_session, test_user, make_account):
-        account = make_account(name="Checking", balance=Decimal("1000"))
-        updated = update_balance(
-            session=db_session,
-            account_id=account.id,
             user_id=test_user.id,
-            new_balance=Decimal("2500"),
+            account_type_id=account_type.id,
+            entry_date=date(2025, 2, 1),
         )
-        assert updated.balance == Decimal("2500")
+        assert entry.balance == Decimal("0")
 
-    def test_update_balance_nonexistent(self, db_session, test_user):
+    def test_different_dates_create_separate_entries(self, db_session, test_user, account_type):
+        upsert_account_entry(
+            session=db_session,
+            user_id=test_user.id,
+            account_type_id=account_type.id,
+            entry_date=date(2025, 1, 1),
+            balance=Decimal("1000"),
+        )
+        upsert_account_entry(
+            session=db_session,
+            user_id=test_user.id,
+            account_type_id=account_type.id,
+            entry_date=date(2025, 2, 1),
+            balance=Decimal("2000"),
+        )
+        entries = list_account_entries(session=db_session, user_id=test_user.id)
+        assert len(entries) == 2
+
+
+class TestDeleteAccountEntry:
+    def test_delete_success(self, db_session, test_user, account_type):
+        entry = upsert_account_entry(
+            session=db_session,
+            user_id=test_user.id,
+            account_type_id=account_type.id,
+            entry_date=date(2025, 1, 1),
+            balance=Decimal("500"),
+        )
+        affected_date = delete_account_entry(
+            session=db_session, entry_id=entry.id, user_id=test_user.id
+        )
+        assert affected_date == date(2025, 1, 1)
+        entries = list_account_entries(session=db_session, user_id=test_user.id)
+        assert entries == []
+
+    def test_delete_nonexistent_raises(self, db_session, test_user):
         with pytest.raises(ValueError, match="not found"):
-            update_balance(
-                session=db_session,
-                account_id=99999,
-                user_id=test_user.id,
-                new_balance=Decimal("100"),
+            delete_account_entry(session=db_session, entry_id=99999, user_id=test_user.id)
+
+    def test_delete_wrong_user_raises(self, db_session, test_user, account_type):
+        entry = upsert_account_entry(
+            session=db_session,
+            user_id=test_user.id,
+            account_type_id=account_type.id,
+            entry_date=date(2025, 1, 1),
+            balance=Decimal("500"),
+        )
+        with pytest.raises(ValueError, match="not found"):
+            delete_account_entry(
+                session=db_session, entry_id=entry.id, user_id="wrong-user"
             )
 
-    def test_update_balance_inactive_account(self, db_session, test_user, make_account):
-        account = make_account(name="Old Account")
-        account.is_active = False
+
+class TestListAccountEntries:
+    def test_list_empty(self, db_session, test_user):
+        entries = list_account_entries(session=db_session, user_id=test_user.id)
+        assert entries == []
+
+    def test_list_ordered_newest_first(self, db_session, test_user, account_type):
+        upsert_account_entry(
+            session=db_session,
+            user_id=test_user.id,
+            account_type_id=account_type.id,
+            entry_date=date(2025, 1, 1),
+            balance=Decimal("1000"),
+        )
+        upsert_account_entry(
+            session=db_session,
+            user_id=test_user.id,
+            account_type_id=account_type.id,
+            entry_date=date(2025, 3, 1),
+            balance=Decimal("3000"),
+        )
+        entries = list_account_entries(session=db_session, user_id=test_user.id)
+        assert entries[0].entry_date > entries[1].entry_date
+
+    def test_list_scoped_to_user(self, db_session, test_user, account_type):
+        upsert_account_entry(
+            session=db_session,
+            user_id=test_user.id,
+            account_type_id=account_type.id,
+            entry_date=date(2025, 1, 1),
+            balance=Decimal("1000"),
+        )
+        upsert_account_entry(
+            session=db_session,
+            user_id="other-user",
+            account_type_id=account_type.id,
+            entry_date=date(2025, 1, 1),
+            balance=Decimal("9999"),
+        )
+        entries = list_account_entries(session=db_session, user_id=test_user.id)
+        assert len(entries) == 1
+        assert all(e.user_id == test_user.id for e in entries)
+
+
+class TestListPensionEntries:
+    def test_returns_only_pension(self, db_session, test_user, account_type):
+        """Pension entries are returned; non-pension entries are excluded."""
+        pension_type = AccountType(name="Pension", user_id=None)
+        db_session.add(pension_type)
         db_session.flush()
 
-        with pytest.raises(ValueError, match="deactivated"):
-            update_balance(
-                session=db_session,
-                account_id=account.id,
-                user_id=test_user.id,
-                new_balance=Decimal("100"),
-            )
-
-
-class TestDeactivateAccount:
-    def test_deactivate_success(self, db_session, test_user, make_account):
-        account = make_account(name="To Deactivate")
-        deactivated = deactivate_account(
-            session=db_session, account_id=account.id, user_id=test_user.id
+        upsert_account_entry(
+            session=db_session,
+            user_id=test_user.id,
+            account_type_id=pension_type.id,
+            entry_date=date(2025, 1, 1),
+            balance=Decimal("50000"),
         )
-        assert deactivated.is_active is False
+        upsert_account_entry(
+            session=db_session,
+            user_id=test_user.id,
+            account_type_id=account_type.id,
+            entry_date=date(2025, 1, 1),
+            balance=Decimal("10000"),
+        )
 
-    def test_deactivate_nonexistent(self, db_session, test_user):
-        with pytest.raises(ValueError, match="not found"):
-            deactivate_account(session=db_session, account_id=99999, user_id=test_user.id)
+        pension = list_pension_entries(session=db_session, user_id=test_user.id)
+        non_pension = list_non_pension_entries(session=db_session, user_id=test_user.id)
+
+        assert len(pension) == 1
+        assert pension[0].account_type_id == pension_type.id
+        assert len(non_pension) == 1
+        assert non_pension[0].account_type_id == account_type.id
 
 
 class TestListAccountTypes:
@@ -169,8 +188,6 @@ class TestListAccountTypes:
         assert any(t.name == "Checking" for t in types)
 
     def test_list_includes_user_custom(self, db_session, test_user, account_type):
-        from app.models import AccountType
-
         custom = AccountType(name="HSA", user_id=test_user.id)
         db_session.add(custom)
         db_session.flush()

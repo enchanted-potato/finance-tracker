@@ -2,10 +2,6 @@ from datetime import date, datetime
 from decimal import Decimal
 
 import time_machine
-from sqlmodel import select
-
-from app.models import Account
-from app.services.account_service import update_balance
 from app.services.snapshot_service import (
     capture_snapshot,
     get_latest_snapshot,
@@ -35,36 +31,23 @@ class TestCaptureSnapshot:
         assert snapshot.net_worth == Decimal("0")
 
     def test_capture_snapshot_with_accounts(self, db_session, test_user, make_account):
-        make_account(name="Checking", balance=Decimal("5000"))
-        make_account(name="Savings", balance=Decimal("10000"))
+        make_account(balance=Decimal("5000"), entry_date=date.today())
+        make_account(balance=Decimal("10000"), entry_date=date.today())
 
         snapshot = capture_snapshot(session=db_session, user_id=test_user.id)
         assert snapshot.total_assets == Decimal("15000")
         assert snapshot.net_worth == Decimal("15000")
-        assert len(snapshot.detail_json["accounts"]) == 2
 
     def test_capture_snapshot_with_liabilities(
         self, db_session, test_user, make_account, make_liability
     ):
-        make_account(name="Checking", balance=Decimal("50000"))
-        make_liability(name="Mortgage", balance=Decimal("200000"))
+        make_account(balance=Decimal("50000"), entry_date=date.today())
+        make_liability(amount=Decimal("200000"))
 
         snapshot = capture_snapshot(session=db_session, user_id=test_user.id)
         assert snapshot.total_assets == Decimal("50000")
         assert snapshot.total_liabilities == Decimal("200000")
         assert snapshot.net_worth == Decimal("-150000")
-
-    def test_capture_snapshot_excludes_inactive(
-        self, db_session, test_user, make_account, make_liability
-    ):
-        make_account(name="Active", balance=Decimal("5000"))
-        inactive = make_account(name="Closed", balance=Decimal("1000"))
-        inactive.is_active = False
-        db_session.flush()
-
-        snapshot = capture_snapshot(session=db_session, user_id=test_user.id)
-        assert snapshot.total_assets == Decimal("5000")
-        assert len(snapshot.detail_json["accounts"]) == 1
 
     @time_machine.travel("2025-06-15")
     def test_capture_snapshot_specific_date(self, db_session, test_user):
@@ -75,26 +58,34 @@ class TestCaptureSnapshot:
 
     @time_machine.travel("2025-06-15")
     def test_capture_snapshot_upsert_same_day(self, db_session, test_user, make_account):
-        make_account(name="Checking", balance=Decimal("1000"))
+        from app.services.account_service import upsert_account_entry
+
+        make_account(balance=Decimal("1000"), entry_date=date(2025, 6, 15))
         snap1 = capture_snapshot(
             session=db_session, user_id=test_user.id, snapshot_date=date(2025, 6, 15)
         )
         snap1_id = snap1.id
 
-        # Update the account balance and re-capture
-        accounts = db_session.exec(select(Account).where(Account.user_id == test_user.id)).all()
-        update_balance(
+        # Add a second entry for the same date (different type would be needed, but here we
+        # re-upsert with a new balance to simulate an update)
+        from app.models import AccountType
+        at2 = AccountType(name="Savings", user_id=None)
+        db_session.add(at2)
+        db_session.flush()
+
+        upsert_account_entry(
             session=db_session,
-            account_id=accounts[0].id,
             user_id=test_user.id,
-            new_balance=Decimal("5000"),
+            account_type_id=at2.id,
+            entry_date=date(2025, 6, 15),
+            balance=Decimal("4000"),
         )
 
         snap2 = capture_snapshot(
             session=db_session, user_id=test_user.id, snapshot_date=date(2025, 6, 15)
         )
         assert snap2.id == snap1_id  # Same row was updated
-        assert snap2.total_assets == Decimal("5000")
+        assert snap2.total_assets == Decimal("5000")  # 1000 + 4000
 
 
 class TestGetSnapshotHistory:
@@ -103,7 +94,7 @@ class TestGetSnapshotHistory:
         assert history == []
 
     def test_history_ordered_by_date(self, db_session, test_user, make_account):
-        make_account(name="Checking", balance=Decimal("1000"))
+        make_account(balance=Decimal("1000"), entry_date=date(2025, 1, 1))
         capture_snapshot(session=db_session, user_id=test_user.id, snapshot_date=date(2025, 3, 1))
         capture_snapshot(session=db_session, user_id=test_user.id, snapshot_date=date(2025, 1, 1))
         capture_snapshot(session=db_session, user_id=test_user.id, snapshot_date=date(2025, 2, 1))
@@ -114,7 +105,7 @@ class TestGetSnapshotHistory:
         assert dates == sorted(dates)
 
     def test_history_date_range_filter(self, db_session, test_user, make_account):
-        make_account(name="Checking", balance=Decimal("1000"))
+        make_account(balance=Decimal("1000"), entry_date=date(2025, 1, 1))
         for month in range(1, 7):
             capture_snapshot(
                 session=db_session,
@@ -133,7 +124,7 @@ class TestGetSnapshotHistory:
     def test_history_scoped_to_user(self, db_session, test_user, make_account):
         other_user_id = "other-snapshot-user"
 
-        make_account(name="Checking", balance=Decimal("1000"))
+        make_account(balance=Decimal("1000"), entry_date=date(2025, 1, 1))
         capture_snapshot(session=db_session, user_id=test_user.id, snapshot_date=date(2025, 1, 1))
         capture_snapshot(session=db_session, user_id=other_user_id, snapshot_date=date(2025, 1, 1))
 
@@ -147,7 +138,7 @@ class TestGetLatestSnapshot:
         assert latest is None
 
     def test_latest_returns_most_recent(self, db_session, test_user, make_account):
-        make_account(name="Checking", balance=Decimal("1000"))
+        make_account(balance=Decimal("1000"), entry_date=date(2025, 1, 1))
         capture_snapshot(session=db_session, user_id=test_user.id, snapshot_date=date(2025, 1, 1))
         capture_snapshot(session=db_session, user_id=test_user.id, snapshot_date=date(2025, 6, 1))
         capture_snapshot(session=db_session, user_id=test_user.id, snapshot_date=date(2025, 3, 1))
@@ -227,7 +218,7 @@ class TestImportCsvSnapshots:
         assert history[0].net_worth == Decimal("30000.00")
 
     def test_import_skips_existing_dates(self, db_session, test_user, make_account):
-        make_account(name="Checking", balance=Decimal("1000"))
+        make_account(balance=Decimal("1000"), entry_date=date(2025, 1, 1))
         capture_snapshot(
             session=db_session, user_id=test_user.id, snapshot_date=date(2025, 1, 1)
         )
@@ -273,7 +264,7 @@ class TestImportCsvSnapshots:
 class TestImportCsvLiabilities:
     def test_updates_existing_snapshot(self, db_session, test_user, make_account):
         """Liabilities and net_worth are updated on an existing snapshot."""
-        make_account(name="Savings", balance=Decimal("50000"))
+        make_account(balance=Decimal("50000"), entry_date=date(2025, 8, 11))
         capture_snapshot(
             session=db_session, user_id=test_user.id, snapshot_date=date(2025, 8, 11)
         )
@@ -306,7 +297,7 @@ class TestImportCsvLiabilities:
 
     def test_invalid_row_produces_error(self, db_session, test_user, make_account):
         """A row with bad numeric data produces an error entry and does not crash."""
-        make_account(name="Savings", balance=Decimal("50000"))
+        make_account(balance=Decimal("50000"), entry_date=date(2025, 8, 11))
         capture_snapshot(
             session=db_session, user_id=test_user.id, snapshot_date=date(2025, 8, 11)
         )
@@ -322,7 +313,7 @@ class TestImportCsvLiabilities:
 
     def test_only_liabilities_updated(self, db_session, test_user, make_account):
         """total_assets is unchanged after a liabilities import."""
-        make_account(name="Savings", balance=Decimal("75000"))
+        make_account(balance=Decimal("75000"), entry_date=date(2025, 8, 11))
         snap_before = capture_snapshot(
             session=db_session, user_id=test_user.id, snapshot_date=date(2025, 8, 11)
         )

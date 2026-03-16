@@ -1,16 +1,17 @@
-"""Account management page — list, add, edit balance, deactivate."""
+"""Account management page — date-based editable table."""
 
+from datetime import date
 from decimal import Decimal, InvalidOperation
 
+import pandas as pd
 import streamlit as st
 
 from app.database import get_session
 from app.services.account_service import (
-    create_account,
-    deactivate_account,
+    delete_account_entry,
     list_account_types,
-    list_non_pension_accounts,
-    update_balance,
+    list_non_pension_entries,
+    upsert_account_entry,
 )
 from app.services.snapshot_service import capture_snapshot
 
@@ -21,157 +22,156 @@ def _get_user_id() -> str:
 
 def render() -> None:
     """Render the accounts management page."""
-    st.header("Asset Accounts")
     user_id = _get_user_id()
 
     session = next(get_session())
     try:
         account_types = list_account_types(session=session, user_id=user_id)
-        accounts = list_non_pension_accounts(session=session, user_id=user_id)
+        entries = list_non_pension_entries(session=session, user_id=user_id)
     finally:
         session.close()
 
-    type_map = {at.id: at.name for at in account_types}
+    non_pension_types = [at for at in account_types if not at.is_pension]
+    type_name_to_id = {at.name: at.id for at in non_pension_types}
+    type_id_to_name = {at.id: at.name for at in non_pension_types}
+    type_names = [at.name for at in non_pension_types]
 
-    # Exclude Pension type from account creation — pension has its own dedicated page
-    non_pension_types = [at for at in account_types if at.name != "Pension"]
+    latest_date = max((e.entry_date for e in entries), default=None)
+    latest_total = sum(float(e.balance) for e in entries if e.entry_date == latest_date) if latest_date else 0.0
+    label = f"Total Assets ({latest_date.strftime('%b %Y')})" if latest_date else "Total Assets"
 
-    # --- Add new account ---
-    st.subheader("Add Account")
-    with st.form("add_account", clear_on_submit=True):
-        col1, col2, col3 = st.columns([2, 2, 1])
-        with col1:
-            account_type = st.selectbox(
-                "Type",
-                options=non_pension_types,
-                format_func=lambda at: at.name,
-                key="new_account_type",
-            )
-        with col2:
-            account_name = st.text_input("Name", placeholder="e.g. Chase Checking")
-        with col3:
-            initial_balance = st.text_input("Balance", value="0.00")
+    col, _ = st.columns([1, 3])
+    with col:
+        st.markdown(f"""
+<div style="background: rgba(20, 167, 96, 0.10); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 100px;">
+    <div style="font-size: 13px; color: #8b949e; font-weight: 500; margin-bottom: 4px;">{label}</div>
+    <div style="font-size: 26px; font-weight: 700; color: #e6edf3;">£{latest_total:,.2f}</div>
+    <div style="font-size: 13px; margin-top: 4px; visibility: hidden;">-</div>
+</div>
+<div style="margin-bottom: 16px;"></div>
+""", unsafe_allow_html=True)
 
-        submitted = st.form_submit_button("Add Account")
-        if submitted and account_name and account_type:
-            try:
-                balance = Decimal(initial_balance)
-            except InvalidOperation:
-                st.error("Invalid balance amount.")
-            else:
-                session = next(get_session())
+    # Build DataFrame from existing entries
+    rows = [
+        {
+            "_id": e.id,
+            "Date": e.entry_date,
+            "Month": e.entry_date.strftime("%b %Y"),
+            "Type": type_id_to_name.get(e.account_type_id, ""),
+            "Currency": e.currency,
+            "Balance": float(e.balance),
+            "Rate (to £)": float(e.exchange_rate),
+        }
+        for e in entries
+    ]
+    df = pd.DataFrame(rows, columns=["_id", "Date", "Month", "Type", "Currency", "Balance", "Rate (to £)"])
+
+    column_config = {
+        "_id": None,  # hidden
+        "Date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
+        "Month": st.column_config.TextColumn("Month", disabled=True),
+        "Type": st.column_config.SelectboxColumn("Type", options=type_names, required=True),
+        "Currency": st.column_config.TextColumn("Currency", max_chars=3),
+        "Balance": st.column_config.NumberColumn("Balance", min_value=0, format="%.2f"),
+        "Rate (to £)": st.column_config.NumberColumn("Rate (to £)", min_value=0, format="%.6f"),
+    }
+
+    st.caption(
+        "Edit balances inline. One row per account type per date. "
+        "For foreign currency accounts set Currency and Rate (to £). "
+        "Use the checkbox column to delete rows."
+    )
+
+    edited = st.data_editor(
+        df,
+        column_config=column_config,
+        num_rows="dynamic",
+        use_container_width=True,
+        key="accounts_editor",
+    )
+
+    if st.button("Save changes", type="primary"):
+        affected_dates: set[date] = set()
+        errors: list[str] = []
+
+        session = next(get_session())
+        try:
+            # Detect deletions: rows in original df not in edited (by _id)
+            original_ids = set(df["_id"].dropna().astype(int))
+            edited_ids = set(edited["_id"].dropna().astype(int)) if "_id" in edited.columns else set()
+            deleted_ids = original_ids - edited_ids
+
+            for del_id in deleted_ids:
                 try:
-                    create_account(
-                        session=session,
-                        user_id=user_id,
-                        account_type_id=account_type.id,
-                        name=account_name,
-                        balance=balance,
+                    affected = delete_account_entry(
+                        session=session, entry_id=int(del_id), user_id=user_id
                     )
-                    capture_snapshot(session=session, user_id=user_id)
-                    st.success(f"Account '{account_name}' created.")
-                    st.rerun()
-                finally:
-                    session.close()
+                    if affected:
+                        affected_dates.add(affected)
+                except ValueError as exc:
+                    errors.append(str(exc))
 
-    # --- List accounts grouped by type ---
-    st.subheader("Your Accounts")
+            # Upsert all rows in edited df
+            for _, row in edited.iterrows():
+                type_name = row.get("Type", "")
+                if not type_name or type_name not in type_name_to_id:
+                    errors.append(f"Unknown type '{type_name}' — skipping row.")
+                    continue
 
-    if not accounts:
-        st.info("No accounts yet. Add one above.")
-        return
+                # Parse date — DateColumn returns date objects, strings, or Timestamps
+                raw_date = row.get("Date")
+                if raw_date is None or (isinstance(raw_date, float) and pd.isna(raw_date)):
+                    errors.append("Row missing date — skipping.")
+                    continue
+                if isinstance(raw_date, str):
+                    from datetime import datetime as _dt
+                    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+                        try:
+                            raw_date = _dt.strptime(raw_date, fmt).date()
+                            break
+                        except ValueError:
+                            continue
+                    else:
+                        errors.append(f"Could not parse date '{raw_date}' — skipping.")
+                        continue
+                entry_date = raw_date if isinstance(raw_date, date) else raw_date.date()
 
-    # Group accounts by type
-    grouped: dict[str, list] = {}
-    for acct in accounts:
-        type_name = type_map.get(acct.account_type_id, "Unknown")
-        grouped.setdefault(type_name, []).append(acct)
+                try:
+                    balance = Decimal(str(row.get("Balance", 0) or 0))
+                except InvalidOperation:
+                    errors.append(f"Invalid balance for type '{type_name}' — skipping.")
+                    continue
 
-    # Batch update form
-    with st.form("batch_update_accounts"):
-        updates_to_process = []
-        deactivations_to_process = []
+                currency = str(row.get("Currency") or "GBP").strip().upper() or "GBP"
+                try:
+                    exchange_rate = Decimal(str(row.get("Rate (to £)", 1) or 1))
+                except InvalidOperation:
+                    exchange_rate = Decimal("1")
 
-        for type_name, type_accounts in sorted(grouped.items()):
-            st.markdown(f"**{type_name}**")
-            for acct in type_accounts:
-                col_select, col_name, col_current, col_new, col_deactivate = st.columns(
-                    [0.5, 2.5, 1.5, 1.5, 0.5]
+                upsert_account_entry(
+                    session=session,
+                    user_id=user_id,
+                    account_type_id=type_name_to_id[type_name],
+                    entry_date=entry_date,
+                    balance=balance,
+                    currency=currency,
+                    exchange_rate=exchange_rate,
                 )
-                with col_select:
-                    selected = st.checkbox(
-                        "Select",
-                        key=f"select_{acct.id}",
-                        label_visibility="collapsed",
-                    )
-                with col_name:
-                    st.text(acct.name)
-                with col_current:
-                    st.text(f"£{acct.balance:,.2f}")
-                with col_new:
-                    new_bal = st.text_input(
-                        "New balance",
-                        key=f"bal_{acct.id}",
-                        placeholder="New balance",
-                        label_visibility="collapsed",
-                    )
-                with col_deactivate:
-                    deactivate = st.checkbox(
-                        "Deactivate",
-                        key=f"deactivate_{acct.id}",
-                        label_visibility="collapsed",
-                        help="Deactivate account",
-                    )
+                affected_dates.add(entry_date)
 
-                if selected and new_bal:
-                    updates_to_process.append((acct.id, new_bal))
-                if deactivate:
-                    deactivations_to_process.append(acct.id)
+            # Sync snapshots for each affected date
+            for snap_date in affected_dates:
+                capture_snapshot(session=session, user_id=user_id, snapshot_date=snap_date)
 
-            st.divider()
+        finally:
+            session.close()
 
-        # Submit button for batch update
-        col1, col2 = st.columns([1, 3])
-        with col1:
-            submitted = st.form_submit_button("Update Selected")
+        if errors:
+            for err in errors:
+                st.error(err)
+        if affected_dates:
+            st.success(f"Saved. Snapshots updated for {len(affected_dates)} date(s).")
+            st.rerun()
 
-        if submitted:
-            errors = []
-            success_count = 0
-
-            session = next(get_session())
-            try:
-                # Process updates
-                for account_id, balance_str in updates_to_process:
-                    try:
-                        parsed = Decimal(balance_str)
-                        update_balance(
-                            session=session,
-                            account_id=account_id,
-                            user_id=user_id,
-                            new_balance=parsed,
-                        )
-                        success_count += 1
-                    except InvalidOperation:
-                        errors.append(f"Invalid balance for account ID {account_id}")
-
-                # Process deactivations
-                for account_id in deactivations_to_process:
-                    deactivate_account(session=session, account_id=account_id, user_id=user_id)
-                    success_count += 1
-
-                if success_count > 0:
-                    capture_snapshot(session=session, user_id=user_id)
-
-                if errors:
-                    for error in errors:
-                        st.error(error)
-                if success_count > 0:
-                    st.success(f"Updated {success_count} account(s).")
-                    st.rerun()
-            finally:
-                session.close()
-
-    # Show total
-    total = sum(a.balance for a in accounts)
-    st.metric("Total Assets", f"£{total:,.2f}")
+    if not entries:
+        st.info("No accounts yet. Add a row above and save.")
