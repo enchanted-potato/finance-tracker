@@ -88,6 +88,24 @@ class LiabilityEntry(SQLModel, table=True):
     )
 
 
+class Goal(SQLModel, table=True):
+    """A savings or investment goal linked optionally to an account type."""
+
+    __tablename__ = "goals"
+    __table_args__ = {"extend_existing": True}
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: str = Field(max_length=128)
+    name: str = Field(max_length=200)
+    account_type_id: int | None = Field(default=None, foreign_key="account_types.id")
+    target_amount: Decimal = Field(max_digits=14, decimal_places=2)
+    target_date: date_type = Field()
+    created_at: datetime = Field(
+        default=None,
+        sa_column_kwargs={"server_default": sa_text("now()")},
+    )
+
+
 class Snapshot(SQLModel, table=True):
     """Point-in-time record of net worth."""
 
