@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Net Worth History — Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f10;
+    --surface: #18181b;
+    --surface2: #222228;
+    --border: #2e2e36;
+    --text: #e8e8f0;
+    --muted: #6b6b7e;
+    --gold: #c9a84c;
+    --gold-dim: rgba(201,168,76,0.12);
+    --green: #3ecf8e;
+    --green-dim: rgba(62,207,142,0.1);
+    --red: #f06a6a;
+    --red-dim: rgba(240,106,106,0.1);
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* Layout */
+  .layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 32px 0;
+    flex-shrink: 0;
+  }
+
+  .sidebar-logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    padding: 0 24px 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .nav-item {
+    display: block;
+    padding: 10px 24px;
+    font-size: 14px;
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 400;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    border-left: 2px solid transparent;
+  }
+
+  .nav-item.active {
+    color: var(--text);
+    border-left-color: var(--gold);
+    background: var(--gold-dim);
+  }
+
+  .main {
+    flex: 1;
+    padding: 40px 48px;
+    max-width: 900px;
+  }
+
+  /* Header */
+  .page-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 36px;
+  }
+
+  .page-title {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* Export button */
+  .btn-ghost {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-ghost:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+  }
+
+  /* Table */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .table-header {
+    display: grid;
+    grid-template-columns: 110px 1fr 1fr 1fr 120px 80px;
+    gap: 0;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .th.right { text-align: right; }
+
+  /* Year group */
+  .year-divider {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+
+  .year-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    font-weight: 500;
+  }
+
+  .year-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Row */
+  .snap-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 1fr 1fr 120px 80px;
+    gap: 0;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    transition: background 0.12s;
+    cursor: default;
+  }
+
+  .snap-row:last-child {
+    border-bottom: none;
+  }
+
+  .snap-row:hover {
+    background: var(--surface2);
+  }
+
+  .cell {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .cell.date {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .cell.right {
+    text-align: right;
+    padding-right: 16px;
+  }
+
+  .cell.nw {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 3px;
+  }
+
+  .badge.pos {
+    color: var(--green);
+    background: var(--green-dim);
+  }
+
+  .badge.neg {
+    color: var(--red);
+    background: var(--red-dim);
+  }
+
+  .badge.neu {
+    color: var(--muted);
+    background: var(--surface2);
+  }
+
+  /* Edit button */
+  .btn-edit {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.06em;
+  }
+
+  .btn-edit:hover {
+    color: var(--text);
+    border-color: var(--muted);
+  }
+
+  /* Detail panel (expanded inline below row) */
+  .detail-panel {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 24px;
+    display: none;
+    animation: slideDown 0.18s ease;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .detail-panel.open {
+    display: block;
+  }
+
+  .detail-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .detail-section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .detail-item:last-child { border-bottom: none; }
+
+  .detail-name {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .detail-val {
+    font-family: var(--mono);
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    width: 380px;
+    padding: 28px;
+    transform: translateY(12px);
+    transition: transform 0.2s;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+
+  .modal-overlay.open .modal {
+    transform: translateY(0);
+  }
+
+  .modal-title {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--gold);
+    margin-bottom: 4px;
+    letter-spacing: 0.04em;
+  }
+
+  .modal-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  .field {
+    margin-bottom: 18px;
+  }
+
+  .field label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .field input[type="number"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .field input[type="number"]:focus {
+    border-color: var(--gold);
+  }
+
+  .field-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .field-check input {
+    accent-color: var(--gold);
+    width: 15px;
+    height: 15px;
+  }
+
+  .field-check label {
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .btn-save {
+    flex: 1;
+    background: var(--gold);
+    color: #0f0f10;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    border: none;
+    padding: 11px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn-save:hover { opacity: 0.85; }
+
+  .btn-cancel {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    padding: 11px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+
+  .btn-cancel:hover { color: var(--text); }
+
+  .btn-danger {
+    background: none;
+    border: 1px solid rgba(240,106,106,0.3);
+    color: var(--red);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    padding: 11px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-danger:hover { background: var(--red-dim); }
+
+  /* CSV expander at bottom */
+  .expander {
+    margin-top: 24px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .expander-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: var(--surface);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border: none;
+    text-align: left;
+    transition: color 0.15s;
+  }
+
+  .expander-trigger:hover { color: var(--text); }
+
+  .expander-arrow {
+    transition: transform 0.2s;
+    font-size: 10px;
+  }
+
+  .expander-trigger.open .expander-arrow {
+    transform: rotate(180deg);
+  }
+
+  .expander-body {
+    display: none;
+    padding: 20px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+
+  .expander-body.open {
+    display: block;
+    animation: slideDown 0.18s ease;
+  }
+
+  .csv-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .csv-tab {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    padding: 8px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s;
+  }
+
+  .csv-tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  .csv-action-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .btn-primary {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.3);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-primary:hover { background: rgba(201,168,76,0.2); }
+
+  .upload-zone {
+    flex: 1;
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .upload-zone:hover {
+    border-color: var(--muted);
+    color: var(--text);
+  }
+
+  .caption {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar (representative) -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">NET WORTH</div>
+    <a class="nav-item">Dashboard</a>
+    <a class="nav-item">Accounts</a>
+    <a class="nav-item">Liabilities</a>
+    <a class="nav-item active">History</a>
+  </nav>
+
+  <!-- Main content -->
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Net Worth History</div>
+        <div class="page-subtitle">One snapshot per month — latest date wins</div>
+      </div>
+      <button class="btn-ghost" onclick="toggleExpander()">&#8595; Export / Import CSV</button>
+    </div>
+
+    <!-- Snapshot table -->
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="th">Month</div>
+        <div class="th right">Assets</div>
+        <div class="th right">Liabilities</div>
+        <div class="th right">Net Worth</div>
+        <div class="th right">Change</div>
+        <div class="th"></div>
+      </div>
+
+      <!-- 2026 -->
+      <div class="year-divider">
+        <span class="year-label">2026</span>
+        <div class="year-line"></div>
+      </div>
+
+      <!-- Row Mar 2026 -->
+      <div class="snap-row" onclick="toggleDetail('mar26')">
+        <div class="cell date">Mar 2026</div>
+        <div class="cell right">£148,220.00</div>
+        <div class="cell right">£12,500.00</div>
+        <div class="cell right nw">£135,720.00</div>
+        <div class="cell right"><span class="badge pos">+£3,210.00</span></div>
+        <div class="cell right"><button class="btn-edit" onclick="openModal(event, 'Mar 2026', 148220, 12500)">Edit</button></div>
+      </div>
+      <div class="detail-panel" id="detail-mar26">
+        <div class="detail-cols">
+          <div>
+            <div class="detail-section-title">Accounts</div>
+            <div class="detail-item"><span class="detail-name">ISA</span><span class="detail-val">£82,400.00</span></div>
+            <div class="detail-item"><span class="detail-name">Pension</span><span class="detail-val">£41,200.00</span></div>
+            <div class="detail-item"><span class="detail-name">Current</span><span class="detail-val">£24,620.00</span></div>
+          </div>
+          <div>
+            <div class="detail-section-title">Liabilities</div>
+            <div class="detail-item"><span class="detail-name">Credit Card</span><span class="detail-val">£12,500.00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row Feb 2026 -->
+      <div class="snap-row" onclick="toggleDetail('feb26')">
+        <div class="cell date">Feb 2026</div>
+        <div class="cell right">£144,900.00</div>
+        <div class="cell right">£13,100.00</div>
+        <div class="cell right nw">£131,800.00</div>
+        <div class="cell right"><span class="badge pos">+£1,500.00</span></div>
+        <div class="cell right"><button class="btn-edit" onclick="openModal(event, 'Feb 2026', 144900, 13100)">Edit</button></div>
+      </div>
+      <div class="detail-panel" id="detail-feb26">
+        <div class="detail-cols">
+          <div>
+            <div class="detail-section-title">Accounts</div>
+            <div class="detail-item"><span class="detail-name">ISA</span><span class="detail-val">£79,800.00</span></div>
+            <div class="detail-item"><span class="detail-name">Pension</span><span class="detail-val">£40,100.00</span></div>
+            <div class="detail-item"><span class="detail-name">Current</span><span class="detail-val">£25,000.00</span></div>
+          </div>
+          <div>
+            <div class="detail-section-title">Liabilities</div>
+            <div class="detail-item"><span class="detail-name">Credit Card</span><span class="detail-val">£13,100.00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row Jan 2026 -->
+      <div class="snap-row" onclick="toggleDetail('jan26')">
+        <div class="cell date">Jan 2026</div>
+        <div class="cell right">£143,600.00</div>
+        <div class="cell right">£13,300.00</div>
+        <div class="cell right nw">£130,300.00</div>
+        <div class="cell right"><span class="badge neg">-£2,100.00</span></div>
+        <div class="cell right"><button class="btn-edit" onclick="openModal(event, 'Jan 2026', 143600, 13300)">Edit</button></div>
+      </div>
+      <div class="detail-panel" id="detail-jan26">
+        <div class="detail-cols">
+          <div>
+            <div class="detail-section-title">Accounts</div>
+            <div class="detail-item"><span class="detail-name">ISA</span><span class="detail-val">£78,200.00</span></div>
+            <div class="detail-item"><span class="detail-name">Pension</span><span class="detail-val">£39,800.00</span></div>
+            <div class="detail-item"><span class="detail-name">Current</span><span class="detail-val">£25,600.00</span></div>
+          </div>
+          <div>
+            <div class="detail-section-title">Liabilities</div>
+            <div class="detail-item"><span class="detail-name">Credit Card</span><span class="detail-val">£13,300.00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2025 -->
+      <div class="year-divider">
+        <span class="year-label">2025</span>
+        <div class="year-line"></div>
+      </div>
+
+      <!-- Dec 2025 -->
+      <div class="snap-row" onclick="toggleDetail('dec25')">
+        <div class="cell date">Dec 2025</div>
+        <div class="cell right">£145,400.00</div>
+        <div class="cell right">£13,000.00</div>
+        <div class="cell right nw">£132,400.00</div>
+        <div class="cell right"><span class="badge pos">+£4,800.00</span></div>
+        <div class="cell right"><button class="btn-edit" onclick="openModal(event, 'Dec 2025', 145400, 13000)">Edit</button></div>
+      </div>
+      <div class="detail-panel" id="detail-dec25"></div>
+
+      <!-- Nov 2025 -->
+      <div class="snap-row">
+        <div class="cell date">Nov 2025</div>
+        <div class="cell right">£141,200.00</div>
+        <div class="cell right">£13,600.00</div>
+        <div class="cell right nw">£127,600.00</div>
+        <div class="cell right"><span class="badge neg">-£900.00</span></div>
+        <div class="cell right"><button class="btn-edit" onclick="openModal(event, 'Nov 2025', 141200, 13600)">Edit</button></div>
+      </div>
+
+      <!-- Oct 2025 -->
+      <div class="snap-row">
+        <div class="cell date">Oct 2025</div>
+        <div class="cell right">£141,900.00</div>
+        <div class="cell right">£13,400.00</div>
+        <div class="cell right nw">£128,500.00</div>
+        <div class="cell right"><span class="badge pos">+£2,300.00</span></div>
+        <div class="cell right"><button class="btn-edit" onclick="openModal(event, 'Oct 2025', 141900, 13400)">Edit</button></div>
+      </div>
+
+      <!-- Sep 2025 -->
+      <div class="snap-row">
+        <div class="cell date">Sep 2025</div>
+        <div class="cell right">£139,800.00</div>
+        <div class="cell right">£13,600.00</div>
+        <div class="cell right nw">£126,200.00</div>
+        <div class="cell right"><span class="badge neu">—</span></div>
+        <div class="cell right"><button class="btn-edit" onclick="openModal(event, 'Sep 2025', 139800, 13600)">Edit</button></div>
+      </div>
+    </div>
+
+    <!-- CSV section collapsed at bottom -->
+    <div class="expander">
+      <button class="expander-trigger" id="csv-toggle" onclick="toggleExpander()">
+        <span>IMPORT / EXPORT CSV</span>
+        <span class="expander-arrow" id="csv-arrow">&#9660;</span>
+      </button>
+      <div class="expander-body" id="csv-body">
+        <div class="csv-tabs">
+          <div class="csv-tab active" onclick="switchTab(this, 'export')">Export</div>
+          <div class="csv-tab" onclick="switchTab(this, 'import-snaps')">Import Snapshots</div>
+          <div class="csv-tab" onclick="switchTab(this, 'import-liab')">Import Liabilities</div>
+        </div>
+
+        <div id="tab-export">
+          <p class="caption">Format: Date, Total Assets, Total Liabilities, Net Worth</p>
+          <div class="csv-action-row">
+            <button class="btn-primary">&#8595; Download net_worth_history.csv</button>
+          </div>
+        </div>
+
+        <div id="tab-import-snaps" style="display:none">
+          <p class="caption">Format: Date, Total Assets, Total Liabilities, Net Worth</p>
+          <div class="csv-action-row">
+            <button class="btn-primary">&#8595; Download template</button>
+            <div class="upload-zone">Drop CSV here or click to upload</div>
+          </div>
+        </div>
+
+        <div id="tab-import-liab" style="display:none">
+          <p class="caption">Updates existing snapshots only — leaves assets unchanged. Format: Date, Total Liabilities</p>
+          <div class="csv-action-row">
+            <button class="btn-primary">&#8595; Download template</button>
+            <div class="upload-zone">Drop CSV here or click to upload</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="modal" onclick="handleOverlayClick(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title" id="modal-title">Edit Snapshot</div>
+    <div class="modal-subtitle" id="modal-subtitle">Mar 2026</div>
+
+    <div class="field">
+      <label>Total Assets</label>
+      <input type="number" id="modal-assets" step="0.01">
+    </div>
+
+    <div class="field-check">
+      <input type="checkbox" id="modal-no-liab" onchange="toggleLiabField()">
+      <label for="modal-no-liab">No liabilities data</label>
+    </div>
+
+    <div class="field" id="liab-field">
+      <label>Total Liabilities</label>
+      <input type="number" id="modal-liab" step="0.01">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-save" onclick="closeModal()">Save changes</button>
+      <button class="btn-danger" onclick="closeModal()">Delete</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleDetail(id) {
+    const panel = document.getElementById('detail-' + id);
+    if (!panel) return;
+    panel.classList.toggle('open');
+  }
+
+  function openModal(event, label, assets, liabilities) {
+    event.stopPropagation();
+    document.getElementById('modal-subtitle').textContent = label;
+    document.getElementById('modal-assets').value = assets;
+    document.getElementById('modal-liab').value = liabilities;
+    document.getElementById('modal-no-liab').checked = false;
+    document.getElementById('liab-field').style.display = '';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modal')) closeModal();
+  }
+
+  function toggleLiabField() {
+    const hide = document.getElementById('modal-no-liab').checked;
+    document.getElementById('liab-field').style.display = hide ? 'none' : '';
+  }
+
+  function toggleExpander() {
+    const body = document.getElementById('csv-body');
+    const trigger = document.getElementById('csv-toggle');
+    body.classList.toggle('open');
+    trigger.classList.toggle('open');
+  }
+
+  function switchTab(el, tabId) {
+    document.querySelectorAll('.csv-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('#tab-export, #tab-import-snaps, #tab-import-liab').forEach(t => t.style.display = 'none');
+    document.getElementById('tab-' + tabId).style.display = '';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+</script>
+</body>
+</html>
