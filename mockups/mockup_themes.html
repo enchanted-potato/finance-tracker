@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance Tracker — Theme Mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Poppins', sans-serif; background: #111; color: #fff; padding: 40px 24px; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; text-align: center; }
+  .subtitle { color: #888; text-align: center; margin-bottom: 48px; font-size: 14px; }
+
+  .themes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .theme-card {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  }
+
+  .theme-label {
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* App shell */
+  .app {
+    display: flex;
+    height: 320px;
+    font-size: 12px;
+  }
+
+  .sidebar {
+    width: 140px;
+    flex-shrink: 0;
+    padding: 16px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sidebar-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+    padding: 0 6px;
+  }
+
+  .nav-item {
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .nav-item.active {
+    font-weight: 600;
+  }
+
+  .main {
+    flex: 1;
+    padding: 18px 16px;
+    overflow: hidden;
+  }
+
+  .page-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .metric-card {
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .metric-label {
+    font-size: 9px;
+    font-weight: 500;
+    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+
+  .metric-value {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .metric-delta {
+    font-size: 9px;
+    margin-top: 2px;
+    font-weight: 500;
+  }
+
+  .chart-area {
+    border-radius: 8px;
+    padding: 12px;
+    height: 110px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chart-label {
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.5;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  svg.chart { width: 100%; height: 76px; }
+
+  /* ── 1. Current (Warm Paper) ─────────────────────────────────── */
+  .current .sidebar { background: #d6d4c5; }
+  .current .main { background: #faf9f5; }
+  .current .sidebar-title { color: #141413; }
+  .current .nav-item { color: #444; }
+  .current .nav-item:hover { background: #e8e6dc; }
+  .current .nav-item.active { color: #141413; border-left: 3px solid #141413; border-radius: 0 7px 7px 0; padding-left: 7px; font-weight: 700; }
+  .current .page-title { color: #141413; }
+  .current .metric-card { background: #d6d4c5; }
+  .current .metric-label { color: #141413; }
+  .current .metric-value { color: #141413; }
+  .current .metric-delta { color: #5ebd6c; }
+  .current .chart-area { background: #d6d4c5; }
+  .current .chart-label { color: #141413; }
+
+  /* ── 2. Midnight ─────────────────────────────────────────────── */
+  .midnight .sidebar { background: #0d1117; }
+  .midnight .main { background: #161b22; }
+  .midnight .sidebar-title { color: #e6edf3; }
+  .midnight .nav-item { color: #8b949e; }
+  .midnight .nav-item.active { background: rgba(88,166,255,0.1); color: #58a6ff; font-weight: 600; border-left: 2px solid #58a6ff; padding-left: 8px; border-radius: 0 7px 7px 0; }
+  .midnight .page-title { color: #e6edf3; }
+  .midnight .metric-card { background: #21262d; border: 1px solid #30363d; }
+  .midnight .metric-label { color: #8b949e; }
+  .midnight .metric-value { color: #e6edf3; }
+  .midnight .metric-delta { color: #3fb950; }
+  .midnight .chart-area { background: #21262d; border: 1px solid #30363d; }
+  .midnight .chart-label { color: #8b949e; }
+
+  /* ── 3. Nord ─────────────────────────────────────────────────── */
+  .nord .sidebar { background: #2e3440; }
+  .nord .main { background: #3b4252; }
+  .nord .sidebar-title { color: #eceff4; }
+  .nord .nav-item { color: #d8dee9; }
+  .nord .nav-item.active { background: rgba(136,192,208,0.15); color: #88c0d0; font-weight: 600; border-left: 2px solid #88c0d0; padding-left: 8px; border-radius: 0 7px 7px 0; }
+  .nord .page-title { color: #eceff4; }
+  .nord .metric-card { background: #434c5e; }
+  .nord .metric-label { color: #d8dee9; }
+  .nord .metric-value { color: #eceff4; }
+  .nord .metric-delta { color: #a3be8c; }
+  .nord .chart-area { background: #434c5e; }
+  .nord .chart-label { color: #d8dee9; }
+
+  /* ── 4. Amber / Dark Warm ────────────────────────────────────── */
+  .amber .sidebar { background: #1a1510; }
+  .amber .main { background: #211d16; }
+  .amber .sidebar-title { color: #f5e6c8; }
+  .amber .nav-item { color: #a89070; }
+  .amber .nav-item.active { background: rgba(245,190,80,0.12); color: #f5be50; font-weight: 600; border-left: 2px solid #f5be50; padding-left: 8px; border-radius: 0 7px 7px 0; }
+  .amber .page-title { color: #f5e6c8; }
+  .amber .metric-card { background: #2e2820; border: 1px solid #3d3528; }
+  .amber .metric-label { color: #a89070; }
+  .amber .metric-value { color: #f5e6c8; }
+  .amber .metric-delta { color: #7ec87e; }
+  .amber .chart-area { background: #2e2820; border: 1px solid #3d3528; }
+  .amber .chart-label { color: #a89070; }
+
+  /* ── 5. Slate + Violet ───────────────────────────────────────── */
+  .violet .sidebar { background: #13111a; }
+  .violet .main { background: #1c1927; }
+  .violet .sidebar-title { color: #ede8f5; }
+  .violet .nav-item { color: #8b8099; }
+  .violet .nav-item.active { background: rgba(168,139,250,0.12); color: #a88bfa; font-weight: 600; border-left: 2px solid #a88bfa; padding-left: 8px; border-radius: 0 7px 7px 0; }
+  .violet .page-title { color: #ede8f5; }
+  .violet .metric-card { background: #252236; border: 1px solid #302d45; }
+  .violet .metric-label { color: #8b8099; }
+  .violet .metric-value { color: #ede8f5; }
+  .violet .metric-delta { color: #6ee7b7; }
+  .violet .chart-area { background: #252236; border: 1px solid #302d45; }
+  .violet .chart-label { color: #8b8099; }
+
+  /* ── 6. Arctic (clean light) ─────────────────────────────────── */
+  .arctic .sidebar { background: #e8f0f7; }
+  .arctic .main { background: #f4f8fc; }
+  .arctic .sidebar-title { color: #0d2137; }
+  .arctic .nav-item { color: #4a6278; }
+  .arctic .nav-item.active { background: rgba(37,99,235,0.1); color: #1d4ed8; font-weight: 600; border-left: 2px solid #1d4ed8; padding-left: 8px; border-radius: 0 7px 7px 0; }
+  .arctic .page-title { color: #0d2137; }
+  .arctic .metric-card { background: #ddeaf6; }
+  .arctic .metric-label { color: #4a6278; }
+  .arctic .metric-value { color: #0d2137; }
+  .arctic .metric-delta { color: #059669; }
+  .arctic .chart-area { background: #ddeaf6; }
+  .arctic .chart-label { color: #4a6278; }
+
+  /* ── 7. Mocha (dark brown/teal) ──────────────────────────────── */
+  .mocha .sidebar { background: #1e1a17; }
+  .mocha .main { background: #272220; }
+  .mocha .sidebar-title { color: #f0ebe5; }
+  .mocha .nav-item { color: #9c8c7e; }
+  .mocha .nav-item.active { background: rgba(94,189,180,0.12); color: #5ebdb4; font-weight: 600; border-left: 2px solid #5ebdb4; padding-left: 8px; border-radius: 0 7px 7px 0; }
+  .mocha .page-title { color: #f0ebe5; }
+  .mocha .metric-card { background: #332e2b; border: 1px solid #403a36; }
+  .mocha .metric-label { color: #9c8c7e; }
+  .mocha .metric-value { color: #f0ebe5; }
+  .mocha .metric-delta { color: #5ebdb4; }
+  .mocha .chart-area { background: #332e2b; border: 1px solid #403a36; }
+  .mocha .chart-label { color: #9c8c7e; }
+</style>
+</head>
+<body>
+<h1>Finance Tracker — Theme Options</h1>
+<p class="subtitle">7 colour scheme mockups · click to compare</p>
+
+<div class="themes-grid">
+
+  <!-- 1. Current -->
+  <div class="theme-card">
+    <div class="theme-label">
+      <span class="dot" style="background:#5ebd6c"></span>
+      1 · Current — Warm Paper
+    </div>
+    <div class="app current">
+      <div class="sidebar">
+        <div class="sidebar-title">Net Worth</div>
+        <div class="nav-item">📊 Dashboard</div>
+        <div class="nav-item active">💰 Accounts</div>
+        <div class="nav-item">💳 Liabilities</div>
+        <div class="nav-item">🏦 Pension</div>
+        <div class="nav-item">📈 History</div>
+        <div class="nav-item">⚙️ Configure</div>
+      </div>
+      <div class="main">
+        <div class="page-title">Accounts</div>
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-label">Net Worth</div>
+            <div class="metric-value">£148k</div>
+            <div class="metric-delta">↑ +£2.1k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Assets</div>
+            <div class="metric-value">£192k</div>
+            <div class="metric-delta">↑ +£1.4k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Liabilities</div>
+            <div class="metric-value">£44k</div>
+            <div class="metric-delta">↓ −£0.7k</div>
+          </div>
+        </div>
+        <div class="chart-area">
+          <div class="chart-label">Net Worth over time</div>
+          <svg class="chart" viewBox="0 0 360 76" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#5ebd6c" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#5ebd6c" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8" fill="none" stroke="#5ebd6c" stroke-width="2.5"/>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8 L360,76 L0,76 Z" fill="url(#g1)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Midnight -->
+  <div class="theme-card">
+    <div class="theme-label">
+      <span class="dot" style="background:#58a6ff"></span>
+      2 · Midnight — GitHub Dark
+    </div>
+    <div class="app midnight">
+      <div class="sidebar">
+        <div class="sidebar-title">Net Worth</div>
+        <div class="nav-item">📊 Dashboard</div>
+        <div class="nav-item active">💰 Accounts</div>
+        <div class="nav-item">💳 Liabilities</div>
+        <div class="nav-item">🏦 Pension</div>
+        <div class="nav-item">📈 History</div>
+        <div class="nav-item">⚙️ Configure</div>
+      </div>
+      <div class="main">
+        <div class="page-title">Accounts</div>
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-label">Net Worth</div>
+            <div class="metric-value">£148k</div>
+            <div class="metric-delta">↑ +£2.1k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Assets</div>
+            <div class="metric-value">£192k</div>
+            <div class="metric-delta">↑ +£1.4k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Liabilities</div>
+            <div class="metric-value">£44k</div>
+            <div class="metric-delta" style="color:#f85149">↓ −£0.7k</div>
+          </div>
+        </div>
+        <div class="chart-area">
+          <div class="chart-label">Net Worth over time</div>
+          <svg class="chart" viewBox="0 0 360 76" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#58a6ff" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#58a6ff" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8" fill="none" stroke="#58a6ff" stroke-width="2.5"/>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8 L360,76 L0,76 Z" fill="url(#g2)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Nord -->
+  <div class="theme-card">
+    <div class="theme-label">
+      <span class="dot" style="background:#88c0d0"></span>
+      3 · Nord — Arctic Blue
+    </div>
+    <div class="app nord">
+      <div class="sidebar">
+        <div class="sidebar-title">Net Worth</div>
+        <div class="nav-item">📊 Dashboard</div>
+        <div class="nav-item active">💰 Accounts</div>
+        <div class="nav-item">💳 Liabilities</div>
+        <div class="nav-item">🏦 Pension</div>
+        <div class="nav-item">📈 History</div>
+        <div class="nav-item">⚙️ Configure</div>
+      </div>
+      <div class="main">
+        <div class="page-title">Accounts</div>
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-label">Net Worth</div>
+            <div class="metric-value">£148k</div>
+            <div class="metric-delta">↑ +£2.1k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Assets</div>
+            <div class="metric-value">£192k</div>
+            <div class="metric-delta">↑ +£1.4k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Liabilities</div>
+            <div class="metric-value">£44k</div>
+            <div class="metric-delta" style="color:#bf616a">↓ −£0.7k</div>
+          </div>
+        </div>
+        <div class="chart-area">
+          <div class="chart-label">Net Worth over time</div>
+          <svg class="chart" viewBox="0 0 360 76" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#88c0d0" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#88c0d0" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8" fill="none" stroke="#88c0d0" stroke-width="2.5"/>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8 L360,76 L0,76 Z" fill="url(#g3)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Amber -->
+  <div class="theme-card">
+    <div class="theme-label">
+      <span class="dot" style="background:#f5be50"></span>
+      4 · Amber — Dark Warm Gold
+    </div>
+    <div class="app amber">
+      <div class="sidebar">
+        <div class="sidebar-title">Net Worth</div>
+        <div class="nav-item">📊 Dashboard</div>
+        <div class="nav-item active">💰 Accounts</div>
+        <div class="nav-item">💳 Liabilities</div>
+        <div class="nav-item">🏦 Pension</div>
+        <div class="nav-item">📈 History</div>
+        <div class="nav-item">⚙️ Configure</div>
+      </div>
+      <div class="main">
+        <div class="page-title">Accounts</div>
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-label">Net Worth</div>
+            <div class="metric-value">£148k</div>
+            <div class="metric-delta">↑ +£2.1k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Assets</div>
+            <div class="metric-value">£192k</div>
+            <div class="metric-delta">↑ +£1.4k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Liabilities</div>
+            <div class="metric-value">£44k</div>
+            <div class="metric-delta" style="color:#f08080">↓ −£0.7k</div>
+          </div>
+        </div>
+        <div class="chart-area">
+          <div class="chart-label">Net Worth over time</div>
+          <svg class="chart" viewBox="0 0 360 76" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g4" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f5be50" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#f5be50" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8" fill="none" stroke="#f5be50" stroke-width="2.5"/>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8 L360,76 L0,76 Z" fill="url(#g4)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Violet -->
+  <div class="theme-card">
+    <div class="theme-label">
+      <span class="dot" style="background:#a88bfa"></span>
+      5 · Violet — Dark Slate Purple
+    </div>
+    <div class="app violet">
+      <div class="sidebar">
+        <div class="sidebar-title">Net Worth</div>
+        <div class="nav-item">📊 Dashboard</div>
+        <div class="nav-item active">💰 Accounts</div>
+        <div class="nav-item">💳 Liabilities</div>
+        <div class="nav-item">🏦 Pension</div>
+        <div class="nav-item">📈 History</div>
+        <div class="nav-item">⚙️ Configure</div>
+      </div>
+      <div class="main">
+        <div class="page-title">Accounts</div>
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-label">Net Worth</div>
+            <div class="metric-value">£148k</div>
+            <div class="metric-delta">↑ +£2.1k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Assets</div>
+            <div class="metric-value">£192k</div>
+            <div class="metric-delta">↑ +£1.4k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Liabilities</div>
+            <div class="metric-value">£44k</div>
+            <div class="metric-delta" style="color:#f87171">↓ −£0.7k</div>
+          </div>
+        </div>
+        <div class="chart-area">
+          <div class="chart-label">Net Worth over time</div>
+          <svg class="chart" viewBox="0 0 360 76" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g5" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#a88bfa" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#a88bfa" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8" fill="none" stroke="#a88bfa" stroke-width="2.5"/>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8 L360,76 L0,76 Z" fill="url(#g5)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Arctic -->
+  <div class="theme-card">
+    <div class="theme-label">
+      <span class="dot" style="background:#1d4ed8"></span>
+      6 · Arctic — Clean Light Blue
+    </div>
+    <div class="app arctic">
+      <div class="sidebar">
+        <div class="sidebar-title">Net Worth</div>
+        <div class="nav-item">📊 Dashboard</div>
+        <div class="nav-item active">💰 Accounts</div>
+        <div class="nav-item">💳 Liabilities</div>
+        <div class="nav-item">🏦 Pension</div>
+        <div class="nav-item">📈 History</div>
+        <div class="nav-item">⚙️ Configure</div>
+      </div>
+      <div class="main">
+        <div class="page-title">Accounts</div>
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-label">Net Worth</div>
+            <div class="metric-value">£148k</div>
+            <div class="metric-delta">↑ +£2.1k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Assets</div>
+            <div class="metric-value">£192k</div>
+            <div class="metric-delta">↑ +£1.4k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Liabilities</div>
+            <div class="metric-value">£44k</div>
+            <div class="metric-delta" style="color:#dc2626">↓ −£0.7k</div>
+          </div>
+        </div>
+        <div class="chart-area">
+          <div class="chart-label">Net Worth over time</div>
+          <svg class="chart" viewBox="0 0 360 76" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g6" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1d4ed8" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8" fill="none" stroke="#1d4ed8" stroke-width="2.5"/>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8 L360,76 L0,76 Z" fill="url(#g6)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Mocha -->
+  <div class="theme-card">
+    <div class="theme-label">
+      <span class="dot" style="background:#5ebdb4"></span>
+      7 · Mocha — Dark Brown + Teal
+    </div>
+    <div class="app mocha">
+      <div class="sidebar">
+        <div class="sidebar-title">Net Worth</div>
+        <div class="nav-item">📊 Dashboard</div>
+        <div class="nav-item active">💰 Accounts</div>
+        <div class="nav-item">💳 Liabilities</div>
+        <div class="nav-item">🏦 Pension</div>
+        <div class="nav-item">📈 History</div>
+        <div class="nav-item">⚙️ Configure</div>
+      </div>
+      <div class="main">
+        <div class="page-title">Accounts</div>
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-label">Net Worth</div>
+            <div class="metric-value">£148k</div>
+            <div class="metric-delta">↑ +£2.1k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Assets</div>
+            <div class="metric-value">£192k</div>
+            <div class="metric-delta">↑ +£1.4k</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Liabilities</div>
+            <div class="metric-value">£44k</div>
+            <div class="metric-delta" style="color:#e08060">↓ −£0.7k</div>
+          </div>
+        </div>
+        <div class="chart-area">
+          <div class="chart-label">Net Worth over time</div>
+          <svg class="chart" viewBox="0 0 360 76" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g7" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#5ebdb4" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#5ebdb4" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8" fill="none" stroke="#5ebdb4" stroke-width="2.5"/>
+            <path d="M0,60 C40,58 80,50 120,44 C160,38 200,30 240,22 C280,14 320,10 360,8 L360,76 L0,76 Z" fill="url(#g7)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="max-width:1400px;margin:48px auto 0;padding:24px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.07)">
+  <p style="font-size:13px;font-weight:600;color:#aaa;margin-bottom:16px;text-transform:uppercase;letter-spacing:.05em">config.toml values</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;font-size:11px;font-family:monospace">
+
+    <div style="background:#0d0d0d;border-radius:8px;padding:14px;border:1px solid #222">
+      <p style="color:#58a6ff;margin-bottom:8px;font-size:12px;font-family:Poppins,sans-serif;font-weight:600">2 · Midnight</p>
+      <p style="color:#6e7681">primaryColor = <span style="color:#79c0ff">"#58a6ff"</span></p>
+      <p style="color:#6e7681">backgroundColor = <span style="color:#79c0ff">"#161b22"</span></p>
+      <p style="color:#6e7681">secondaryBackgroundColor = <span style="color:#79c0ff">"#21262d"</span></p>
+      <p style="color:#6e7681">textColor = <span style="color:#79c0ff">"#e6edf3"</span></p>
+    </div>
+
+    <div style="background:#0d0d0d;border-radius:8px;padding:14px;border:1px solid #222">
+      <p style="color:#88c0d0;margin-bottom:8px;font-size:12px;font-family:Poppins,sans-serif;font-weight:600">3 · Nord</p>
+      <p style="color:#6e7681">primaryColor = <span style="color:#79c0ff">"#88c0d0"</span></p>
+      <p style="color:#6e7681">backgroundColor = <span style="color:#79c0ff">"#3b4252"</span></p>
+      <p style="color:#6e7681">secondaryBackgroundColor = <span style="color:#79c0ff">"#434c5e"</span></p>
+      <p style="color:#6e7681">textColor = <span style="color:#79c0ff">"#eceff4"</span></p>
+    </div>
+
+    <div style="background:#0d0d0d;border-radius:8px;padding:14px;border:1px solid #222">
+      <p style="color:#f5be50;margin-bottom:8px;font-size:12px;font-family:Poppins,sans-serif;font-weight:600">4 · Amber</p>
+      <p style="color:#6e7681">primaryColor = <span style="color:#79c0ff">"#f5be50"</span></p>
+      <p style="color:#6e7681">backgroundColor = <span style="color:#79c0ff">"#211d16"</span></p>
+      <p style="color:#6e7681">secondaryBackgroundColor = <span style="color:#79c0ff">"#2e2820"</span></p>
+      <p style="color:#6e7681">textColor = <span style="color:#79c0ff">"#f5e6c8"</span></p>
+    </div>
+
+    <div style="background:#0d0d0d;border-radius:8px;padding:14px;border:1px solid #222">
+      <p style="color:#a88bfa;margin-bottom:8px;font-size:12px;font-family:Poppins,sans-serif;font-weight:600">5 · Violet</p>
+      <p style="color:#6e7681">primaryColor = <span style="color:#79c0ff">"#a88bfa"</span></p>
+      <p style="color:#6e7681">backgroundColor = <span style="color:#79c0ff">"#1c1927"</span></p>
+      <p style="color:#6e7681">secondaryBackgroundColor = <span style="color:#79c0ff">"#252236"</span></p>
+      <p style="color:#6e7681">textColor = <span style="color:#79c0ff">"#ede8f5"</span></p>
+    </div>
+
+    <div style="background:#0d0d0d;border-radius:8px;padding:14px;border:1px solid #222">
+      <p style="color:#93c5fd;margin-bottom:8px;font-size:12px;font-family:Poppins,sans-serif;font-weight:600">6 · Arctic</p>
+      <p style="color:#6e7681">primaryColor = <span style="color:#79c0ff">"#1d4ed8"</span></p>
+      <p style="color:#6e7681">backgroundColor = <span style="color:#79c0ff">"#f4f8fc"</span></p>
+      <p style="color:#6e7681">secondaryBackgroundColor = <span style="color:#79c0ff">"#ddeaf6"</span></p>
+      <p style="color:#6e7681">textColor = <span style="color:#79c0ff">"#0d2137"</span></p>
+    </div>
+
+    <div style="background:#0d0d0d;border-radius:8px;padding:14px;border:1px solid #222">
+      <p style="color:#5ebdb4;margin-bottom:8px;font-size:12px;font-family:Poppins,sans-serif;font-weight:600">7 · Mocha</p>
+      <p style="color:#6e7681">primaryColor = <span style="color:#79c0ff">"#5ebdb4"</span></p>
+      <p style="color:#6e7681">backgroundColor = <span style="color:#79c0ff">"#272220"</span></p>
+      <p style="color:#6e7681">secondaryBackgroundColor = <span style="color:#79c0ff">"#332e2b"</span></p>
+      <p style="color:#6e7681">textColor = <span style="color:#79c0ff">"#f0ebe5"</span></p>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

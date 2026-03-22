@@ -36,3 +36,10 @@ uv add <package>
 - Streamlit pages in frontend/pages/
 - Keep services independent of Streamlit (no st.* calls in services)
 
+## Known issues / conventions
+
+### No `st.expander()` — use toggle buttons instead
+The global CSS in `main.py` applies Poppins font via `*:not(.material-icons)`, which overrides the Material Symbols Rounded font that Streamlit uses to render expander arrow icons. This causes the raw ligature text (e.g. `_arrow_down`) to appear instead of an arrow symbol.
+
+**Fix:** Use a session-state toggle button with plain Unicode `▼`/`▲` characters instead of `st.expander()`. These render correctly in any font. See `frontend/pages/history.py` and `frontend/pages/goals.py` for examples.
+

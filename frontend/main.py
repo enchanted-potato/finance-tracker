@@ -15,7 +15,7 @@ from app.services.auth_service import (
     init_firebase_admin,
     verify_firebase_token,
 )
-from frontend.pages import accounts, configure, dashboard, history, liabilities, pension
+from frontend.pages import accounts, configure, dashboard, goals, history, liabilities, pension
 
 # Declare custom Firebase auth component
 _AUTH_COMPONENT_DIR = os.path.join(os.path.dirname(__file__), "auth_component")
@@ -165,9 +165,10 @@ def main() -> None:
     st.markdown(
         """
         <style>
-            /* Import Poppins and Material Icons fonts */
+            /* Import Poppins, Material Icons, and Material Symbols Rounded */
             @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
             @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+            @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
             /* Apply Poppins font everywhere except icons */
             *:not(span.material-icons):not(.material-icons) {
@@ -177,6 +178,16 @@ def main() -> None:
             /* Ensure Material Icons font is never overridden by inheritance */
             .material-icons, span.material-icons {
                 font-family: 'Material Icons' !important;
+            }
+
+            /* Restore Material Symbols Rounded for Streamlit's own UI icons (e.g. expander arrow) */
+            details summary [aria-hidden="true"],
+            details summary svg,
+            details > summary > div > span:first-child,
+            details > summary > span:first-child,
+            [data-testid="stExpanderToggleIcon"],
+            [data-testid="stExpanderHeader"] span:first-child {
+                font-family: 'Material Symbols Rounded' !important;
             }
 
             /* Hide sidebar collapse button (uses Material Symbols which conflict with font override) */
@@ -262,8 +273,8 @@ def main() -> None:
     st.sidebar.divider()
 
     # Navigation menu with Bootstrap icons
-    page_names = ["Dashboard", "Accounts", "Liabilities", "Pension", "Trends", "Configure"]
-    page_icons = ["grid", "wallet2", "credit-card", "piggy-bank", "graph-up-arrow", "gear"]
+    page_names = ["Dashboard", "Accounts", "Liabilities", "Pension", "Goals", "Trends", "Configure"]
+    page_icons = ["grid", "wallet2", "credit-card", "piggy-bank", "trophy", "graph-up-arrow", "gear"]
     current_index = page_names.index(st.session_state["selected_page"])
 
     with st.sidebar:
@@ -313,6 +324,8 @@ def main() -> None:
             liabilities.render()
         case "Pension":
             pension.render()
+        case "Goals":
+            goals.render()
         case "Trends":
             history.render()
         case "Configure":

@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goals Page Mockups — Finance Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    padding: 40px 20px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #e6edf3;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: #8b949e;
+    margin-bottom: 48px;
+  }
+  .mockup-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #58a6ff;
+    margin-bottom: 16px;
+  }
+  .mockup-desc {
+    font-size: 13px;
+    color: #8b949e;
+    margin-bottom: 24px;
+    max-width: 680px;
+    line-height: 1.6;
+  }
+  .divider {
+    border: none;
+    border-top: 1px solid #30363d;
+    margin: 60px 0;
+  }
+
+  /* ============================
+     SHARED LAYOUT
+     ============================ */
+  .app-shell {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #161b22;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: #0d1117;
+    padding: 24px 0;
+    border-right: 1px solid #21262d;
+  }
+  .sidebar-logo {
+    padding: 0 20px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #e6edf3;
+    border-bottom: 1px solid #21262d;
+    margin-bottom: 12px;
+  }
+  .sidebar-logo span { color: #58a6ff; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    font-size: 13px;
+    color: #8b949e;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+  }
+  .nav-item.active {
+    color: #58a6ff;
+    background: rgba(88,166,255,0.08);
+    border-left-color: #58a6ff;
+    font-weight: 600;
+  }
+  .nav-icon { font-size: 15px; opacity: 0.8; }
+  .main-content {
+    flex: 1;
+    padding: 32px 36px;
+    min-height: 700px;
+    overflow: hidden;
+  }
+  .page-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #e6edf3;
+  }
+
+  /* ============================
+     METRIC CARDS
+     ============================ */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .metric-card {
+    border-radius: 12px;
+    padding: 18px 22px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .metric-card.blue  { background: rgba(33,150,243,0.10); }
+  .metric-card.green { background: rgba(20,167,96,0.10); }
+  .metric-card.amber { background: rgba(255,193,7,0.10); }
+  .metric-card.purple { background: rgba(168,85,247,0.10); }
+  .metric-label {
+    font-size: 12px;
+    color: #8b949e;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .metric-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #e6edf3;
+  }
+  .metric-sub {
+    font-size: 11px;
+    color: #8b949e;
+    margin-top: 4px;
+  }
+
+  /* ============================
+     BUTTONS
+     ============================ */
+  .btn-primary {
+    background: #238636;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: #8b949e;
+    border: 1px solid #30363d;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+  }
+
+  /* ============================
+     CONCEPT A — PROGRESS CARDS
+     ============================ */
+  .goals-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .goal-card {
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 14px;
+    padding: 22px 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+  .goal-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .goal-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e6edf3;
+  }
+  .goal-type-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .tag-savings  { background: rgba(20,167,96,0.15);  color: #3fb950; }
+  .tag-invest   { background: rgba(88,166,255,0.15); color: #58a6ff; }
+  .tag-pension  { background: rgba(168,85,247,0.15); color: #a78bfa; }
+  .tag-debt     { background: rgba(248,81,73,0.15);  color: #f85149; }
+
+  .goal-amounts {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .goal-current {
+    font-size: 22px;
+    font-weight: 700;
+    color: #e6edf3;
+    font-variant-numeric: tabular-nums;
+  }
+  .goal-target {
+    font-size: 13px;
+    color: #8b949e;
+  }
+  .goal-target strong { color: #e6edf3; }
+
+  .progress-track {
+    background: #21262d;
+    border-radius: 100px;
+    height: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 0.3s ease;
+  }
+  .fill-green  { background: linear-gradient(90deg, #14a760, #3fb950); }
+  .fill-blue   { background: linear-gradient(90deg, #1f6feb, #58a6ff); }
+  .fill-purple { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+  .fill-amber  { background: linear-gradient(90deg, #d29922, #ffc107); }
+  .fill-red    { background: linear-gradient(90deg, #b91c1c, #f85149); }
+
+  .goal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .goal-pct {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .goal-deadline {
+    font-size: 11px;
+    color: #8b949e;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .status-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .status-on-track  { background: rgba(63,185,80,0.12);  color: #3fb950; }
+  .status-behind    { background: rgba(248,81,73,0.12);  color: #f85149; }
+  .status-ahead     { background: rgba(88,166,255,0.12); color: #58a6ff; }
+  .status-done      { background: rgba(168,85,247,0.12); color: #a78bfa; }
+
+  /* ============================
+     CONCEPT B — TABLE VIEW
+     ============================ */
+  .goals-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .goals-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: #8b949e;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    border-bottom: 1px solid #21262d;
+  }
+  .goals-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    vertical-align: middle;
+  }
+  .goals-table tr:last-child td { border-bottom: none; }
+  .goals-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .table-name { font-weight: 600; color: #e6edf3; }
+  .table-amount { font-variant-numeric: tabular-nums; color: #e6edf3; }
+  .table-muted { color: #8b949e; }
+
+  .mini-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mini-track {
+    flex: 1;
+    background: #21262d;
+    border-radius: 100px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .mini-fill {
+    height: 100%;
+    border-radius: 100px;
+  }
+  .mini-pct {
+    font-size: 12px;
+    font-weight: 600;
+    width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ============================
+     CONCEPT B PROJECTION CHART
+     ============================ */
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e6edf3;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-container {
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-top: 24px;
+  }
+  .chart-svg-area {
+    width: 100%;
+    height: 160px;
+    position: relative;
+  }
+  svg text { font-family: 'Poppins', sans-serif; }
+
+  /* ============================
+     ADD GOAL FORM (Concept B)
+     ============================ */
+  .form-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 12px;
+    align-items: end;
+    margin-top: 16px;
+    padding: 16px 20px;
+    background: rgba(88,166,255,0.04);
+    border: 1px dashed #30363d;
+    border-radius: 10px;
+  }
+  .form-field label {
+    display: block;
+    font-size: 11px;
+    color: #8b949e;
+    font-weight: 500;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-input {
+    width: 100%;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    color: #e6edf3;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: 'Poppins', sans-serif;
+  }
+  .form-input::placeholder { color: #4a5568; }
+  .form-select {
+    width: 100%;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    color: #8b949e;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: 'Poppins', sans-serif;
+  }
+</style>
+</head>
+<body>
+
+<h1>Goals Page — Mockups</h1>
+<p class="subtitle">Two layout concepts for the Finance Tracker goals feature</p>
+
+<!-- ============================================================
+     CONCEPT A — PROGRESS CARDS
+     ============================================================ -->
+<div style="max-width: 1200px; margin: 0 auto 20px;">
+  <div class="mockup-label">Concept A — Progress Cards</div>
+  <p class="mockup-desc">
+    Card grid layout — each goal gets its own card with a big current amount, progress bar, status badge, and deadline.
+    Feels like a personal dashboard. Easy to scan at a glance.
+  </p>
+</div>
+
+<div class="app-shell">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">finance<span>.</span></div>
+    <div class="nav-item"><span class="nav-icon">⊞</span> Dashboard</div>
+    <div class="nav-item"><span class="nav-icon">◉</span> Accounts</div>
+    <div class="nav-item"><span class="nav-icon">◈</span> Liabilities</div>
+    <div class="nav-item"><span class="nav-icon">○</span> Pension</div>
+    <div class="nav-item active"><span class="nav-icon">◎</span> Goals</div>
+    <div class="nav-item"><span class="nav-icon">↗</span> Trends</div>
+    <div class="nav-item"><span class="nav-icon">⚙</span> Configure</div>
+  </div>
+
+  <!-- Main -->
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-title">Goals</div>
+      <button class="btn-primary">+ Add Goal</button>
+    </div>
+
+    <!-- Summary metrics -->
+    <div class="metrics-row">
+      <div class="metric-card blue">
+        <div class="metric-label">Total Targeted</div>
+        <div class="metric-value">£265,000</div>
+        <div class="metric-sub">across 4 goals</div>
+      </div>
+      <div class="metric-card green">
+        <div class="metric-label">Total Saved</div>
+        <div class="metric-value">£118,400</div>
+        <div class="metric-sub">44.7% of all targets</div>
+      </div>
+      <div class="metric-card amber">
+        <div class="metric-label">Remaining</div>
+        <div class="metric-value">£146,600</div>
+        <div class="metric-sub">next milestone: Dec 2025</div>
+      </div>
+    </div>
+
+    <!-- Goal cards -->
+    <div class="goals-grid">
+
+      <!-- Goal 1 — Emergency Fund -->
+      <div class="goal-card">
+        <div class="goal-card-header">
+          <div>
+            <div class="goal-name">Emergency Fund</div>
+            <div style="font-size:11px; color:#8b949e; margin-top:2px;">Linked: Current Account</div>
+          </div>
+          <span class="goal-type-tag tag-savings">Savings</span>
+        </div>
+        <div class="goal-amounts">
+          <div class="goal-current">£8,200</div>
+          <div class="goal-target">of <strong>£10,000</strong></div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill fill-green" style="width: 82%"></div>
+        </div>
+        <div class="goal-footer">
+          <span class="goal-pct" style="color:#3fb950">82%</span>
+          <span class="status-badge status-ahead">Ahead</span>
+          <span class="goal-deadline">🗓 Dec 2025</span>
+        </div>
+      </div>
+
+      <!-- Goal 2 — House Deposit -->
+      <div class="goal-card">
+        <div class="goal-card-header">
+          <div>
+            <div class="goal-name">House Deposit</div>
+            <div style="font-size:11px; color:#8b949e; margin-top:2px;">Linked: ISA + LISA</div>
+          </div>
+          <span class="goal-type-tag tag-savings">Savings</span>
+        </div>
+        <div class="goal-amounts">
+          <div class="goal-current">£38,500</div>
+          <div class="goal-target">of <strong>£80,000</strong></div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill fill-amber" style="width: 48%"></div>
+        </div>
+        <div class="goal-footer">
+          <span class="goal-pct" style="color:#ffc107">48%</span>
+          <span class="status-badge status-behind">Behind</span>
+          <span class="goal-deadline">🗓 Jun 2027</span>
+        </div>
+      </div>
+
+      <!-- Goal 3 — Investment Portfolio -->
+      <div class="goal-card">
+        <div class="goal-card-header">
+          <div>
+            <div class="goal-name">Investment Portfolio</div>
+            <div style="font-size:11px; color:#8b949e; margin-top:2px;">Linked: Trading 212 ISA</div>
+          </div>
+          <span class="goal-type-tag tag-invest">Investment</span>
+        </div>
+        <div class="goal-amounts">
+          <div class="goal-current">£47,200</div>
+          <div class="goal-target">of <strong>£100,000</strong></div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill fill-blue" style="width: 47%"></div>
+        </div>
+        <div class="goal-footer">
+          <span class="goal-pct" style="color:#58a6ff">47%</span>
+          <span class="status-badge status-on-track">On Track</span>
+          <span class="goal-deadline">🗓 Dec 2030</span>
+        </div>
+      </div>
+
+      <!-- Goal 4 — Pension -->
+      <div class="goal-card">
+        <div class="goal-card-header">
+          <div>
+            <div class="goal-name">Pension Pot</div>
+            <div style="font-size:11px; color:#8b949e; margin-top:2px;">Linked: NEST + Employer</div>
+          </div>
+          <span class="goal-type-tag tag-pension">Pension</span>
+        </div>
+        <div class="goal-amounts">
+          <div class="goal-current">£24,500</div>
+          <div class="goal-target">of <strong>£75,000</strong></div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill fill-purple" style="width: 33%"></div>
+        </div>
+        <div class="goal-footer">
+          <span class="goal-pct" style="color:#a78bfa">33%</span>
+          <span class="status-badge status-on-track">On Track</span>
+          <span class="goal-deadline">🗓 Apr 2055</span>
+        </div>
+      </div>
+
+    </div><!-- /goals-grid -->
+  </div><!-- /main-content -->
+</div><!-- /app-shell -->
+
+<hr class="divider">
+
+<!-- ============================================================
+     CONCEPT B — TABLE + PROJECTION CHART
+     ============================================================ -->
+<div style="max-width: 1200px; margin: 0 auto 20px;">
+  <div class="mockup-label">Concept B — Table + Projection Chart</div>
+  <p class="mockup-desc">
+    Dense table view with all goals at a glance, plus a horizontal bar chart
+    showing Total Saved vs Total Targeted per goal. Click a row to drill into
+    a single goal's projection. Compact and data-forward.
+  </p>
+</div>
+
+<div class="app-shell">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">finance<span>.</span></div>
+    <div class="nav-item"><span class="nav-icon">⊞</span> Dashboard</div>
+    <div class="nav-item"><span class="nav-icon">◉</span> Accounts</div>
+    <div class="nav-item"><span class="nav-icon">◈</span> Liabilities</div>
+    <div class="nav-item"><span class="nav-icon">○</span> Pension</div>
+    <div class="nav-item active"><span class="nav-icon">◎</span> Goals</div>
+    <div class="nav-item"><span class="nav-icon">↗</span> Trends</div>
+    <div class="nav-item"><span class="nav-icon">⚙</span> Configure</div>
+  </div>
+
+  <!-- Main -->
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-title">Goals</div>
+      <button class="btn-primary">+ Add Goal</button>
+    </div>
+
+    <!-- Overall summary bar -->
+    <div style="background: rgba(31,111,235,0.08); border: 1px solid rgba(88,166,255,0.2); border-radius: 12px; padding: 14px 20px; margin-bottom: 20px; display:flex; align-items:center; gap:20px;">
+      <div style="flex-shrink:0;">
+        <div style="font-size:11px; color:#8b949e; font-weight:500; margin-bottom:3px;">TOTAL SAVED</div>
+        <div style="font-size:22px; font-weight:700; color:#e6edf3; font-variant-numeric:tabular-nums;">£118,400</div>
+      </div>
+      <div style="flex:1;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+          <span style="font-size:11px; color:#8b949e;">Progress across all goals</span>
+          <span style="font-size:12px; font-weight:600; color:#58a6ff;">44.7% · £146,600 remaining</span>
+        </div>
+        <div style="background:#21262d; border-radius:100px; height:10px; overflow:hidden;">
+          <div style="width:44.7%; height:100%; border-radius:100px; background: linear-gradient(90deg, #1f6feb, #58a6ff);"></div>
+        </div>
+      </div>
+      <div style="flex-shrink:0; text-align:right;">
+        <div style="font-size:11px; color:#8b949e; font-weight:500; margin-bottom:3px;">TOTAL TARGET</div>
+        <div style="font-size:22px; font-weight:700; color:#8b949e; font-variant-numeric:tabular-nums;">£265,000</div>
+      </div>
+    </div>
+
+    <!-- Goals Table -->
+    <div style="background: #0d1117; border: 1px solid #21262d; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+      <table class="goals-table">
+        <thead>
+          <tr>
+            <th>Goal</th>
+            <th>Current</th>
+            <th>Target</th>
+            <th>Progress</th>
+            <th>Deadline</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="table-name">Emergency Fund</div>
+              <div class="table-muted" style="font-size:11px;">Current Account</div>
+            </td>
+            <td class="table-amount">£8,200</td>
+            <td class="table-amount table-muted">£10,000</td>
+            <td>
+              <div class="mini-progress">
+                <div class="mini-track">
+                  <div class="mini-fill fill-green" style="width:82%"></div>
+                </div>
+                <span class="mini-pct" style="color:#3fb950">82%</span>
+              </div>
+            </td>
+            <td class="table-muted" style="font-size:12px;">Dec 2025</td>
+            <td><span class="status-badge status-ahead">Ahead</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="table-name">House Deposit</div>
+              <div class="table-muted" style="font-size:11px;">ISA + LISA</div>
+            </td>
+            <td class="table-amount">£38,500</td>
+            <td class="table-amount table-muted">£80,000</td>
+            <td>
+              <div class="mini-progress">
+                <div class="mini-track">
+                  <div class="mini-fill fill-amber" style="width:48%"></div>
+                </div>
+                <span class="mini-pct" style="color:#ffc107">48%</span>
+              </div>
+            </td>
+            <td class="table-muted" style="font-size:12px;">Jun 2027</td>
+            <td><span class="status-badge status-behind">Behind</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="table-name">Investment Portfolio</div>
+              <div class="table-muted" style="font-size:11px;">Trading 212 ISA</div>
+            </td>
+            <td class="table-amount">£47,200</td>
+            <td class="table-amount table-muted">£100,000</td>
+            <td>
+              <div class="mini-progress">
+                <div class="mini-track">
+                  <div class="mini-fill fill-blue" style="width:47%"></div>
+                </div>
+                <span class="mini-pct" style="color:#58a6ff">47%</span>
+              </div>
+            </td>
+            <td class="table-muted" style="font-size:12px;">Dec 2030</td>
+            <td><span class="status-badge status-on-track">On Track</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="table-name">Pension Pot</div>
+              <div class="table-muted" style="font-size:11px;">NEST + Employer</div>
+            </td>
+            <td class="table-amount">£24,500</td>
+            <td class="table-amount table-muted">£75,000</td>
+            <td>
+              <div class="mini-progress">
+                <div class="mini-track">
+                  <div class="mini-fill fill-purple" style="width:33%"></div>
+                </div>
+                <span class="mini-pct" style="color:#a78bfa">33%</span>
+              </div>
+            </td>
+            <td class="table-muted" style="font-size:12px;">Apr 2055</td>
+            <td><span class="status-badge status-on-track">On Track</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Add row inline -->
+      <div class="form-row">
+        <div class="form-field">
+          <label>Goal Name</label>
+          <input class="form-input" type="text" placeholder="e.g. Emergency Fund">
+        </div>
+        <div class="form-field">
+          <label>Link to Account</label>
+          <select class="form-select">
+            <option>Current Account</option>
+            <option>ISA</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Target Amount</label>
+          <input class="form-input" type="text" placeholder="£10,000">
+        </div>
+        <div class="form-field">
+          <label>Target Date</label>
+          <input class="form-input" type="text" placeholder="Dec 2025">
+        </div>
+        <div class="form-field">
+          <label>&nbsp;</label>
+          <button class="btn-primary">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Saved vs Total Targeted line chart -->
+    <div class="chart-container">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+        <div>
+          <div class="section-title" style="margin-bottom:4px;">Total Saved vs Total Targeted</div>
+          <div style="font-size:11px; color:#8b949e;">combined balance across all linked accounts over time</div>
+        </div>
+        <div style="display:flex; gap:16px; align-items:center; font-size:11px; color:#8b949e;">
+          <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:#58a6ff;border-radius:2px;"></span>Total Saved</span>
+          <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:#f85149;border-radius:2px;opacity:0.7;border-bottom:2px dashed #f85149;"></span>Total Target</span>
+        </div>
+      </div>
+
+      <!-- Scale: y=10 → £265k (target), y=130 → £0. Range=120px for £265k → 1px=£2208 -->
+      <!-- x: 40 to 600 = 560px for ~26 months (Jan 2024 – Mar 2026) -->
+      <!-- Monthly totals (sum all goals' account balances): roughly climbing from ~£60k to £118.4k -->
+      <svg viewBox="0 0 620 155" width="100%" height="155" xmlns="http://www.w3.org/2000/svg">
+
+        <!-- Grid lines -->
+        <line x1="40" y1="10"  x2="600" y2="10"  stroke="#21262d" stroke-width="1"/>
+        <line x1="40" y1="40"  x2="600" y2="40"  stroke="#21262d" stroke-width="1"/>
+        <line x1="40" y1="70"  x2="600" y2="70"  stroke="#21262d" stroke-width="1"/>
+        <line x1="40" y1="100" x2="600" y2="100" stroke="#21262d" stroke-width="1"/>
+        <line x1="40" y1="130" x2="600" y2="130" stroke="#21262d" stroke-width="1"/>
+
+        <!-- Y axis labels (£0 at y=130, £265k at y=10) -->
+        <text x="36" y="13"  font-size="9" fill="#8b949e" text-anchor="end">£265k</text>
+        <text x="36" y="43"  font-size="9" fill="#8b949e" text-anchor="end">£200k</text>
+        <text x="36" y="73"  font-size="9" fill="#8b949e" text-anchor="end">£130k</text>
+        <text x="36" y="103" font-size="9" fill="#8b949e" text-anchor="end">£65k</text>
+        <text x="36" y="133" font-size="9" fill="#8b949e" text-anchor="end">£0</text>
+
+        <!-- X axis labels -->
+        <text x="40"  y="148" font-size="9" fill="#8b949e" text-anchor="middle">Jan 24</text>
+        <text x="149" y="148" font-size="9" fill="#8b949e" text-anchor="middle">Jul 24</text>
+        <text x="258" y="148" font-size="9" fill="#8b949e" text-anchor="middle">Jan 25</text>
+        <text x="367" y="148" font-size="9" fill="#8b949e" text-anchor="middle">Jul 25</text>
+        <text x="476" y="148" font-size="9" fill="#8b949e" text-anchor="middle">Jan 26</text>
+        <text x="556" y="148" font-size="9" fill="#8b949e" text-anchor="middle">Mar 26</text>
+
+        <!-- TARGET line — flat at £265k = y=10 -->
+        <line x1="40" y1="10" x2="600" y2="10" stroke="#f85149" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.6"/>
+        <text x="602" y="13" font-size="9" fill="#f85149">£265k</text>
+
+        <!-- TOTAL SAVED line — climbing from ~£60k (y=97) to £118.4k (y=77) -->
+        <!-- y = 130 - (amount / 265000 * 120) -->
+        <!-- £60k → y=103   £70k→y=98   £80k→y=94   £90k→y=89   £100k→y=84   £110k→y=80   £118.4k→y=77 -->
+        <defs>
+          <linearGradient id="savedGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#58a6ff" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#58a6ff" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Area fill under saved line -->
+        <polygon
+          points="40,130 40,103 58,101 76,100 94,99 112,97 130,96 149,95 167,93 185,92 203,91 221,90 240,89 258,88 276,87 294,86 312,85 331,84 349,83 367,82 385,81 403,80 421,79 440,78 458,78 476,77 494,77 512,77 530,77 548,77 556,77 556,130"
+          fill="url(#savedGrad)"/>
+
+        <!-- Saved line (solid) -->
+        <polyline
+          points="40,103 58,101 76,100 94,99 112,97 130,96 149,95 167,93 185,92 203,91 221,90 240,89 258,88 276,87 294,86 312,85 331,84 349,83 367,82 385,81 403,80 421,79 440,78 458,78 476,77 494,77 512,77 530,77 548,77 556,77"
+          fill="none" stroke="#58a6ff" stroke-width="2" stroke-linejoin="round"/>
+
+        <!-- Today marker -->
+        <line x1="556" y1="10" x2="556" y2="130" stroke="#58a6ff" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+        <text x="544" y="8" font-size="8" fill="#58a6ff">Today</text>
+
+        <!-- Current value dot + label -->
+        <circle cx="556" cy="77" r="4" fill="#58a6ff"/>
+        <rect x="559" y="68" width="44" height="14" rx="3" fill="rgba(31,111,235,0.2)"/>
+        <text x="581" y="78" font-size="9" fill="#58a6ff" text-anchor="middle" font-weight="600">£118,400</text>
+
+        <!-- Gap annotation -->
+        <line x1="580" y1="10" x2="580" y2="77" stroke="#8b949e" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>
+        <text x="584" y="44" font-size="9" fill="#8b949e">£146,600</text>
+        <text x="584" y="54" font-size="8" fill="#8b949e">remaining</text>
+
+      </svg>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /app-shell -->
+
+
+<!-- ============================================================
+     NOTES
+     ============================================================ -->
+<div style="max-width: 1200px; margin: 60px auto 0;">
+  <div style="font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #58a6ff; margin-bottom: 14px; font-weight: 600;">Implementation Notes</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div style="background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 20px 24px;">
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #e6edf3;">Data Model Needed</div>
+      <ul style="font-size: 12px; color: #8b949e; line-height: 2; padding-left: 16px;">
+        <li><code style="color:#58a6ff">goals</code> table: id, user_id, name, account_type_id (optional link), target_amount, target_date</li>
+        <li>Current value = latest snapshot balance for linked account</li>
+        <li>Status = computed: compare progress rate vs required rate to hit target</li>
+        <li>No separate <code style="color:#58a6ff">GoalType</code> needed — free text or fixed categories</li>
+      </ul>
+    </div>
+    <div style="background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 20px 24px;">
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #e6edf3;">Status Logic</div>
+      <ul style="font-size: 12px; color: #8b949e; line-height: 2; padding-left: 16px;">
+        <li><span style="color:#3fb950">Ahead</span> — actual % &gt; expected % by &gt;5pp</li>
+        <li><span style="color:#58a6ff">On Track</span> — within ±5pp of expected %</li>
+        <li><span style="color:#f85149">Behind</span> — actual % &lt; expected % by &gt;5pp</li>
+        <li>Expected % = (elapsed time / total duration) × 100</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
