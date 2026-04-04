@@ -8,17 +8,19 @@ Personal net worth tracker for a single user. Track asset accounts and liabiliti
 
 Seeing your net worth trend over time at a glance, without the overhead of transaction tracking.
 
-## Current Milestone: v1.1 UI Overhaul
+## Current Milestone: v2.0 React Migration
 
-**Goal:** Improve every page for both practicality and aesthetics — redesign balance entry to support date-based backfilling, add history views per data type, and polish dashboard and supporting pages.
+**Goal:** Replace Streamlit with a React + TypeScript frontend backed by a FastAPI REST API, hosted on Firebase Hosting with zero new GCP charges.
 
 **Target features:**
-- Date-aware balance entry on Accounts, Liabilities, and Pension pages (backfilling support)
-- Per-page history views with daily totals and expandable per-item breakdown
-- Dashboard metric cards with colored styled boxes; fix negative delta color
-- History page table styling and date formatting
-- Configure page inline delete per row
-- Sidebar active state color improvement
+- FastAPI REST API wrapping all existing SQLModel services
+- React + TypeScript frontend with Tailwind CSS + shadcn/ui
+- Recharts replacing Plotly for all charts
+- Midnight dark colour scheme carried over
+- Firebase Auth integrated via Firebase JS SDK (replacing Streamlit Firebase component)
+- All existing pages rebuilt: Dashboard, Accounts, Liabilities, Pension, History, Configure
+- Date-aware balance entry and history views (previously planned for v1.1 Phases 7-8)
+- Firebase Hosting deployment for React; FastAPI stays on Cloud Run
 
 ## Requirements
 
@@ -42,19 +44,16 @@ Seeing your net worth trend over time at a glance, without the overhead of trans
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] User can enter account balances for any chosen date (backfilling)
-- [ ] User can view asset entry history with daily totals and per-account breakdown
-- [ ] User can enter liability balances for any chosen date (backfilling)
-- [ ] User can view liability entry history with daily totals and per-liability breakdown
-- [ ] User can enter pension balances for any chosen date (backfilling)
-- [ ] User can view pension entry history with daily totals and per-provider breakdown
-- [ ] Dashboard metric cards display with colored styled boxes; negative delta shown in red
-- [ ] Line chart y-axis shows thousands comma separator
-- [ ] Pension bar chart has visual depth (shadows)
-- [ ] History page uses styled table with dates formatted as "Jan 2025"
-- [ ] History expanded row shows asset and liability breakdown with edit and delete
-- [ ] Configure page delete type action is inline per row
-- [ ] Sidebar active page indicator uses improved color
+- [ ] FastAPI REST API exposes endpoints for all existing functionality (accounts, liabilities, pension, snapshots, configure)
+- [ ] React frontend authenticates via Firebase JS SDK (Google Sign-In)
+- [ ] Dashboard page shows net worth metric cards and charts (trend, allocation, pension)
+- [ ] Accounts page supports CRUD, date-aware balance entry, and per-day history view
+- [ ] Liabilities page supports CRUD, date-aware balance entry, and per-day history view
+- [ ] Pension page supports CRUD, date-aware balance entry, and per-day history view
+- [ ] History page shows styled snapshot table with "Jan 2025" date format and expandable rows with edit/delete
+- [ ] Configure page manages account/liability types with inline delete per row
+- [ ] CSV export and import available in History page
+- [ ] React app deployed to Firebase Hosting; FastAPI deployed to Cloud Run
 
 ### Out of Scope
 
@@ -93,4 +92,4 @@ Seeing your net worth trend over time at a glance, without the overhead of trans
 | Hardcoded test user for Phases 1-3 | Unblock UI development without auth complexity | ✓ Good |
 
 ---
-*Last updated: 2026-03-05 after milestone v1.1 started*
+*Last updated: 2026-04-04 after milestone v2.0 started*

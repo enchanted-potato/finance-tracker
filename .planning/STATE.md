@@ -1,36 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
+milestone: v2.0
+milestone_name: React Migration
 status: planning
-stopped_at: Completed 06-04-PLAN.md
-last_updated: "2026-03-07T21:58:45.790Z"
-last_activity: 2026-03-05 — v1.1 roadmap created (Phases 6-8 defined)
+stopped_at: —
+last_updated: "2026-04-04T00:00:00.000Z"
+last_activity: 2026-04-04 — Milestone v2.0 started
 progress:
-  total_phases: 5
-  completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
-  percent: 60
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # State
 
 ## Current Position
 
-Phase: 6 of 8 (Dashboard and Navigation Polish) — ready to plan
+Phase: Not started (defining requirements)
 Plan: —
-Status: Roadmap created; ready to plan Phase 6
-Last activity: 2026-03-13 - Completed quick task 6: Apply Midnight colour scheme to entire Streamlit app
+Status: Defining requirements
+Last activity: 2026-04-04 — Milestone v2.0 started
 
-Progress: [██████░░░░] 60%
+Progress: [░░░░░░░░░░] 0%
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-05)
+See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Seeing your net worth trend over time at a glance, without the overhead of transaction tracking.
-**Current focus:** v1.1 — UI Overhaul (Phase 6: Dashboard and Navigation Polish)
+**Current focus:** v2.0 — React Migration
 
 ## Performance Metrics
 
