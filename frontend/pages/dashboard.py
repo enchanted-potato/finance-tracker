@@ -56,9 +56,9 @@ def render() -> None:
     # --- Headline numbers ---
     # Prefer live account/liability balances; fall back to latest snapshot
     # when no active records exist (e.g. data imported as snapshots only).
-    total_assets = sum((a.balance for a in accounts), Decimal("0"))
+    total_assets = sum((a.balance * a.exchange_rate for a in accounts), Decimal("0"))
     total_liabilities = sum((lb.amount for lb in liabilities), Decimal("0"))
-    total_pension = sum((a.balance for a in pension_accounts), Decimal("0"))
+    total_pension = sum((a.balance * a.exchange_rate for a in pension_accounts), Decimal("0"))
     if total_assets == 0 and total_liabilities == 0 and all_snapshots:
         latest = all_snapshots[-1]
         total_assets = latest.total_assets if latest.total_assets is not None else Decimal("0")
