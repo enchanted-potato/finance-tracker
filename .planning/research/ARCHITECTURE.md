@@ -1,8 +1,8 @@
 # Architecture Research
 
-**Domain:** Firebase Auth + Cloud Run deployment integration with existing Streamlit net worth tracker
-**Researched:** 2026-02-17
-**Confidence:** MEDIUM — Web tools unavailable; analysis based on training knowledge (Jan 2025) + direct codebase inspection. Flag all Cloud Run socket specifics for verification before implementation.
+**Domain:** FastAPI REST layer + React SPA migration on top of existing Python/SQLModel service layer
+**Researched:** 2026-04-04
+**Confidence:** HIGH — based on direct codebase inspection + FastAPI official docs. Firebase token flow confirmed against existing `auth_service.py`.
 
 ---
 
@@ -11,447 +11,533 @@
 ### System Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     USER'S BROWSER                              │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Streamlit page (HTML/JS rendered by Streamlit server)   │   │
-│  │                                                          │   │
-│  │  ┌─────────────────────────────────────────────────┐    │   │
-│  │  │  st.components.v1.html() — firebase_auth.html   │    │   │
-│  │  │  Firebase JS SDK (loaded from CDN)              │    │   │
-│  │  │  Renders: login form (email/password + Google)  │    │   │
-│  │  │  On success: postMessage(idToken) to parent     │    │   │
-│  │  └─────────────────┬───────────────────────────────┘    │   │
-│  └────────────────────┼────────────────────────────────────┘   │
-└───────────────────────┼─────────────────────────────────────────┘
-                        │ idToken (JWT string) via Streamlit
-                        │ component return value
-                        ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                  CLOUD RUN CONTAINER (Streamlit server)          │
-│                                                                 │
-│  frontend/main.py                                               │
-│  ├── auth_component.py                                          │
-│  │   └── st.components.v1.html() → returns idToken             │
-│  │       firebase_admin.auth.verify_id_token(idToken)          │
-│  │       → decoded_token with uid, email, name                 │
-│  │       get_or_create_user(uid, email, name) [app/auth.py]    │
-│  │       st.session_state["user_id"] = uid                     │
-│  │                                                              │
-│  ├── pages/dashboard.py  ─┐                                     │
-│  ├── pages/accounts.py   ─┤─ read st.session_state["user_id"] │
-│  ├── pages/liabilities.py─┤   pass to service functions        │
-│  ├── pages/history.py    ─┤                                     │
-│  └── pages/configure.py  ─┘                                     │
-│                                                                 │
-│  app/services/                                                  │
-│  ├── account_service.py   ─┐                                    │
-│  ├── liability_service.py ─┤─ no change (already user_id param)│
-│  ├── snapshot_service.py  ─┘                                    │
-│  └── type_service.py                                            │
-│                                                                 │
-│  app/auth.py                                                    │
-│  ├── verify_token(id_token: str) → dict                        │
-│  └── get_or_create_user(uid, email, display_name) → User       │
-│                                                                 │
-│  app/database.py                                                │
-│  └── create_engine(DATABASE_URL)  ← Unix socket on Cloud Run   │
-│                                      TCP on local docker        │
-└───────────────────────┬─────────────────────────────────────────┘
-                        │ Unix socket (Cloud Run)
-                        │ /cloudsql/PROJECT:REGION:INSTANCE
-                        ▼
-┌─────────────────────────────────────────────────────────────────┐
-│               CLOUD SQL (PostgreSQL 15)                         │
-│               Managed Cloud SQL Auth Proxy (built into CR)      │
-└─────────────────────────────────────────────────────────────────┘
-
-External:
-┌──────────────────────────────────┐
-│  Firebase Authentication (GCP)   │
-│  UID issuance, token signing     │
-│  Accessed by: browser JS SDK     │
-│  Accessed by: server admin SDK   │
-│  (for verify_id_token)           │
-└──────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        FIREBASE HOSTING                             │
+│                                                                     │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  React SPA (Vite build output, static files)                  │  │
+│  │                                                               │  │
+│  │  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────┐ │  │
+│  │  │  Firebase   │  │   React      │  │  API Client Layer     │ │  │
+│  │  │  JS SDK     │  │   Router     │  │  (fetch + auth token  │ │  │
+│  │  │  (Auth)     │  │  (pages)     │  │   injection)          │ │  │
+│  │  └──────┬──────┘  └──────────────┘  └──────────┬───────────┘ │  │
+│  └─────────┼──────────────────────────────────────┼─────────────┘  │
+└────────────┼──────────────────────────────────────┼────────────────┘
+             │ Google Sign-In / token refresh        │ Authorization: Bearer <id_token>
+             ▼                                       ▼
+┌───────────────────────┐         ┌─────────────────────────────────────────┐
+│  Firebase Auth (GCP)  │         │      CLOUD RUN CONTAINER (FastAPI)      │
+│  Token signing,       │         │                                         │
+│  UID issuance         │◄────────│  api/main.py                            │
+└───────────────────────┘  verify │  ├── CORSMiddleware (Firebase Hosting)  │
+                           token  │  ├── routers/                           │
+                                  │  │   ├── accounts.py  ─┐               │
+                                  │  │   ├── liabilities.py─┤ call service  │
+                                  │  │   ├── pension.py    ─┤ functions     │
+                                  │  │   ├── snapshots.py  ─┤ directly      │
+                                  │  │   ├── history.py    ─┘               │
+                                  │  │   └── configure.py                  │
+                                  │  ├── deps.py                           │
+                                  │  │   ├── get_session() → SessionDep    │
+                                  │  │   └── get_current_user() → str(uid) │
+                                  │  │       (verifies Firebase ID token)  │
+                                  │  └── app/services/ (UNCHANGED)         │
+                                  │      ├── account_service.py            │
+                                  │      ├── liability_service.py          │
+                                  │      ├── snapshot_service.py           │
+                                  │      └── type_service.py               │
+                                  └──────────────┬──────────────────────────┘
+                                                 │ Unix socket
+                                                 ▼
+                                  ┌─────────────────────────────────────────┐
+                                  │  CLOUD SQL (PostgreSQL 15) — UNCHANGED  │
+                                  └─────────────────────────────────────────┘
 ```
 
 ### Component Responsibilities
 
 | Component | Responsibility | Status |
 |-----------|----------------|--------|
-| `frontend/main.py` | App entry point; auth gate (show login or app); replace TEST_USER_ID | MODIFY |
-| `frontend/auth_component.py` | Render Firebase JS login widget via st.components; capture token | NEW |
-| `frontend/firebase_auth.html` | Firebase JS SDK HTML; postMessage idToken to Streamlit | NEW |
-| `app/auth.py` | `verify_token()` + `get_or_create_user()` using firebase-admin | NEW |
-| `app/config.py` | Add `firebase_project_id`, `cloud_sql_connection_name` settings | MODIFY |
-| `app/database.py` | Engine creation unchanged; DATABASE_URL format changes per env | UNCHANGED (code) |
-| `app/models.py` | Already correct — User.id is Firebase UID VARCHAR | UNCHANGED |
-| `app/services/*` | Already receive user_id param — no change needed | UNCHANGED |
-| `Dockerfile` | Already correct structure; may need `--server.enableCORS=false` flag | MINOR MODIFY |
+| `api/main.py` | FastAPI app entry point, CORS middleware, router inclusion | NEW |
+| `api/deps.py` | Shared FastAPI dependencies: `get_session()`, `get_current_user()` | NEW |
+| `api/routers/accounts.py` | `/api/accounts` endpoints — wraps `account_service` functions | NEW |
+| `api/routers/liabilities.py` | `/api/liabilities` endpoints — wraps `liability_service` functions | NEW |
+| `api/routers/pension.py` | `/api/pension` endpoints — wraps pension functions from account_service | NEW |
+| `api/routers/snapshots.py` | `/api/snapshots` endpoints — wraps `snapshot_service` functions | NEW |
+| `api/routers/history.py` | `/api/history` endpoints — CSV export/import, history table data | NEW |
+| `api/routers/configure.py` | `/api/configure` endpoints — account/liability type CRUD | NEW |
+| `app/services/*` | All existing business logic — zero changes | UNCHANGED |
+| `app/models.py` | SQLModel models — zero changes | UNCHANGED |
+| `app/database.py` | Engine + `get_session()` generator — zero changes | UNCHANGED |
+| `app/services/auth_service.py` | `verify_firebase_token()` — already exists, used by FastAPI dep | UNCHANGED |
+| `frontend/` (Streamlit) | Existing Streamlit app — runs in parallel during migration | UNCHANGED |
+| `react-frontend/` | React + TypeScript SPA (Vite project) | NEW |
 
 ---
 
-## Firebase Auth Integration: How Token Flows from Browser to Python
+## FastAPI ↔ SQLModel Services Integration
 
-### The Core Problem
+### The Key Insight: Services Already Work
 
-Streamlit is a Python server. Firebase authentication happens client-side in JavaScript. There is no built-in bridge. The solution is `st.components.v1.html()`, which embeds an iframe and allows bidirectional communication via the component's return value.
+The existing service functions in `app/services/` already follow the correct pattern for FastAPI reuse:
 
-### Pattern: st.components.v1.html() as Auth Bridge
+- Every function takes `session: Session` as an explicit keyword argument
+- Every function takes `user_id: str` as an explicit keyword argument
+- Functions raise `ValueError` for domain errors — map to HTTP 400/404 in routers
+- Functions return SQLModel model instances directly (Pydantic-serializable)
 
-**Confidence: MEDIUM** — This is the established community pattern. The exact `postMessage` / return value mechanism has worked since Streamlit ~1.0 but verify the component return API against current Streamlit docs.
+The FastAPI router layer is a thin translation layer: receive HTTP request, inject dependencies, call service, return result.
 
-**How it works:**
+### Pattern: Dependency Injection for Session + User
 
-1. `auth_component.py` calls `st.components.v1.html(html_string, height=400)` and captures the return value.
-2. `firebase_auth.html` is loaded as the HTML string. It loads Firebase JS SDK from CDN, renders a login form.
-3. On successful Firebase login, the JS calls `window.parent.postMessage({idToken: token}, "*")` — Streamlit's component bridge picks this up and surfaces it as the return value of `html()`.
-4. Python receives the JWT string, calls `firebase_admin.auth.verify_id_token(id_token)`, gets `{uid, email, name, ...}`.
-5. Python calls `get_or_create_user()` and stores `uid` in `st.session_state["user_id"]`.
-
-**Alternative considered: URL query params** — less secure, token visible in browser history. Rejected.
-**Alternative considered: st.experimental_user** — Streamlit's built-in auth; does not support Firebase. Rejected.
+`api/deps.py` provides two shared dependencies for all protected routes:
 
 ```python
-# frontend/auth_component.py  (simplified)
-import streamlit as st
-import streamlit.components.v1 as components
-from pathlib import Path
-from app.auth import verify_token, get_or_create_user
+# api/deps.py
+from typing import Annotated, Generator
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlmodel import Session
 
-_HTML = (Path(__file__).parent / "firebase_auth.html").read_text()
+from app.database import engine
+from app.services.auth_service import verify_firebase_token, init_firebase_admin
 
-def render_login() -> str | None:
-    """Render Firebase login widget and return Firebase UID if authenticated."""
-    result = components.html(_HTML, height=500)
-    if result and isinstance(result, dict) and "idToken" in result:
-        decoded = verify_token(result["idToken"])
-        user = get_or_create_user(
-            uid=decoded["uid"],
-            email=decoded.get("email", ""),
-            display_name=decoded.get("name", ""),
+# Initialize Firebase Admin once at startup (idempotent guard already in auth_service.py)
+init_firebase_admin()
+
+bearer_scheme = HTTPBearer()
+
+def get_session() -> Generator[Session, None, None]:
+    """Yield one Session per request. Reuses existing database.py engine."""
+    with Session(engine) as session:
+        yield session
+
+SessionDep = Annotated[Session, Depends(get_session)]
+
+def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)],
+) -> str:
+    """Verify Firebase ID token. Return UID or raise 401."""
+    token = credentials.credentials
+    decoded = verify_firebase_token(token)  # existing auth_service function
+    if decoded is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-        return user.id
-    return None
+    return decoded["uid"]
+
+CurrentUser = Annotated[str, Depends(get_current_user)]
 ```
 
-```javascript
-// frontend/firebase_auth.html  (key JS section)
-// After firebase.auth().signInWithEmailAndPassword(email, password)
-firebase.auth().onAuthStateChanged(function(user) {
-    if (user) {
-        user.getIdToken().then(function(idToken) {
-            // Send token to Streamlit Python layer
-            window.parent.postMessage({idToken: idToken}, "*");
-        });
-    }
-});
-```
+The `get_session()` in `deps.py` wraps the existing `engine` from `database.py` — it does the same thing as the existing `get_session()` generator. FastAPI's `Depends()` ensures one session per HTTP request, with automatic cleanup via the context manager.
 
-### Replacing the Hardcoded Test User in main.py
+### Pattern: Router Wrapping a Service
 
-**Current state (`frontend/main.py`):**
 ```python
-TEST_USER_ID = "test-user"
-st.session_state["user_id"] = TEST_USER_ID  # line 118
+# api/routers/accounts.py
+from fastapi import APIRouter, HTTPException
+from app.services import account_service
+from api.deps import SessionDep, CurrentUser
+
+router = APIRouter(prefix="/api/accounts", tags=["accounts"])
+
+@router.get("/")
+def list_account_types(session: SessionDep, user_id: CurrentUser):
+    return account_service.list_account_types(session=session, user_id=user_id)
+
+@router.get("/entries")
+def list_account_entries(session: SessionDep, user_id: CurrentUser):
+    return account_service.list_account_entries(session=session, user_id=user_id)
+
+@router.put("/entries")
+def upsert_account_entry(body: AccountEntryIn, session: SessionDep, user_id: CurrentUser):
+    try:
+        return account_service.upsert_account_entry(
+            session=session,
+            user_id=user_id,
+            account_type_id=body.account_type_id,
+            entry_date=body.entry_date,
+            balance=body.balance,
+            currency=body.currency,
+            exchange_rate=body.exchange_rate,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/entries/{entry_id}")
+def delete_account_entry(entry_id: int, session: SessionDep, user_id: CurrentUser):
+    try:
+        account_service.delete_account_entry(
+            session=session, entry_id=entry_id, user_id=user_id
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 ```
 
-**After auth integration:**
-```python
-# In main() — auth gate pattern
-if "user_id" not in st.session_state:
-    uid = auth_component.render_login()
-    if uid:
-        st.session_state["user_id"] = uid
-        st.rerun()
-    st.stop()  # Don't render the rest of the app
-# else: user authenticated, fall through to normal app render
-```
+### ValueError → HTTP Exception Mapping
 
-**`_ensure_test_user()` is deleted.** `get_or_create_user()` in `app/auth.py` replaces it with production logic.
+All service functions raise `ValueError` on domain errors. The router catches these and maps them to appropriate HTTP status codes:
 
-**`_init_db()` is modified** — remove `_ensure_test_user(session)` call. Keep `SQLModel.metadata.create_all(engine)` and `seed_default_types()`.
+| Service exception | HTTP status | Condition |
+|-------------------|-------------|-----------|
+| `ValueError("...not found...")` | 404 | Entity not found for user |
+| `ValueError("...")` (other) | 400 | Bad input / domain constraint violation |
+| No exception | 200/201 | Success |
 
 ---
 
-## Cloud SQL Connection: Docker-Compose TCP vs Cloud Run Unix Socket
+## Firebase Token Flow: React → FastAPI
 
-### Local (docker-compose) — TCP
-
-```
-DATABASE_URL=postgresql://finance:finance@db:5432/finance_tracker
-```
-
-`db` resolves to the docker-compose Postgres service via Docker networking. Standard TCP connection. This stays unchanged for local dev.
-
-### Cloud Run — Unix Socket via Cloud SQL Auth Proxy
-
-**Confidence: MEDIUM** — This is the canonical GCP pattern. Verify exact socket path format and `pg_bouncer` flag requirements against official docs before deploying.
-
-Cloud Run has built-in Cloud SQL Auth Proxy support. When you add `--add-cloudsql-instances PROJECT:REGION:INSTANCE` to the Cloud Run deploy command, Cloud Run mounts a Unix socket at:
+### Token Acquisition in React
 
 ```
-/cloudsql/PROJECT_ID:REGION:INSTANCE_NAME
+1. User opens React app on Firebase Hosting
+2. Firebase JS SDK (modular) is initialized with project config
+3. User clicks "Sign in with Google"
+4. Firebase JS SDK handles OAuth popup → Firebase Auth issues ID token (JWT, 1hr expiry)
+5. JS SDK stores token internally and auto-refreshes before expiry
+6. React app calls user.getIdToken() to get current valid token
+7. Token is attached to all API requests: Authorization: Bearer <token>
 ```
 
-The SQLAlchemy/psycopg2 connection string for Unix socket is:
+The Firebase JS SDK refreshes tokens automatically. The React API client must call `getIdToken()` (not cache the raw token string) on every request to get a non-expired token.
+
+### Token Verification in FastAPI
 
 ```
-postgresql+psycopg2://USER:PASSWORD@/DBNAME?host=/cloudsql/PROJECT_ID:REGION:INSTANCE_NAME
+1. FastAPI receives: Authorization: Bearer <firebase-id-token>
+2. HTTPBearer security scheme extracts the token string
+3. get_current_user() dependency calls verify_firebase_token(token)
+4. verify_firebase_token() calls firebase_admin.auth.verify_id_token(token)
+   → verifies signature against Firebase's public keys (cached by Admin SDK)
+   → verifies expiry, audience (project ID), issuer
+   → checks UID against ALLOWED_FIREBASE_UID if set (single-user guard)
+5. Returns decoded["uid"] — the Firebase UID string
+6. UID is passed as user_id to all service function calls
+7. All service queries filter by user_id — data isolation guaranteed
 ```
 
-Note the empty host (`@/`) and the `host=` query parameter pointing to the socket directory.
+The existing `verify_firebase_token()` in `app/services/auth_service.py` already does all of this. The FastAPI dependency layer wraps it and converts `None` return to a 401 HTTP exception.
 
-**In `app/config.py`**, no code changes are needed — the URL comes from the `DATABASE_URL` environment variable. Only the value changes per environment:
+### Token Refresh Strategy in React
 
-```bash
-# Cloud Run environment variable (set via gcloud or Secret Manager)
-DATABASE_URL=postgresql+psycopg2://finance:PASSWORD@/finance_tracker?host=/cloudsql/my-project:us-central1:finance-db
+```typescript
+// api/client.ts — centralized API client
+import { getAuth } from "firebase/auth";
+
+async function apiFetch(path: string, options?: RequestInit): Promise<Response> {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (!user) throw new Error("Not authenticated");
+
+  // Always call getIdToken() — SDK returns cached token if not expired,
+  // fetches new one if within 5 min of expiry
+  const token = await user.getIdToken();
+
+  return fetch(`${import.meta.env.VITE_API_URL}${path}`, {
+    ...options,
+    headers: {
+      ...options?.headers,
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
 ```
 
-**Engine creation in `app/database.py` is code-unchanged.** The `create_engine(settings.database_url)` call works for both TCP and Unix socket — the difference is purely in the URL string.
+This pattern means the React app never stores a raw token string — it always requests the current valid token from the Firebase JS SDK before each API call.
 
-### Connection Pool Consideration
+---
 
-Cloud Run scales to zero and has cold starts. Connection pooling settings matter:
+## CORS Configuration
+
+Firebase Hosting serves the React SPA from `https://PROJECT.web.app` and `https://PROJECT.firebaseapp.com`. The FastAPI server on Cloud Run is at a different origin.
 
 ```python
-# app/database.py — add pool settings for Cloud Run
-engine = create_engine(
-    settings.database_url,
-    echo=settings.debug,
-    pool_size=2,          # Cloud Run instances are single-user; keep small
-    max_overflow=0,
-    pool_pre_ping=True,   # Detect stale connections after scale-from-zero
+# api/main.py
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://PROJECT_ID.web.app",
+        "https://PROJECT_ID.firebaseapp.com",
+        "http://localhost:5173",  # Vite dev server default
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 ```
 
-**Confidence: MEDIUM** — pool_pre_ping is widely recommended for Cloud Run; verify pool_size/max_overflow tuning.
+Note: When `allow_credentials=True`, `allow_origins` cannot be `["*"]` — must list explicit origins. This is a CORS spec requirement enforced by browsers.
 
 ---
 
-## Secrets Management on Cloud Run
+## Recommended Project Structure
 
-**Confidence: MEDIUM** — This is standard GCP pattern. Verify IAM permissions required.
+### Python Side (FastAPI layer — new)
 
-Firebase service account credentials and DB password must NOT be in the container image or environment variables in plain text. Use Google Secret Manager.
+```
+api/                           # New FastAPI application package
+├── __init__.py
+├── main.py                    # FastAPI app, middleware, router inclusion
+├── deps.py                    # Shared dependencies: SessionDep, CurrentUser
+├── schemas/                   # Request/response Pydantic models (separate from DB models)
+│   ├── __init__.py
+│   ├── accounts.py            # AccountEntryIn, AccountEntryOut, AccountTypeIn
+│   ├── liabilities.py         # LiabilityEntryIn, LiabilityEntryOut
+│   ├── pension.py             # PensionEntryIn (reuses AccountEntry shape)
+│   ├── snapshots.py           # SnapshotOut, SnapshotHistoryOut
+│   └── configure.py           # AccountTypeIn, LiabilityTypeIn
+└── routers/                   # One file per domain, mirrors service layer
+    ├── __init__.py
+    ├── accounts.py            # /api/accounts — wraps account_service
+    ├── liabilities.py         # /api/liabilities — wraps liability_service
+    ├── pension.py             # /api/pension — wraps pension functions
+    ├── snapshots.py           # /api/snapshots — wraps snapshot_service
+    ├── history.py             # /api/history — snapshot history + CSV
+    └── configure.py           # /api/configure — type CRUD (wraps type_service)
 
-**Approach:**
-
-1. Store Firebase credentials JSON as a Secret Manager secret.
-2. Mount it as a volume in Cloud Run (not env var — it's a file, not a string).
-3. `FIREBASE_CREDENTIALS_PATH` env var points to the mounted path.
-
-```bash
-# Deploy command pattern
-gcloud run deploy finance-tracker \
-  --image gcr.io/PROJECT_ID/finance-tracker \
-  --add-cloudsql-instances PROJECT:REGION:INSTANCE \
-  --set-env-vars DATABASE_URL=postgresql+psycopg2://...,FIREBASE_CREDENTIALS_PATH=/secrets/firebase \
-  --set-secrets /secrets/firebase=firebase-credentials:latest \
-  --set-secrets DATABASE_PASSWORD=db-password:latest \
-  --service-account finance-tracker-sa@PROJECT.appspot.com
+app/                           # UNCHANGED — existing service layer
+├── models.py
+├── database.py
+├── config.py
+├── seed.py
+└── services/
+    ├── account_service.py
+    ├── liability_service.py
+    ├── snapshot_service.py
+    ├── type_service.py
+    └── auth_service.py        # verify_firebase_token() already here
 ```
 
-**Alternative for DB password:** embed in DATABASE_URL secret (store the whole URL as a secret, mount as env var from secret).
+### React Side (new)
 
-**`app/config.py` extension needed:**
-
-```python
-class Settings(BaseSettings):
-    database_url: str
-    firebase_credentials_path: str = ""
-    firebase_project_id: str = ""   # NEW: for token verification
-    debug: bool = False
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+```
+react-frontend/                # Vite project root
+├── index.html                 # Vite entry point (references /src/main.tsx)
+├── vite.config.ts             # VITE_API_URL proxy for local dev
+├── tsconfig.json
+├── package.json
+├── .env.local                 # VITE_API_URL=http://localhost:8000 (local)
+├── .env.production            # VITE_API_URL=https://finance-tracker-xxxx.run.app
+├── public/
+│   └── favicon.ico
+└── src/
+    ├── main.tsx               # React DOM render, Firebase init, router setup
+    ├── firebase.ts            # Firebase app initialization (config from env vars)
+    ├── api/
+    │   ├── client.ts          # Base fetch wrapper with token injection
+    │   ├── accounts.ts        # API calls for accounts + pension
+    │   ├── liabilities.ts     # API calls for liabilities
+    │   ├── snapshots.ts       # API calls for snapshots + history
+    │   └── configure.ts       # API calls for type management
+    ├── components/            # Reusable UI components (shadcn/ui wrappers)
+    │   ├── ui/                # shadcn/ui generated components live here
+    │   ├── NetWorthCard.tsx
+    │   ├── AccountTable.tsx
+    │   ├── NetWorthChart.tsx  # Recharts wrapper
+    │   └── AuthGuard.tsx      # Route-level auth check
+    ├── pages/                 # One file per app page (mirrors Streamlit pages)
+    │   ├── Dashboard.tsx
+    │   ├── Accounts.tsx
+    │   ├── Liabilities.tsx
+    │   ├── Pension.tsx
+    │   ├── History.tsx
+    │   └── Configure.tsx
+    ├── hooks/                 # Custom React hooks
+    │   ├── useCurrentUser.ts  # Firebase auth state observer
+    │   ├── useAccounts.ts     # Data fetching hooks per domain
+    │   └── useSnapshots.ts
+    └── types/                 # TypeScript types mirroring API schemas
+        ├── accounts.ts
+        ├── liabilities.ts
+        └── snapshots.ts
 ```
 
-`firebase_project_id` is needed by `verify_id_token()` to check the `aud` claim.
+### Structure Rationale
+
+- **`api/` vs `app/`:** The existing `app/` package stays completely unchanged. The new `api/` package adds FastAPI on top without touching services. Clear boundary.
+- **`api/schemas/`:** Separate from SQLModel models in `app/models.py`. DB models have server-only fields (e.g., `user_id` on every record — never sent to client); schemas expose only what the API surface needs.
+- **`api/routers/`:** One file per domain mirrors the existing service file structure. `accounts.py` wraps `account_service.py`, `liabilities.py` wraps `liability_service.py`, etc. Direct correspondence makes navigation obvious.
+- **`react-frontend/src/api/`:** All HTTP calls centralized here. Pages and hooks never call `fetch()` directly. Swap implementation without touching components.
+- **`react-frontend/src/pages/`:** One-to-one with existing Streamlit pages. Same mental model for the migration.
+- **`react-frontend/src/types/`:** TypeScript types generated from or manually mirroring the API response schemas. Keeps type safety across the boundary.
 
 ---
 
-## app/auth.py: New File Structure
+## API Route Organization: Mirror the Service Layer
 
-```python
-# app/auth.py
-import firebase_admin
-from firebase_admin import auth, credentials
-from sqlmodel import Session, select
-from loguru import logger
+| Existing Service Function | FastAPI Endpoint | Method |
+|---------------------------|------------------|--------|
+| `account_service.list_account_types()` | `GET /api/accounts/types` | GET |
+| `account_service.list_account_entries()` | `GET /api/accounts/entries` | GET |
+| `account_service.list_non_pension_entries()` | `GET /api/accounts/entries?exclude_pension=true` | GET |
+| `account_service.upsert_account_entry()` | `PUT /api/accounts/entries` | PUT |
+| `account_service.delete_account_entry()` | `DELETE /api/accounts/entries/{id}` | DELETE |
+| `account_service.list_pension_types()` | `GET /api/pension/types` | GET |
+| `account_service.list_pension_entries()` | `GET /api/pension/entries` | GET |
+| `liability_service.*` | `GET|PUT|DELETE /api/liabilities/*` | varies |
+| `type_service.create_account_type()` | `POST /api/configure/account-types` | POST |
+| `type_service.delete_account_type()` | `DELETE /api/configure/account-types/{id}` | DELETE |
+| `type_service.create_liability_type()` | `POST /api/configure/liability-types` | POST |
+| `type_service.delete_liability_type()` | `DELETE /api/configure/liability-types/{id}` | DELETE |
+| `snapshot_service.capture_snapshot()` | `POST /api/snapshots/capture` | POST |
+| `snapshot_service.get_snapshot_history()` | `GET /api/history` | GET |
+| `snapshot_service.export_csv()` | `GET /api/history/export.csv` | GET |
+| `snapshot_service.import_csv()` | `POST /api/history/import` | POST |
 
-from app.config import settings
-from app.models import User
-
-_app: firebase_admin.App | None = None
-
-def _get_app() -> firebase_admin.App:
-    """Initialize Firebase Admin app (singleton)."""
-    global _app
-    if _app is None:
-        if settings.firebase_credentials_path:
-            cred = credentials.Certificate(settings.firebase_credentials_path)
-        else:
-            cred = credentials.ApplicationDefault()  # GCP service account
-        _app = firebase_admin.initialize_app(cred)
-    return _app
-
-def verify_token(*, id_token: str) -> dict:
-    """Verify a Firebase ID token and return the decoded claims."""
-    _get_app()
-    return auth.verify_id_token(id_token)  # raises on invalid/expired
-
-def get_or_create_user(*, uid: str, email: str, display_name: str, session: Session) -> User:
-    """Return existing user or create a new one from Firebase claims."""
-    user = session.exec(select(User).where(User.id == uid)).first()
-    if user is None:
-        logger.info(f"Creating new user: {uid}")
-        user = User(id=uid, email=email, display_name=display_name)
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-    return user
-```
-
-**Credential resolution strategy:**
-- Local dev: `FIREBASE_CREDENTIALS_PATH` points to downloaded service account JSON.
-- Cloud Run: `FIREBASE_CREDENTIALS_PATH` points to Secret Manager mounted file OR use `ApplicationDefault()` (Cloud Run SA with Firebase permissions).
-
----
-
-## Dockerfile: Health Check for Cloud Run
-
-Cloud Run requires the container to respond to HTTP requests. Streamlit does respond on port 8501, but adding `--server.enableCORS=false` and `--server.enableXsrfProtection=false` is often needed behind Cloud Run's proxy.
-
-```dockerfile
-# Current CMD — works but may need flags
-CMD ["uv", "run", "streamlit", "run", "frontend/main.py", \
-     "--server.port=8501", \
-     "--server.address=0.0.0.0", \
-     "--server.enableCORS=false", \
-     "--server.enableXsrfProtection=false"]
-```
-
-**Confidence: LOW** — The CORS/XSRF flags are frequently cited in community resources for Cloud Run deployments but not definitively documented as required. Test without first; add if auth token posting fails.
-
-Cloud Run health check: Cloud Run uses HTTP GET `/healthz` or the root path by default. Streamlit responds on `/` so the default health check passes. No explicit health check endpoint needed.
-
----
-
-## Recommended Project Structure Changes
-
-```
-finance-tracker/
-├── app/
-│   ├── auth.py                    # NEW — Firebase token verify + get_or_create_user
-│   ├── config.py                  # MODIFY — add firebase_project_id
-│   ├── database.py                # MODIFY — add pool_pre_ping, pool_size
-│   ├── models.py                  # UNCHANGED
-│   ├── seed.py                    # UNCHANGED
-│   └── services/                  # UNCHANGED
-├── frontend/
-│   ├── auth_component.py          # NEW — st.components.v1.html() wrapper
-│   ├── firebase_auth.html         # NEW — Firebase JS SDK login widget
-│   ├── main.py                    # MODIFY — remove TEST_USER_ID, add auth gate
-│   └── pages/                     # UNCHANGED
-├── Dockerfile                     # MODIFY — add server flags
-├── docker-compose.yml             # UNCHANGED (local still uses TCP)
-└── .env.example                   # MODIFY — add FIREBASE_PROJECT_ID
-```
+All routes under `/api/` are protected by the `CurrentUser` dependency (Firebase token verification).
 
 ---
 
 ## Data Flow
 
-### Authentication Flow (new users / logged-out state)
+### Authenticated API Request Flow
 
 ```
-Browser (unauthenticated)
+React page (e.g., Accounts.tsx)
+    ↓ calls useAccounts() hook
+hooks/useAccounts.ts → api/accounts.ts → api/client.ts
+    ↓ user.getIdToken() → Firebase JS SDK (returns valid/refreshed token)
+HTTP GET /api/accounts/entries
+Authorization: Bearer <firebase-id-token>
+    ↓ CORS preflight handled by CORSMiddleware (FastAPI)
+api/routers/accounts.py → list_account_entries()
+    ↓ Depends(get_current_user) → verify_firebase_token() → uid
+    ↓ Depends(get_session) → Session(engine)
+app/services/account_service.list_account_entries(session=session, user_id=uid)
+    ↓ SQLModel query filtered by user_id
+Cloud SQL (Unix socket)
+    ↓ List[AccountEntry] SQLModel instances
+JSON serialization (FastAPI auto-serializes SQLModel/Pydantic models)
     ↓
-frontend/main.py: "user_id" not in st.session_state
+React: JSON array of account entries → renders table
+```
+
+### Balance Update + Snapshot Flow
+
+```
+React Accounts page: user submits balance form
     ↓
-auth_component.render_login()
-    ↓
-st.components.v1.html(firebase_auth.html)
-    ↓ user enters credentials
-Firebase JS SDK → Firebase Auth API (GCP)
+api/accounts.ts → PUT /api/accounts/entries (body: {account_type_id, entry_date, balance})
+    ↓ FastAPI router
+account_service.upsert_account_entry(session, user_id, ...)
     ↓ success
-JS: user.getIdToken() → JWT string
-    ↓ postMessage
-Streamlit component return value → Python
+POST /api/snapshots/capture (called immediately after from React, or by server)
+snapshot_service.capture_snapshot(session, user_id, snapshot_date)
+    ↓ upserts snapshot (one per user per day — UniqueConstraint)
+204 No Content / Snapshot object
     ↓
-app/auth.verify_token(id_token)
-    ↓ firebase_admin SDK → Firebase public keys (cached)
-decoded claims: {uid, email, name}
-    ↓
-app/auth.get_or_create_user(uid, email, name, session)
-    ↓ upsert into users table (Cloud SQL)
-User record
-    ↓
-st.session_state["user_id"] = uid
-st.rerun()
-    ↓
-App renders normally (Dashboard, Accounts, etc.)
+React invalidates query cache → refetches account entries + dashboard
 ```
 
-### Normal App Flow (authenticated, unchanged from Phase 3)
+Two design options for snapshot capture after balance update:
+
+**Option A (recommended):** React makes two sequential calls — PUT balance, then POST snapshot. Keeps server endpoints single-responsibility. React can handle the cascade.
+
+**Option B:** PUT balance endpoint triggers snapshot capture server-side in the same transaction. Reduces round trips but couples concerns.
+
+Option A is recommended: easier to test, aligns with existing service layer separation (balance update and snapshot are separate service calls today).
+
+### Firebase Auth State Flow in React
 
 ```
-User action (e.g., update account balance)
+App mounts → firebase.ts initializes Firebase app
     ↓
-frontend/pages/accounts.py
-    ↓ reads st.session_state["user_id"]
-app/services/account_service.update_balance(user_id=uid, ...)
-    ↓
-Cloud SQL (Unix socket) via SQLModel Session
-    ↓
-snapshot_service.capture_snapshot(user_id=uid, session=session)
-```
-
-### Cloud Run Request Flow
-
-```
-HTTPS request → Cloud Run ingress
-    ↓ TLS termination
-Streamlit server (port 8501)
-    ↓ WebSocket (Streamlit's normal mode)
-Python session (st.session_state persisted per browser tab)
-    ↓ Unix socket
-Cloud SQL Auth Proxy (built into Cloud Run runtime)
-    ↓ encrypted TCP
-Cloud SQL PostgreSQL
+main.tsx: onAuthStateChanged(auth, user => { ... })
+    ↓ no user
+AuthGuard redirects to /login
+    ↓ user clicks "Sign in with Google"
+Firebase JS SDK → Google OAuth popup → Firebase Auth token issued
+    ↓ onAuthStateChanged fires with user object
+AuthGuard renders children (app routes)
+    ↓ every API call
+user.getIdToken() → returns cached token (refreshes automatically if near expiry)
 ```
 
 ---
 
 ## Architectural Patterns
 
-### Pattern 1: st.session_state as Auth Context Carrier
+### Pattern 1: Thin Router, Fat Service
 
-**What:** Store Firebase UID in `st.session_state["user_id"]` after verification. Every page reads it from there.
+**What:** FastAPI routers contain zero business logic. They receive HTTP input, call one service function, handle exceptions, return results. All logic stays in `app/services/`.
 
-**When to use:** Always — this is the only viable per-session state store in Streamlit.
+**When to use:** Always. The service layer was already designed to be UI-agnostic. FastAPI routers are a third caller (after Streamlit pages and pytest tests).
 
-**Trade-offs:** Session state is per-tab (browser tab), not per-user across tabs. Acceptable for single-user app. State is lost on server restart (user must re-auth). With Cloud Run, containers may be replaced — session state does not persist across container instances. This is a known Streamlit-on-Cloud-Run constraint.
+**Trade-offs:** Routers are trivially thin. Some duplication in error handling boilerplate. Worth it — services remain independently testable without HTTP context.
 
-**Implication:** Auth token re-verification happens on every new Streamlit session (new tab, server restart). The Firebase JS SDK handles token refresh transparently on the client; the Python side needs to be aware that tokens expire in 1 hour and re-verification is needed.
+### Pattern 2: HTTPBearer + Dependency for Auth
 
-### Pattern 2: Firebase Admin SDK Singleton Initialization
+**What:** Use FastAPI's `HTTPBearer` security scheme to extract the `Authorization: Bearer` token. Wrap it in a `get_current_user()` dependency that returns the verified UID. Inject `CurrentUser` into any protected route.
 
-**What:** Initialize `firebase_admin` app once at module level (or on first call) as a singleton. Re-initialization on every request throws an error.
+**When to use:** Every non-public endpoint. Apply at router level via `dependencies=[Depends(get_current_user)]` if all routes in a router are protected.
 
-**When to use:** Always — `firebase_admin.initialize_app()` is not idempotent.
+**Trade-offs:** Every request hits Firebase's token verification. The Firebase Admin SDK caches Firebase's public keys locally (refreshes every hour), so most verifications are local crypto operations — fast. No database lookup needed for auth.
 
-**Trade-offs:** Global state, but Firebase Admin is designed for this. The `_get_app()` guard in `app/auth.py` handles this correctly.
+```python
+# Apply auth to entire router at inclusion time in main.py:
+app.include_router(
+    accounts_router,
+    dependencies=[Depends(get_current_user)],  # all routes in router are protected
+)
+# Or declare per-route as shown in router examples above.
+```
 
-### Pattern 3: DATABASE_URL Abstraction for Environment Parity
+### Pattern 3: Shared `SessionDep` Type Alias
 
-**What:** All database connection logic lives in `DATABASE_URL`. Local uses TCP format, Cloud Run uses Unix socket format. `app/database.py` code never changes between environments.
+**What:** Define `SessionDep = Annotated[Session, Depends(get_session)]` once in `deps.py`. Use it as a type annotation in every route handler. FastAPI resolves the dependency automatically.
 
-**When to use:** Always — 12-factor app principle. Avoids environment-specific code branches.
+**When to use:** Always — this is the official FastAPI + SQLModel pattern. Avoids repeating `Annotated[Session, Depends(get_session)]` in every route signature.
 
-**Trade-offs:** The URL format difference (TCP vs Unix socket) is subtle. Unix socket format uses `?host=` query param which is non-obvious. Document this clearly in `.env.example`.
+**Trade-offs:** One session per HTTP request, created and destroyed per request. Correct for a REST API (unlike Streamlit, which held sessions open across reruns).
+
+### Pattern 4: Schema Separation (DB models vs API schemas)
+
+**What:** `app/models.py` defines SQLModel table models. `api/schemas/` defines separate Pydantic models for request bodies and response shapes. Route functions receive schema objects as input and may return either schema or model objects.
+
+**When to use:** For any field that differs between DB and API: `user_id` should never appear in response bodies (inferred from auth token); `created_at`/`updated_at` may be excluded from create request bodies.
+
+**Trade-offs:** Some duplication between `models.py` and `schemas/`. Acceptable — the SQLModel dual-inheritance makes models serve as response schemas directly in many cases. Only create explicit schemas where the shape truly differs.
+
+---
+
+## Build Order: Parallel Development After API Contract
+
+The API contract (route paths + request/response shapes) can be agreed first, then FastAPI and React developed in parallel.
+
+**Step 1 (blocking): Define API contract**
+- List all endpoints, methods, request bodies, response shapes
+- Agree on JSON field names (snake_case to match Python, or camelCase for JS — pick one, configure FastAPI serialization alias if needed)
+- This unblocks parallel work
+
+**Step 2 (parallel):**
+
+| FastAPI track | React track |
+|---------------|-------------|
+| `api/main.py` + `api/deps.py` setup | Vite project scaffold + Firebase JS SDK init |
+| `api/routers/accounts.py` + `api/schemas/accounts.py` | `src/api/accounts.ts` + `src/types/accounts.ts` |
+| `api/routers/liabilities.py` | `src/api/liabilities.ts` |
+| `api/routers/configure.py` | Configure page |
+| `api/routers/snapshots.py` + `api/routers/history.py` | Dashboard + History pages |
+
+**Step 3 (integration):** Connect React to live FastAPI. Fix any contract mismatches. End-to-end auth flow testing.
+
+**Step 4 (deployment):** Firebase Hosting deploy for React (`firebase deploy --only hosting`). FastAPI on Cloud Run replaces Streamlit (or runs as separate service initially).
+
+**Dependency constraints:**
+- `api/deps.py` must exist before any router (imports it)
+- Firebase project web config must be known before React `firebase.ts` can be written (API key, project ID, app ID)
+- FastAPI CORS must list the Firebase Hosting origin before React can call the API in production
+- Streamlit can continue running on Cloud Run during migration — React + FastAPI can be a separate Cloud Run service initially
 
 ---
 
@@ -461,130 +547,103 @@ Cloud SQL PostgreSQL
 
 | Service | Integration Pattern | Confidence | Notes |
 |---------|---------------------|------------|-------|
-| Firebase Auth (client) | Firebase JS SDK via CDN in st.components iframe | MEDIUM | CDN load in iframe may have CSP issues on some hosting |
-| Firebase Auth (server) | `firebase-admin` Python SDK — `verify_id_token()` | HIGH | Already in pyproject.toml dependencies |
-| Cloud SQL | Unix socket via Cloud SQL Auth Proxy (built into Cloud Run) | MEDIUM | Proxy is automatic with `--add-cloudsql-instances` flag |
-| Secret Manager | Volume mount for Firebase credentials JSON | MEDIUM | Alternative: Application Default Credentials via SA permissions |
+| Firebase Auth (React) | Firebase JS SDK modular API — `signInWithPopup`, `onAuthStateChanged`, `getIdToken` | HIGH | Use modular (v9+) SDK, not compat layer |
+| Firebase Auth (FastAPI) | `firebase_admin.auth.verify_id_token()` — already in `auth_service.py` | HIGH | No changes needed; wrap in FastAPI dep |
+| Firebase Hosting | `firebase deploy --only hosting` from `react-frontend/dist/` | HIGH | Static host; needs `firebase.json` rewrite rules for SPA routing |
+| Cloud SQL | Unchanged — Unix socket via Cloud Run Auth Proxy | HIGH | FastAPI uses same engine as Streamlit |
 
 ### Internal Boundaries
 
 | Boundary | Communication | Notes |
 |----------|---------------|-------|
-| `frontend/auth_component.py` → `app/auth.py` | Direct Python import call | Keep `app/auth.py` free of st.* calls |
-| `frontend/main.py` → auth gate | `st.session_state["user_id"]` presence check | Gate must be first in `main()` before any page render |
-| `app/auth.py` → `app/database.py` | Receives `Session` as parameter | `get_or_create_user` takes session arg; does not create its own |
-| Pages → Services | `st.session_state["user_id"]` passed as `user_id` kwarg | Pattern already established in Phase 3 |
-
----
-
-## Build Order (What Must Exist Before What)
-
-**Phase 4A — Firebase backend infrastructure:**
-1. `app/auth.py` — core token verification and user creation (no UI dependency)
-2. `app/config.py` modification — add `firebase_project_id` setting
-3. Local Firebase project setup + download credentials JSON + set `FIREBASE_CREDENTIALS_PATH` in `.env`
-
-**Phase 4B — Frontend auth bridge:**
-4. `frontend/firebase_auth.html` — standalone HTML/JS that can be tested in a browser directly
-5. `frontend/auth_component.py` — wraps the HTML, calls `app/auth.py`
-6. `frontend/main.py` modification — replace `TEST_USER_ID` with auth gate
-
-**Phase 5A — Cloud Run deployment:**
-7. Cloud SQL instance creation + database + user
-8. Cloud Run service account creation + IAM permissions (Cloud SQL Client, Secret Manager Secret Accessor)
-9. Secret Manager secrets: Firebase credentials, DB password
-10. Dockerfile modification (server flags)
-11. `gcloud builds submit` + `gcloud run deploy` with `--add-cloudsql-instances`
-
-**Dependency constraints:**
-- `app/auth.py` must exist before `auth_component.py` (imports it)
-- Firebase project must exist before `firebase_auth.html` can reference the config (API key, project ID)
-- Cloud SQL must exist before Cloud Run deploy (needs connection name)
-- IAM permissions must be set before deploy (Cloud Run SA needs Cloud SQL Client role)
+| `api/routers/` → `app/services/` | Direct Python function calls | The entire point — no HTTP between them |
+| `api/deps.py` → `app/database.py` | Reuses `engine` object directly | Don't create a second engine; import the existing one |
+| `api/deps.py` → `app/services/auth_service.py` | Calls `verify_firebase_token()` | Already production-hardened; no rewrite needed |
+| React `src/api/` → FastAPI | HTTPS REST with `Authorization: Bearer` | All calls go through `api/client.ts` |
+| React `src/pages/` → `src/api/` | Custom hooks that call api functions | Pages never call fetch directly |
 
 ---
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Trusting the Token Payload Without Verification
+### Anti-Pattern 1: Business Logic in Routers
 
-**What people do:** Decode the JWT client-side, send `uid` directly to the server, use it without verification.
+**What people do:** Put filtering, computation, or validation logic directly in FastAPI route handler functions.
 
-**Why it's wrong:** JWT payload is not encrypted — anyone can craft a token with any `uid`. Firebase token verification (`verify_id_token`) checks the signature against Firebase's public keys.
+**Why it's wrong:** The services are already tested and correct. Duplicating logic in routers creates divergence. The services can't be tested independently anymore.
 
-**Do this instead:** Always call `firebase_admin.auth.verify_id_token(id_token)` server-side. Never trust client-sent `uid` values directly.
+**Do this instead:** Routers call one service function. Period. If the service doesn't exist for a use case, add it to the service file — not the router.
 
-### Anti-Pattern 2: Re-initializing firebase_admin on Every Request
+### Anti-Pattern 2: Creating a New SQLAlchemy Engine in FastAPI
 
-**What people do:** Call `firebase_admin.initialize_app()` at the top of a function that runs on every Streamlit rerun.
+**What people do:** Create a second `create_engine()` call in `api/deps.py` or `api/main.py` with a new URL.
 
-**Why it's wrong:** Streamlit reruns the entire script on every interaction. `initialize_app()` throws `ValueError: The default Firebase app already exists` on the second call.
+**Why it's wrong:** Two engines = two connection pools = doubled Cloud SQL connections. On the free tier `db-f1-micro` this causes exhaustion. Also, session lifecycle between engines is undefined.
 
-**Do this instead:** Use a singleton guard (`if not firebase_admin._apps: firebase_admin.initialize_app(...)` or the `_get_app()` pattern shown above).
+**Do this instead:** Import `engine` from `app/database.py` in `api/deps.py`. One engine, one pool.
 
-### Anti-Pattern 3: Hardcoding TCP URL for Cloud Run
+### Anti-Pattern 3: Caching the Firebase ID Token String in React State
 
-**What people do:** Use `postgresql://user:pass@localhost:5432/db` in Cloud Run, then run the Cloud SQL proxy as a sidecar or separate service.
+**What people do:** Store `idToken` as a `useState` variable, attach it to all requests from that state.
 
-**Why it's wrong:** Cloud Run has native Cloud SQL Auth Proxy support via `--add-cloudsql-instances`. Running a separate proxy defeats this and adds complexity.
+**Why it's wrong:** Firebase ID tokens expire after 1 hour. The cached string becomes invalid. API calls start returning 401 silently.
 
-**Do this instead:** Use the Unix socket URL format `postgresql+psycopg2://user:pass@/db?host=/cloudsql/PROJECT:REGION:INSTANCE` and the native `--add-cloudsql-instances` flag.
+**Do this instead:** Call `user.getIdToken()` in the API client layer before every request. The Firebase JS SDK returns a cached valid token or automatically fetches a refreshed one — this call is fast when the token is still valid.
 
-### Anti-Pattern 4: Storing ID Token in st.session_state Long-Term
+### Anti-Pattern 4: Exposing `user_id` in API Request Bodies
 
-**What people do:** Store the raw Firebase ID token string in `st.session_state` and use it as the user identifier for all service calls.
+**What people do:** Include `user_id` as a field in POST/PUT request body schemas, letting the client tell the server who they are.
 
-**Why it's wrong:** Firebase ID tokens expire in 1 hour. If the user stays on the page, subsequent service calls would use an expired token as the user ID — this is fragile.
+**Why it's wrong:** Client-provided user identity is trivially forgeable. Any client can claim any `user_id`.
 
-**Do this instead:** Verify the token once, extract the `uid`, store only the `uid` in `st.session_state`. The `uid` is permanent and does not expire. Re-verify from the JS side (Firebase JS SDK auto-refreshes; user must re-login if Streamlit session is new).
+**Do this instead:** `user_id` is always extracted from the verified Firebase token via `CurrentUser` dependency. It never appears in request body schemas. The router passes `user_id=user_id` (from the dep) to service functions.
 
-### Anti-Pattern 5: Putting Firebase Credentials in the Docker Image
+### Anti-Pattern 5: Using `allow_origins=["*"]` with `allow_credentials=True`
 
-**What people do:** `COPY firebase-credentials.json /app/` in the Dockerfile.
+**What people do:** Set both `allow_origins=["*"]` and `allow_credentials=True` in CORSMiddleware.
 
-**Why it's wrong:** The image is pushed to a container registry. Credentials are baked in and visible to anyone with registry access.
+**Why it's wrong:** Browsers reject this combination per CORS spec — credentialed requests require explicit origin lists. This causes silent CORS failures in production that work fine in development (where `localhost` might be explicitly listed).
 
-**Do this instead:** Mount the credentials file via Secret Manager volume mount at Cloud Run deploy time.
+**Do this instead:** List explicit origins: Firebase Hosting domain(s) + `http://localhost:5173` for dev.
 
 ---
 
 ## Scaling Considerations
 
+This is a single-user app. The architecture is intentionally simple.
+
 | Scale | Architecture Adjustments |
 |-------|--------------------------|
-| 1 user (current target) | Current architecture is correct and sufficient |
-| 1-10 users | Consider Streamlit session state persistence — users can't share server state; each user has their own session. Works fine. |
-| 10+ users | Cloud Run scales horizontally; each instance has independent session state. Streamlit WebSocket sessions are sticky to an instance — Cloud Run handles this. DB connection pool per instance matters (`pool_size=2` recommended). |
+| 1 user (current target) | Current plan is correct. No changes needed. |
+| 1-10 users | Add basic rate limiting (FastAPI middleware). Connection pool stays small (`pool_size=2`). |
+| 10+ users | Multi-user is explicitly out of scope. Would require removing single-user UID guard and adding proper multi-tenancy — significant change. |
 
-Single-user is the stated target. The architecture is appropriate. No premature optimization needed.
+The Cloud Run + Cloud SQL free tier (`db-f1-micro`) is the binding constraint. Keep `pool_size=2` in the engine. FastAPI's async I/O is not needed here — synchronous service functions and sync route handlers work correctly with thread pool.
 
 ---
 
 ## Sources
 
-**Codebase analysis (HIGH confidence):**
-- `/Users/kristiakarakatsani/Repos/finance-tracker/frontend/main.py` — existing auth structure
-- `/Users/kristiakarakatsani/Repos/finance-tracker/app/config.py` — Settings shape
-- `/Users/kristiakarakatsani/Repos/finance-tracker/app/database.py` — Engine creation pattern
-- `/Users/kristiakarakatsani/Repos/finance-tracker/app/models.py` — User model (Firebase UID as PK)
-- `/Users/kristiakarakatsani/Repos/finance-tracker/docker-compose.yml` — Local TCP connection
-- `/Users/kristiakarakatsani/Repos/finance-tracker/Dockerfile` — Container entry point
-- `/Users/kristiakarakatsani/Repos/finance-tracker/pyproject.toml` — firebase-admin already a dependency
+**HIGH confidence (direct codebase inspection):**
+- `/Users/kristiakarakatsani/Repos/finance-tracker/app/services/account_service.py` — service function signatures (session, user_id as kwargs)
+- `/Users/kristiakarakatsani/Repos/finance-tracker/app/services/auth_service.py` — `verify_firebase_token()` already exists and production-hardened
+- `/Users/kristiakarakatsani/Repos/finance-tracker/app/database.py` — `get_session()` generator and engine pattern
+- `/Users/kristiakarakatsani/Repos/finance-tracker/app/models.py` — SQLModel model shapes (AccountEntry, LiabilityEntry, Snapshot, etc.)
+- `/Users/kristiakarakatsani/Repos/finance-tracker/.planning/codebase/ARCHITECTURE.md` — existing layer analysis
 
-**Training knowledge (MEDIUM confidence — Jan 2025 cutoff, web verification unavailable):**
-- `st.components.v1.html()` postMessage pattern for Firebase-Streamlit bridge
-- `firebase_admin.auth.verify_id_token()` API and singleton initialization pattern
-- Cloud SQL Auth Proxy Unix socket path format and `--add-cloudsql-instances` Cloud Run flag
-- SQLAlchemy Unix socket URL format with `?host=` query parameter
-- Google Secret Manager volume mount approach for Cloud Run
+**HIGH confidence (official documentation, fetched 2026-04-04):**
+- FastAPI dependency injection: https://fastapi.tiangolo.com/tutorial/dependencies/
+- FastAPI bigger applications (APIRouter): https://fastapi.tiangolo.com/tutorial/bigger-applications/
+- FastAPI SQL databases with SQLModel: https://fastapi.tiangolo.com/tutorial/sql-databases/
+- FastAPI CORS middleware: https://fastapi.tiangolo.com/tutorial/cors/
+- FastAPI OAuth2 / Bearer token pattern: https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/
 
-**Flags requiring verification before implementation:**
-- Exact Streamlit component return value mechanism for `postMessage` (verify against current Streamlit docs — component API has evolved)
-- Streamlit `--server.enableCORS=false` requirement for Cloud Run (LOW confidence — community claim, not officially documented as mandatory)
-- Unix socket URL dialect: confirm `postgresql+psycopg2://` vs `postgresql://` requirement with psycopg2 on Unix sockets
-- Cloud Run IAM role required for Cloud SQL: verify `roles/cloudsql.client` is sufficient
+**MEDIUM confidence (training knowledge, August 2025 cutoff — verify at implementation):**
+- Firebase JS SDK modular API `getIdToken()` auto-refresh behavior
+- `firebase deploy --only hosting` and `firebase.json` SPA rewrite rules
+- Vite project structure conventions (`src/`, `public/`, `index.html` at root)
 
 ---
 
-*Architecture research for: Firebase Auth + Cloud Run integration with existing Streamlit net worth tracker*
-*Researched: 2026-02-17*
+*Architecture research for: FastAPI REST layer + React SPA migration on existing Python/SQLModel net worth tracker*
+*Researched: 2026-04-04*

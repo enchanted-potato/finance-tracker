@@ -1,161 +1,293 @@
 # Stack Research
 
-**Domain:** Firebase Auth + Cloud Run/Cloud SQL deployment for existing Streamlit app
-**Researched:** 2026-02-17
-**Confidence:** HIGH (versions sourced from resolved uv.lock; integration patterns from official architecture)
+**Domain:** React + TypeScript frontend with FastAPI REST layer (v2.0 migration)
+**Researched:** 2026-04-04
+**Confidence:** MEDIUM — Core library versions from training knowledge (cutoff August 2025); Firebase JS SDK version from prior Phase 4 research (2026-02-18, HIGH confidence); FastAPI installation pattern confirmed via official docs fetch. Verify specific npm package versions with `npm info <pkg> version` before pinning.
+
+---
 
 ## Existing Stack (Already Validated — Do Not Re-Research)
 
 | Technology | Version (locked) | Purpose |
 |------------|-----------------|---------|
 | Python | 3.12 | Runtime |
-| Streamlit | 1.53.1 | Frontend |
 | SQLModel | (see uv.lock) | ORM |
 | psycopg2-binary | (see uv.lock) | PostgreSQL driver |
-| firebase-admin | 7.1.0 | Server-side Firebase SDK |
+| firebase-admin | 7.1.0 | Server-side Firebase ID token verification |
 | pydantic-settings | (see uv.lock) | Config from env vars |
 | loguru | (see uv.lock) | Logging |
 | uv | latest | Package management |
+| Cloud SQL (PostgreSQL 15) | db-f1-micro | Managed database |
+| Cloud Run | N/A | Container hosting |
 
-## New Capabilities: Firebase Auth Integration
+---
 
-### Core Technologies (New)
+## New Capabilities: React Frontend
+
+### Core Technologies
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| Firebase JS SDK | 11.x (CDN) | Client-side auth (email/password + Google sign-in) | Only way to do client-side Firebase auth in a Streamlit custom HTML component; no server-side equivalent |
-| firebase-admin (Python) | 7.1.0 (already locked) | Server-side ID token verification | Already in pyproject.toml; verifies tokens the JS SDK issues; no version change needed |
-| `st.components.v1.html()` | Streamlit built-in | Render Firebase login HTML widget | Streamlit's mechanism for embedding arbitrary HTML/JS — no extra package |
+| React | 18.x | UI framework | Stable LTS release; shadcn/ui and Recharts both require React 18 |
+| TypeScript | 5.x | Type safety | Industry standard for React projects; catches API contract errors at compile time |
+| Vite | 5.x | Build tool + dev server | Fastest dev server for React; native ES modules, HMR; Firebase Hosting serves the static build output |
+| Tailwind CSS | 3.x | Utility-first CSS | shadcn/ui is built on Tailwind; dark mode via `dark:` variants fits the midnight colour scheme |
+| shadcn/ui | latest CLI | Component library | Not a package — CLI copies components into your repo. Built on Radix UI primitives + Tailwind. Zero runtime overhead, fully customizable. Correct choice for a bespoke dark UI. |
+| Recharts | 2.x | Chart library | React-native charting (not a wrapper). Replaces Plotly. Composable API matches how the dashboard already separates chart types. Works without a build-time plugin. |
+| Firebase JS SDK | 12.9.0 | Client-side auth | Already validated in Phase 4 research (2026-02-18). Google Sign-In popup + `onAuthStateChanged` persistence. Install via npm for TypeScript types. |
 
-**Firebase JS SDK CDN URL (use module syntax, not compat):**
-```html
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js';
-  import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js';
-</script>
-```
-
-Use the gstatic.com CDN (Google's own CDN for Firebase). Do NOT use jsDelivr or unpkg for Firebase — the gstatic CDN is the canonical source and is version-pinned.
-
-### Supporting Libraries (New)
+### Supporting Libraries
 
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| `streamlit.components.v1` | built-in | Embed HTML auth widget + receive token via `component_value` | Always — this is how the JS-to-Python token handoff works |
-| PyJWT | 2.11.0 (already locked via firebase-admin) | JWT decoding internals | Already a transitive dep; never use directly — firebase-admin wraps it |
+| `react-router-dom` | 6.x | Client-side routing | One route per page (Dashboard, Accounts, Liabilities, Pension, History, Configure). Use `createBrowserRouter`. |
+| `axios` | 1.x | HTTP client | Cleaner interceptor support than `fetch` — needed to attach Firebase ID token to every request via a request interceptor. Alternative: use `fetch` with a wrapper. |
+| `date-fns` | 3.x | Date formatting | Format snapshot dates as "Jan 2025". Lightweight; no Moment.js. |
+| `react-hook-form` | 7.x | Form state management | Balance entry forms, account CRUD forms. Reduces re-renders vs controlled inputs. |
+| `zod` | 3.x | Runtime schema validation | Validate API response shapes client-side; pair with `react-hook-form` resolver for form validation. |
+| `lucide-react` | latest | Icon set | shadcn/ui uses lucide-react by default; consistent with its component examples. |
 
-## New Capabilities: Cloud Run + Cloud SQL Deployment
-
-### Core Technologies (New)
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Cloud SQL (PostgreSQL 15) | db-f1-micro | Managed Postgres | Already in plan; free tier fits single-user app |
-| Unix socket connection | N/A (psycopg2 built-in) | App-to-Cloud-SQL connection on Cloud Run | Cloud Run injects `/cloudsql/INSTANCE_CONNECTION_NAME` socket; psycopg2 connects natively without any connector library |
-| Cloud Run service account | N/A (GCP IAM) | Grants Cloud SQL Client role to the Cloud Run service | Required for Cloud SQL proxy sidecar that Cloud Run manages automatically |
-| Secret Manager | N/A (GCP service) | Store Firebase service account JSON | Avoids baking credentials into container image; mount as env var or file at runtime |
-
-### What NOT to Add
-
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| `cloud-sql-python-connector` | Adds complexity; only needed when you can't use Unix sockets (e.g., from local machine hitting Cloud SQL directly). Cloud Run provides the socket automatically. | psycopg2 with `host=/cloudsql/PROJECT:REGION:INSTANCE` |
-| `google-cloud-run` client library | Not needed to deploy or configure Cloud Run from within the app | `gcloud` CLI for deployment; no runtime library needed |
-| Firebase REST API calls | More fragile than the Admin SDK; no token caching | firebase-admin SDK `auth.verify_id_token()` |
-| Storing Firebase service account JSON in the Docker image | Security risk; credentials in image layers | GCP Secret Manager → mount as env var `GOOGLE_APPLICATION_CREDENTIALS` or Secret Manager volume |
-
-### Development Tools (No Change)
+### Development Tools
 
 | Tool | Purpose | Notes |
 |------|---------|-------|
-| Docker + docker-compose.yml | Local dev | Already working; no changes needed for auth milestone |
-| `gcloud` CLI | Build/push image, create Cloud Run service, create Cloud SQL instance | Used at deployment time, not in app code |
+| `@vitejs/plugin-react` | Vite plugin for React JSX transform | Required in `vite.config.ts`; use `@vitejs/plugin-react` (SWC-based is faster: `@vitejs/plugin-react-swc`) |
+| `@types/react` / `@types/react-dom` | TypeScript declarations for React | Dev dep; must match React 18 |
+| `eslint` + `eslint-plugin-react-hooks` | Lint rules for hooks | Catches stale closure bugs before runtime |
+| `prettier` | Code formatting | Consistent with Ruff on Python side |
+| Firebase CLI (`firebase-tools`) | Deploy to Firebase Hosting | `npm install -g firebase-tools`; run `firebase deploy --only hosting` |
+
+---
+
+## New Capabilities: FastAPI Backend
+
+### Core Technologies
+
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| FastAPI | 0.115.x | REST API framework | Python-native, async, automatic OpenAPI docs. Wraps existing SQLModel services directly — no architectural change, services stay unchanged. |
+| Uvicorn | 0.30.x | ASGI server | FastAPI's standard production server; replaces Streamlit's server. Use `uvicorn[standard]` for production (includes `httptools` + `uvloop`). |
+| `python-multipart` | 0.0.9+ | Form data + file uploads | Required by FastAPI for CSV file upload endpoint (History page import). Install separately — not included by default. |
+
+### Supporting Libraries (Python)
+
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| `pydantic` v2 | (transitive via FastAPI) | Request/response schema validation | Define Pydantic models for all API request bodies and response shapes. SQLModel models are NOT used directly as API schemas — define separate Pydantic response schemas. |
+| `firebase-admin` | 7.1.0 (already installed) | Verify Firebase ID tokens in API middleware | `auth.verify_id_token(token)` in a FastAPI dependency. No version change. |
+| `starlette` | (transitive via FastAPI) | CORS middleware | `CORSMiddleware` is from Starlette; FastAPI re-exports it. No separate install. |
+
+### FastAPI Auth Dependency Pattern
+
+```python
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from firebase_admin import auth
+
+bearer_scheme = HTTPBearer()
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> str:
+    """Extract and verify Firebase ID token. Returns Firebase UID."""
+    token = credentials.credentials
+    try:
+        decoded = auth.verify_id_token(token)
+        return decoded["uid"]
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+```
+
+Inject as: `user_id: str = Depends(get_current_user)` on every route.
+
+### CORS Configuration
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://<project-id>.web.app",          # Firebase Hosting production
+        "https://<project-id>.firebaseapp.com",  # Firebase Hosting alternate
+        "http://localhost:5173",                  # Vite dev server default port
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["Authorization", "Content-Type"],
+)
+```
+
+Never use `allow_origins=["*"]` with `allow_credentials=True` — browsers reject this combination.
+
+---
+
+## New Capabilities: Firebase Hosting
+
+### Tooling
+
+| Tool | Version | Purpose | Why |
+|------|---------|---------|-----|
+| `firebase-tools` (CLI) | 13.x | Deploy React build to Firebase Hosting | Official CLI; `firebase deploy --only hosting` uploads `dist/` |
+
+### Firebase Hosting Free Tier (Spark Plan) — Confirmed Limits
+
+| Resource | Free Limit | Likely Usage |
+|----------|------------|--------------|
+| Storage | 10 GB | React build is ~1-5 MB — nowhere near limit |
+| Data transfer (egress) | 360 MB/day | Single-user app: each page load ~200-500 KB — ~1000 loads/day before limit |
+| Custom domains | 1 | Sufficient for single deployment |
+| Hosting sites per project | 1 on Spark | Sufficient |
+
+**Verdict:** Firebase Hosting Spark (free) is sufficient. A React app for a single user will not approach egress limits.
+
+**MEDIUM confidence** — free tier limits from training knowledge; verify at https://firebase.google.com/pricing before launch.
+
+### `firebase.json` Configuration
+
+```json
+{
+  "hosting": {
+    "public": "frontend/dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
+```
+
+The `rewrites` rule is required for React Router's `createBrowserRouter` — all routes must serve `index.html`.
+
+---
 
 ## Installation
 
-No new Python packages are required for this milestone.
+### React Frontend
 
 ```bash
-# firebase-admin is already in pyproject.toml (pinned to 7.1.0 in uv.lock)
-# All google-* transitive deps already resolved:
-#   google-api-core 2.29.0
-#   google-auth 2.48.0
-#   google-cloud-firestore 2.23.0
-#   google-cloud-storage 3.8.0
-#   google-cloud-core 2.5.0
+# Scaffold with Vite (run from project root or a new frontend/ subdirectory)
+npm create vite@latest frontend -- --template react-ts
+cd frontend
 
-# Nothing to uv add — run sync to ensure lockfile is applied
-uv sync --frozen
+# Core runtime deps
+npm install recharts react-router-dom axios date-fns react-hook-form zod lucide-react
+
+# Firebase JS SDK (npm for TypeScript types — not CDN)
+npm install firebase
+
+# shadcn/ui (initialize after Tailwind is configured)
+npx shadcn@latest init
+# Then add components as needed:
+npx shadcn@latest add button card dialog table input
+
+# Tailwind CSS (Vite 5 + Tailwind 3)
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+
+# Dev deps
+npm install -D @types/react @types/react-dom @vitejs/plugin-react-swc eslint prettier
 ```
 
-## Configuration Additions Required
+### FastAPI Backend
 
-These env vars need to be added to `app/config.py` (Settings class) and `.env.example`:
+```bash
+# Add to existing pyproject.toml via uv
+uv add fastapi uvicorn python-multipart
 
-```python
-# New fields for Settings(BaseSettings):
-firebase_project_id: str           # e.g. "my-finance-tracker-12345"
-firebase_web_api_key: str          # Firebase project web API key (for JS SDK config)
-
-# Already exists — needs to be populated in production:
-firebase_credentials_path: str = ""  # Path to service account JSON (or empty = use ADC)
+# Or with standard extras (includes uvloop, httptools for production performance)
+uv add "fastapi[standard]" python-multipart
 ```
 
-**Cloud Run environment variables:**
-```
-DATABASE_URL=postgresql://finance:finance@/finance_tracker?host=/cloudsql/PROJECT:REGION:INSTANCE
-FIREBASE_CREDENTIALS_PATH=/secrets/firebase-sa.json   # or use Workload Identity
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_WEB_API_KEY=AIza...
-```
+No other Python packages needed — `firebase-admin`, `sqlmodel`, `pydantic-settings` are already installed.
 
-Note: The `DATABASE_URL` format for Unix socket with psycopg2 uses `host=` as a query parameter pointing to the socket directory — not a TCP host.
-
-## Token Handoff Architecture (Critical Integration Point)
-
-Streamlit has no WebSocket or bidirectional channel with embedded HTML components other than `component_value`. The auth flow is:
-
-```
-1. st.components.v1.html() renders firebase_auth.html in an iframe
-2. User logs in via Firebase JS SDK (email/password or Google popup)
-3. JS SDK calls getIdToken() to get a short-lived ID token (1hr)
-4. iframe posts token to parent via Streamlit.setComponentValue(token)
-5. Python receives token as return value of st.components.v1.html()
-6. Python calls firebase_admin.auth.verify_id_token(token) → decoded claims
-7. uid = decoded["uid"] stored in st.session_state["user_id"]
-8. get_or_create_user(uid, email, display_name) upserts to users table
-9. All subsequent service calls use st.session_state["user_id"]
-```
-
-**Session state keys to use:**
-- `st.session_state["user_id"]` — Firebase UID (already used by pages in Phase 3)
-- `st.session_state["id_token"]` — raw ID token (store for token refresh detection)
-- `st.session_state["user_email"]` — display in sidebar
+---
 
 ## Alternatives Considered
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| Firebase JS SDK via st.components.v1.html() | streamlit-firebase (3rd party) | Never — unmaintained, outdated SDK version |
-| psycopg2 Unix socket | cloud-sql-python-connector | When connecting from local machine to Cloud SQL for DB migrations during development |
-| GCP Secret Manager for Firebase SA | FIREBASE_CREDENTIALS_PATH env var pointing to mounted file | Both work on Cloud Run; Secret Manager is cleaner but either is fine |
-| Firebase Admin SDK verify_id_token() | Manual JWT decode with PyJWT | Never — Admin SDK handles key rotation, caching, audience validation automatically |
+| Recommended | Alternative | Why Not |
+|-------------|-------------|---------|
+| Vite | Create React App | CRA is deprecated since 2023; no active maintenance |
+| Vite | Next.js | SSR adds complexity; this is a pure SPA behind Firebase Auth — no SEO, no SSR needed |
+| shadcn/ui | MUI / Chakra UI | Both impose their design system on top of Tailwind; shadcn/ui copies code into the repo allowing full control of the midnight dark theme |
+| Recharts | Plotly (React) | `react-plotly.js` is a heavy wrapper around Plotly.js; Recharts is React-native and ~10x smaller bundle size |
+| Recharts | Chart.js | Chart.js is canvas-based; Recharts is SVG-based and integrates naturally with React's declarative rendering |
+| `axios` | native `fetch` | Both work; axios request interceptors are cleaner for attaching the Firebase token header to every request |
+| `react-hook-form` | Formik | react-hook-form has fewer re-renders and simpler API with Zod integration |
+| FastAPI | Flask | FastAPI has async support, automatic OpenAPI docs, and native Pydantic integration — all needed here |
+| FastAPI | Django REST Framework | DRF is heavier; FastAPI wraps the existing services with minimal boilerplate |
+| `uvicorn[standard]` | gunicorn + uvicorn workers | Cloud Run runs one container instance per request; single uvicorn process is appropriate |
+
+---
+
+## What NOT to Add
+
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| Redux / Zustand | Overkill for a single-user app with simple page-level data. React's `useState` + `useEffect` + context is enough. | React built-in state + context for auth |
+| `react-query` / TanStack Query | Useful for caching, but adds complexity that isn't warranted until there's evidence of performance issues | Simple `useEffect` + `useState` fetching with axios |
+| Separate auth backend | Firebase handles auth — adding a custom auth server duplicates work and creates a second point of failure | Firebase Auth + firebase-admin `verify_id_token` |
+| `cloud-sql-python-connector` | Cloud Run already provides the Unix socket; this library adds complexity with no benefit here | psycopg2 Unix socket (unchanged from existing setup) |
+| Plotly.js / react-plotly.js | Large bundle (~3MB); Recharts produces equivalent charts at ~200KB | Recharts |
+| Firebase CDN for JS SDK (new development) | CDN was correct for the Streamlit component (no build step); now that there's a Vite build, use npm for TypeScript types and tree-shaking | `npm install firebase` |
+| `express` / Node.js backend | Python services are already written; duplicating them in Node adds maintenance burden | FastAPI wrapping existing Python services |
+
+---
 
 ## Version Compatibility
 
 | Package | Version | Compatible With | Notes |
 |---------|---------|-----------------|-------|
-| firebase-admin | 7.1.0 | Python 3.12, google-auth 2.48.0 | Confirmed by uv.lock resolution |
-| Firebase JS SDK | 11.3.1 | All modern browsers | Use modular (tree-shakeable) API, not compat/v8 API |
-| psycopg2-binary | (locked) | PostgreSQL 15 (Cloud SQL) | Unix socket path passed as `host=` parameter |
+| React | 18.x | TypeScript 5.x, Vite 5.x, Recharts 2.x | React 19 released 2024 but shadcn/ui adoption not universal yet; 18.x is safe default |
+| shadcn/ui | CLI (latest) | React 18, Tailwind 3, Radix UI | shadcn/ui is not versioned — CLI generates from templates. Run `npx shadcn@latest` |
+| Recharts | 2.x | React 18 | Recharts 3 is in development as of Aug 2025; 2.x is the stable release |
+| Firebase JS SDK | 12.9.0 | React 18, TypeScript 5 | Confirmed current as of 2026-02-18 (Phase 4 research) |
+| FastAPI | 0.115.x | Python 3.12, Pydantic v2 | FastAPI 0.100+ uses Pydantic v2 natively |
+| Uvicorn | 0.30.x | FastAPI 0.115.x, Python 3.12 | `uvicorn[standard]` for production extras |
+| Tailwind CSS | 3.x | Vite 5, shadcn/ui | Tailwind v4 released 2025 but shadcn/ui still targets v3; use v3 until shadcn/ui officially supports v4 |
+
+---
+
+## Integration Points
+
+### Firebase Auth Flow (React SPA → FastAPI → SQLModel)
+
+```
+1. React mounts → firebase.auth().onAuthStateChanged() fires
+2. User present → getIdToken() → store token in memory (React context)
+3. axios interceptor attaches: Authorization: Bearer <id_token>
+4. FastAPI receives request → HTTPBearer extracts token
+5. firebase_admin.auth.verify_id_token(token) → decoded["uid"]
+6. uid passed to existing SQLModel service functions (unchanged)
+7. Services query PostgreSQL as before
+```
+
+This flow replaces the Streamlit component bridge entirely. The services themselves do not change.
+
+### CSV Export/Import (multipart upload)
+
+FastAPI requires `python-multipart` for `UploadFile` in route handlers. Without it, FastAPI raises a runtime error when a file upload endpoint is hit. Install explicitly — it is not a FastAPI default.
+
+---
 
 ## Sources
 
-- uv.lock at `/Users/kristiakarakatsani/Repos/finance-tracker/uv.lock` — firebase-admin 7.1.0 confirmed (resolved 2026-01-30 timestamp on PyJWT dep); google-* package versions confirmed — HIGH confidence
-- Firebase JS SDK CDN: `https://www.gstatic.com/firebasejs/` — version 11.3.1 referenced in gstatic CDN (training knowledge, January 2025 cutoff) — MEDIUM confidence (pin to specific version at implementation time by checking gstatic)
-- Cloud Run + Cloud SQL Unix socket pattern: standard GCP architecture; DATABASE_URL format for psycopg2 Unix socket is `postgresql://user:pass@/dbname?host=/cloudsql/CONN_NAME` — HIGH confidence (well-established pattern)
-- `st.components.v1.html()` component value return: Streamlit built-in since v0.63; used for JS-to-Python data passing — HIGH confidence
+- Phase 4 Research (`.planning/phases/04-firebase-authentication/04-RESEARCH.md`) — Firebase JS SDK 12.9.0, firebase-admin 7.1.0 — HIGH confidence (verified 2026-02-18)
+- FastAPI official docs (https://fastapi.tiangolo.com/) — CORS middleware via Starlette, `fastapi[standard]` installation — HIGH confidence (fetched 2026-04-04)
+- Training knowledge (cutoff August 2025) — React 18, Vite 5, Tailwind 3, Recharts 2.x, shadcn/ui CLI, react-router-dom 6, axios 1.x, FastAPI 0.115.x, uvicorn 0.30.x — MEDIUM confidence (verify npm versions before pinning)
+- Firebase Hosting pricing page (https://firebase.google.com/pricing) — free tier limits — MEDIUM confidence (from training; verify before launch)
+- shadcn/ui docs (https://ui.shadcn.com/docs/installation/vite) — Vite installation pattern — MEDIUM confidence (training knowledge)
 
 ---
-*Stack research for: Firebase Auth + Cloud Run deployment on existing Streamlit net worth tracker*
-*Researched: 2026-02-17*
+
+*Stack research for: React + FastAPI + Firebase Hosting migration (v2.0)*
+*Researched: 2026-04-04*
