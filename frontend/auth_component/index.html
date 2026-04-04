@@ -113,7 +113,6 @@
         import {
             getAuth,
             signInWithPopup,
-            signInWithRedirect,
             getRedirectResult,
             signOut,
             GoogleAuthProvider,
@@ -126,6 +125,12 @@
         let firebaseApp = null;
         let auth = null;
         let currentUser = null;
+        let firebaseConfig = null;
+        let relayListener = null;
+
+        function isIOS() {
+            return /iPad|iPhone/.test(navigator.userAgent);
+        }
 
         // Send message to Streamlit parent
         function sendMessageToStreamlit(message) {
@@ -171,6 +176,34 @@
         function hideError() {
             const errorEl = document.getElementById('errorMessage');
             errorEl.classList.add('hidden');
+        }
+
+        // iOS relay: open auth-relay.html in a new tab, listen for token via localStorage
+        function openRelayTab() {
+            const relayUrl = `auth-relay.html?config=${encodeURIComponent(JSON.stringify(firebaseConfig))}`;
+            window.open(relayUrl, '_blank');
+
+            // Clean up any previous listener
+            if (relayListener) window.removeEventListener('storage', relayListener);
+
+            relayListener = (e) => {
+                if (e.key !== 'finance_tracker_auth_relay') return;
+                try {
+                    const { token, ts } = JSON.parse(e.newValue || '{}');
+                    // Ignore stale tokens (older than 5 minutes)
+                    if (!token || Date.now() - ts > 5 * 60 * 1000) return;
+
+                    localStorage.removeItem('finance_tracker_auth_relay');
+                    window.removeEventListener('storage', relayListener);
+                    relayListener = null;
+
+                    setComponentValue({ status: 'authenticated', token });
+                    hideLoginUI();
+                } catch (err) {
+                    console.error('Relay parse error:', err);
+                }
+            };
+            window.addEventListener('storage', relayListener);
         }
 
         // Initialize Firebase with config
@@ -238,18 +271,12 @@
 
             try {
                 const provider = new GoogleAuthProvider();
-                // Use redirect on mobile (popup blocked by iOS Safari due to iframe storage partitioning)
-                // Use popup on desktop for better UX
-                if (/webOS|iPhone|iPad/i.test(navigator.userAgent)) {
-                    await signInWithRedirect(auth, provider);
-                } else {
-                    await signInWithPopup(auth, provider);
-                }
+                await signInWithPopup(auth, provider);
             } catch (error) {
                 console.error('Sign-in error:', error);
 
                 if (error.code === 'auth/popup-blocked') {
-                    showError('Please allow popups for this site and try again');
+                    showError('Popup blocked. Please allow popups for this site in your browser settings and try again.');
                 } else if (error.code === 'auth/popup-closed-by-user') {
                     showError('Sign-in cancelled');
                 } else {
@@ -277,6 +304,7 @@
 
                 // Initialize Firebase if config provided
                 if (args.firebase_config && !firebaseApp) {
+                    firebaseConfig = args.firebase_config;
                     // Send initializing state
                     setComponentValue({ status: 'initializing' });
                     await initializeFirebase(args.firebase_config);
@@ -290,7 +318,19 @@
         });
 
         // Set up event listeners
-        document.getElementById('signInBtn').addEventListener('click', handleSignIn);
+        // On iOS, open relay tab synchronously on click (before any async code),
+        // otherwise signInWithPopup (desktop/Android)
+        document.getElementById('signInBtn').addEventListener('click', () => {
+            if (isIOS()) {
+                if (!firebaseConfig) {
+                    showError('Authentication not initialized');
+                    return;
+                }
+                openRelayTab();
+            } else {
+                handleSignIn();
+            }
+        });
 
         // Send component ready message
         sendMessageToStreamlit({
