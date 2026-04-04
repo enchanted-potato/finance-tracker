@@ -21,17 +21,29 @@ def render() -> None:
 
     session = next(get_session())
     try:
-        accounts = list_non_pension_entries(session=session, user_id=user_id)
-        pension_accounts = list_pension_entries(session=session, user_id=user_id)
+        _all_accounts = list_non_pension_entries(session=session, user_id=user_id)
+        _all_pension_accounts = list_pension_entries(session=session, user_id=user_id)
         all_liability_entries = list_liability_entries(session=session, user_id=user_id)
-        # Use the latest entry per liability type (carry-forward: types updated on
-        # different dates are all included, not just entries from the single latest date)
+        # Use the latest entry per type (carry-forward: types updated on different dates
+        # are all included, not just entries from the single latest date)
         seen_types: set[int] = set()
         liabilities = []
         for entry in all_liability_entries:  # sorted newest-first
             if entry.liability_type_id not in seen_types:
                 seen_types.add(entry.liability_type_id)
                 liabilities.append(entry)
+        seen_types = set()
+        accounts = []
+        for entry in _all_accounts:  # sorted newest-first
+            if entry.account_type_id not in seen_types:
+                seen_types.add(entry.account_type_id)
+                accounts.append(entry)
+        seen_types = set()
+        pension_accounts = []
+        for entry in _all_pension_accounts:  # sorted newest-first
+            if entry.account_type_id not in seen_types:
+                seen_types.add(entry.account_type_id)
+                pension_accounts.append(entry)
         account_types = list_account_types(session=session, user_id=user_id)
         liability_types = list_liability_types(session=session, user_id=user_id)
         all_snapshots = get_snapshot_history(session=session, user_id=user_id)
