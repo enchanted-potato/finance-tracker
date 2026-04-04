@@ -36,9 +36,16 @@ def render() -> None:
     type_id_to_name = {at.id: at.name for at in non_pension_types}
     type_names = [at.name for at in non_pension_types]
 
+    # Carry-forward: latest entry per account type (same logic as dashboard/snapshot)
+    seen: set[int] = set()
+    latest_entries: list = []
+    for e in entries:  # sorted newest-first
+        if e.account_type_id not in seen:
+            seen.add(e.account_type_id)
+            latest_entries.append(e)
+    latest_total = sum(float(e.balance * e.exchange_rate) for e in latest_entries)
     latest_date = max((e.entry_date for e in entries), default=None)
-    latest_total = sum(float(e.balance) for e in entries if e.entry_date == latest_date) if latest_date else 0.0
-    label = f"Total Assets ({latest_date.strftime('%b %Y')})" if latest_date else "Total Assets"
+    label = "Total Assets" if latest_date is None else f"Total Assets ({latest_date.strftime('%b %Y')})"
 
     col, _ = st.columns([1, 3])
     with col:
