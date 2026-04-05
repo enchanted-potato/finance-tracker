@@ -4,10 +4,10 @@ milestone: v2.0
 milestone_name: React Migration
 status: planning
 stopped_at: —
-last_updated: "2026-04-04T00:00:00.000Z"
-last_activity: 2026-04-04 — Milestone v2.0 started
+last_updated: "2026-04-05T00:00:00.000Z"
+last_activity: 2026-04-05 — Roadmap created for v2.0 milestone (Phases 9-15)
 progress:
-  total_phases: 0
+  total_phases: 7
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,10 +18,10 @@ progress:
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started (roadmap defined, awaiting phase planning)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-04 — Milestone v2.0 started
+Status: Roadmap created — ready for Phase 9 planning
+Last activity: 2026-04-05 — Roadmap created for v2.0 milestone (Phases 9-15)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -30,16 +30,28 @@ Progress: [░░░░░░░░░░] 0%
 See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Seeing your net worth trend over time at a glance, without the overhead of transaction tracking.
-**Current focus:** v2.0 — React Migration
+**Current focus:** v2.0 — React Migration (Phases 9-15)
+
+## Milestone Scope
+
+| Phase | Goal | Requirements |
+|-------|------|--------------|
+| 9. FastAPI Foundation | Correctly configured FastAPI server before any feature routes | API-01, API-02, API-03, API-04 |
+| 10. Core Data API Routes | All feature endpoints live with float schemas and Recharts-shaped responses | API-05, API-06, API-07, API-08 |
+| 11. React Scaffold and Auth | Vite SPA with Firebase auth gate and per-request token refresh | REACT-01, REACT-02, REACT-03, REACT-04 |
+| 12. Data Pages | Accounts, Liabilities, Pension — CRUD, date-aware entry, collapsible history | RDAT-01, RDAT-02, RDAT-03, RDAT-04, RDAT-05, RDAT-06, RDAT-07 |
+| 13. Dashboard | Metric cards and four Recharts charts from real API data | RDASH-01, RDASH-02, RDASH-03, RDASH-04 |
+| 14. History and Configure | Snapshot table with CSV I/O; type management with inline delete | RHIST-01, RHIST-02, RHIST-03, RHIST-04, RCONF-01 |
+| 15. Deployment | React on Firebase Hosting; FastAPI on Cloud Run; production smoke test | RDEP-01, RDEP-02 |
 
 ## Performance Metrics
 
-**Velocity:**
+**Velocity (carried over from v1.x):**
 - Total plans completed: 6
 - Average duration: 1359 seconds (~23 minutes)
 - Total execution time: 8151 seconds
 
-**By Phase:**
+**By Phase (v1.x history):**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
@@ -71,13 +83,23 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 - [Quick-4]: capture_snapshot filters LiabilityEntry by entry_date == snapshot_date (not is_active flag)
 - [Quick-4]: Deletion in st.data_editor detected by diffing original _id set vs edited _id set (hidden column pattern)
 
+### Architecture Decisions for v2.0
+
+- FastAPI layer is a pure translation layer — zero business logic in route handlers; all logic stays in app/services/
+- Pydantic response schemas are separate from SQLModel models — required to avoid Decimal serialisation and user_id leakage
+- React API client calls user.getIdToken() before every request — raw token string never stored in React state
+- All data shaping for Recharts (one object per date, all series as keys) happens in FastAPI routes, not in React
+- All monetary values serialised as float (not Decimal) via explicit Pydantic response schemas
+
 ### Pending Todos
 
 None.
 
 ### Blockers/Concerns
 
-None.
+- Research flags for Phase 10/13: Recharts PieChart donut innerRadius prop — verify against Recharts docs at planning time
+- Research flags for Phase 15: Firebase Hosting `run` rewrite `region` field must match `gcloud run services describe` output — verify before writing firebase.json
+- Research flag for Phase 11: Confirm whether shadcn/ui now recommends sonner over useToast for toasts — verify with CLI before adding toast infrastructure
 
 ## Quick Tasks Completed
 
@@ -92,6 +114,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-13T00:00:00Z
-Stopped at: Completed quick-6-PLAN.md
+Last session: 2026-04-05T00:00:00Z
+Stopped at: Roadmap created for v2.0 (Phases 9-15)
 Resume file: None

@@ -2,13 +2,14 @@
 
 ## Overview
 
-Phases 1-3 are pre-GSD foundation (complete): database models, service layer, and Streamlit UI — all working locally behind a hardcoded test user. v1.0 (Phases 4-5) added Firebase Authentication and Cloud Run deployment, making the app production-ready. v1.1 (Phases 6-8) polishes and extends the UI: dashboard cosmetics, date-aware balance entry with backfilling across all three data types, and history/configure page improvements.
+Phases 1-3 are pre-GSD foundation (complete): database models, service layer, and Streamlit UI — all working locally behind a hardcoded test user. v1.0 (Phases 4-5) added Firebase Authentication and Cloud Run deployment, making the app production-ready. v1.1 (Phases 6-8) polishes and extends the UI: dashboard cosmetics, date-aware balance entry with backfilling across all three data types, and history/configure page improvements. v2.0 (Phases 9-15) replaces Streamlit with a React + TypeScript SPA backed by a new FastAPI REST layer deployed on Firebase Hosting.
 
 ## Milestones
 
 - [x] **Phases 1-3: Foundation** — Pre-GSD (complete). Models, services, UI working locally.
 - [x] **v1.0 — Ship (Phases 4-5)** — Firebase Auth + Cloud Run deployment.
-- [ ] **v1.1 — UI Overhaul (Phases 6-8)** — Dashboard polish, date-aware entry, history and configure improvements.
+- [x] **v1.1 — UI Overhaul (Phases 6-8)** — Dashboard polish, date-aware entry, history and configure improvements.
+- [ ] **v2.0 — React Migration (Phases 9-15)** — FastAPI REST layer + React + TypeScript SPA on Firebase Hosting.
 
 ## Phases
 
@@ -24,6 +25,13 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Dashboard and Navigation Polish** - Metric card styling, chart improvements, sidebar active color (completed 2026-03-07)
 - [ ] **Phase 7: Date-Aware Balance Entry** - Date picker + history view on Accounts, Liabilities, and Pension pages
 - [ ] **Phase 8: History and Configure Improvements** - Styled history table, date formatting, expanded row actions, inline delete
+- [ ] **Phase 9: FastAPI Foundation** - CORS, auth dependency, Firebase Admin lifespan, pool_pre_ping — platform correct before any feature routes
+- [ ] **Phase 10: Core Data API Routes** - All feature endpoints (accounts, liabilities, pension, snapshots, configure) with float schemas and Recharts-shaped responses
+- [ ] **Phase 11: React Scaffold and Auth** - Vite + Tailwind + shadcn/ui, Firebase Google Sign-In auth gate, Axios client with per-request token refresh, sidebar shell
+- [ ] **Phase 12: Data Pages** - Accounts, Liabilities, and Pension pages with CRUD dialogs, date-aware entry, and collapsible entry history
+- [ ] **Phase 13: Dashboard** - Metric cards and four Recharts charts (trend, allocation, pension) consuming real API data
+- [ ] **Phase 14: History and Configure** - Snapshot history table with expandable rows and CSV export/import; Configure page with inline type management
+- [ ] **Phase 15: Deployment** - React SPA on Firebase Hosting; FastAPI replaces Streamlit on Cloud Run; end-to-end production smoke test
 
 ## Phase Details
 
@@ -119,16 +127,117 @@ Plans:
 
 ---
 
+### Phase 9: FastAPI Foundation
+**Goal**: A correctly configured FastAPI server is running locally — CORS, auth, database session, and Firebase Admin initialisation are all in place before any feature route is written
+**Depends on**: Phase 8 (v1.1 Streamlit app complete; v2.0 API layer starts here)
+**Requirements**: API-01, API-02, API-03, API-04
+**Success Criteria** (what must be TRUE):
+  1. `GET /api/health` returns HTTP 200; the server starts without errors and Firebase Admin SDK is initialised via the lifespan context manager — not at module level
+  2. `curl -H "Authorization: Bearer <valid-token>" /api/health` returns 200; the same request without a token returns HTTP 401
+  3. A CORS preflight from `http://localhost:5173` succeeds (HTTP 200 with correct `Access-Control-Allow-Origin` header); a preflight from an unlisted origin is rejected
+  4. A Pydantic response schema with a `Decimal` balance field serialises to `{"balance": 10753.42}` (float), not `{"balance": "10753.42"}` (string) — verified with `curl`
+  5. `pool_pre_ping=True` is set on the database engine; the app reconnects cleanly after a simulated database connection drop
+**Plans**: TBD
+
+---
+
+### Phase 10: Core Data API Routes
+**Goal**: All feature endpoints are live and returning correctly shaped data — the API contract is the single source of truth for all business logic and data shaping
+**Depends on**: Phase 9 (FastAPI foundation must be correct before any feature routes)
+**Requirements**: API-05, API-06, API-07, API-08
+**Success Criteria** (what must be TRUE):
+  1. Account CRUD endpoints (`GET/POST /api/accounts`, `PUT/DELETE /api/accounts/{id}`) return correctly and the balance entry endpoint saves a dated snapshot — verified with `curl` using a valid Firebase token
+  2. Liability CRUD and balance entry endpoints match the accounts pattern; daily totals and per-liability breakdown are computed server-side and returned in the response
+  3. Pension CRUD and balance entry endpoints match the accounts pattern; daily totals and per-provider breakdown are computed server-side and returned in the response
+  4. `GET /api/snapshots/export.csv` returns a downloadable CSV file; `POST /api/snapshots/import` accepts a multipart CSV upload and persists the imported snapshots
+  5. Account type and liability type CRUD endpoints return whether each type is in use — the "in use" check is performed by the API, not the client
+**Plans**: TBD
+
+---
+
+### Phase 11: React Scaffold and Auth
+**Goal**: A React SPA exists with working Firebase Google Sign-In — all pages are gated behind authentication and the API client is wired to refresh tokens before every request
+**Depends on**: Phase 9 (API auth endpoint must exist to test the React auth gate end-to-end; Phase 10 not required — scaffold uses the health endpoint)
+**Requirements**: REACT-01, REACT-02, REACT-03, REACT-04
+**Success Criteria** (what must be TRUE):
+  1. The app loads at `http://localhost:5173` with the Midnight dark theme applied; navigating to any page URL without being authenticated redirects to the login screen with no financial data visible
+  2. User can sign in with Google Sign-In; after login, the dashboard shell loads and the sidebar shows all page links with the active page highlighted
+  3. Every API request made by the app includes a fresh Firebase ID token in the `Authorization` header — the raw token string is never stored in React component state
+  4. Receiving HTTP 401 from the API redirects the user to the login screen
+**Plans**: TBD
+
+---
+
+### Phase 12: Data Pages
+**Goal**: Users can manage accounts, liabilities, and pension providers — adding, editing, and deleting entries with date-aware balance capture and a collapsible entry history on each page
+**Depends on**: Phase 10 (data API routes must exist), Phase 11 (React scaffold and auth gate must exist)
+**Requirements**: RDAT-01, RDAT-02, RDAT-03, RDAT-04, RDAT-05, RDAT-06, RDAT-07
+**Success Criteria** (what must be TRUE):
+  1. The Accounts page shows the account list; user can add, edit, and delete accounts via a dialog — changes persist and are reflected immediately in the list
+  2. The Accounts page date picker defaults to today; submitting a balance entry for a past date saves a snapshot for that date and the entry appears in the history table
+  3. The Accounts page entry history shows daily totals (computed by API); expanding a row reveals per-account balances for that day
+  4. The Liabilities and Pension pages replicate the Accounts page behaviour exactly — CRUD dialogs, date-aware entry, and collapsible history with server-computed totals all work on all three pages
+**Plans**: TBD
+
+---
+
+### Phase 13: Dashboard
+**Goal**: The dashboard gives an at-a-glance view of net worth position — metric cards, trend chart, allocation charts, and pension chart all render with real data from the API
+**Depends on**: Phase 12 (real account, liability, and pension data must exist to validate chart rendering and metric card values)
+**Requirements**: RDASH-01, RDASH-02, RDASH-03, RDASH-04
+**Success Criteria** (what must be TRUE):
+  1. Net Worth, Assets, and Liabilities metric cards display as styled rounded boxes (blue, green, red); a negative net worth delta is shown in red — values and delta are returned by the API, not computed in React
+  2. The net worth trend line chart renders with y-axis values formatted with thousands comma separators; chart data is in Recharts format (one object per date with all series as keys) as returned by the API
+  3. The asset allocation donut chart renders using Recharts — data is returned by the API with one slice per asset type
+  4. The pension balance bar chart renders using Recharts with one bar per provider — data is returned by the API
+**Plans**: TBD
+
+---
+
+### Phase 14: History and Configure
+**Goal**: Users can review their full snapshot history with expandable detail rows and CSV import/export; account and liability types can be managed with inline deletion
+**Depends on**: Phase 12 (snapshot data from data pages must exist), Phase 11 (React scaffold)
+**Requirements**: RHIST-01, RHIST-02, RHIST-03, RHIST-04, RCONF-01
+**Success Criteria** (what must be TRUE):
+  1. The History page snapshot table displays dates in "Jan 2025" format — the date is formatted by the API in the response, not by React
+  2. Expanding a snapshot row reveals per-asset and per-liability item names and values — the breakdown is provided by the API
+  3. User can click a download button and receive a CSV file of all snapshots — the file is generated server-side via `GET /snapshots/export.csv` with no client-side data processing
+  4. User can upload a CSV file on the History page and the imported snapshots appear in the table after upload
+  5. The Configure page shows account type and liability type tables; each row has an inline delete button that is disabled (not absent) when the type is in use — the "in use" state is returned by the API
+**Plans**: TBD
+
+---
+
+### Phase 15: Deployment
+**Goal**: The React SPA is live on Firebase Hosting and FastAPI is running on Cloud Run — the full stack is accessible end-to-end in production with all production pitfalls verified
+**Depends on**: Phase 14 (all pages complete), Phase 13 (dashboard complete)
+**Requirements**: RDEP-01, RDEP-02
+**Success Criteria** (what must be TRUE):
+  1. The React SPA is deployed to Firebase Hosting; navigating directly to any page URL (e.g. `/history`) returns the app, not a 404 — the catch-all SPA rewrite rule in `firebase.json` is in place
+  2. FastAPI is running on Cloud Run replacing Streamlit; the Cloud SQL Unix socket and Secret Manager wiring are unchanged from the v1.0 deployment
+  3. A CORS preflight from the Firebase Hosting production domain succeeds — the `ALLOWED_ORIGINS` list in the deployed FastAPI app includes the production Firebase Hosting URL
+  4. Signing in on the production URL, making a balance entry, and reloading the page shows the entry persisted — full end-to-end smoke test passes
+**Plans**: TBD
+
+---
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 6 → 7 → 8
+Phases execute in numeric order: 9 → 10 → 11 → 12 → 13 → 14 → 15
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1-3. Foundation (pre-GSD) | — | Complete | Pre-2026-02-17 |
 | 4. Firebase Authentication | 2/2 | Complete | 2026-02-21 |
 | 5. Cloud Run Deployment | 4/4 | Complete | 2026-03-01 |
-| 6. Dashboard and Navigation Polish | 4/4 | Complete   | 2026-03-07 |
+| 6. Dashboard and Navigation Polish | 4/4 | Complete | 2026-03-07 |
 | 7. Date-Aware Balance Entry | 0/TBD | Not started | - |
 | 8. History and Configure Improvements | 0/TBD | Not started | - |
+| 9. FastAPI Foundation | 0/TBD | Not started | - |
+| 10. Core Data API Routes | 0/TBD | Not started | - |
+| 11. React Scaffold and Auth | 0/TBD | Not started | - |
+| 12. Data Pages | 0/TBD | Not started | - |
+| 13. Dashboard | 0/TBD | Not started | - |
+| 14. History and Configure | 0/TBD | Not started | - |
+| 15. Deployment | 0/TBD | Not started | - |

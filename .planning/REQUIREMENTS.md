@@ -153,43 +153,43 @@
 | DASH-03 | Phase 6 | Complete |
 | DASH-04 | Phase 6 | Complete |
 | NAV-01 | Phase 6 | Complete |
-| API-01 | Phase TBD | Pending |
-| API-02 | Phase TBD | Pending |
-| API-03 | Phase TBD | Pending |
-| API-04 | Phase TBD | Pending |
-| API-05 | Phase TBD | Pending |
-| API-06 | Phase TBD | Pending |
-| API-07 | Phase TBD | Pending |
-| API-08 | Phase TBD | Pending |
-| REACT-01 | Phase TBD | Pending |
-| REACT-02 | Phase TBD | Pending |
-| REACT-03 | Phase TBD | Pending |
-| REACT-04 | Phase TBD | Pending |
-| RDASH-01 | Phase TBD | Pending |
-| RDASH-02 | Phase TBD | Pending |
-| RDASH-03 | Phase TBD | Pending |
-| RDASH-04 | Phase TBD | Pending |
-| RDAT-01 | Phase TBD | Pending |
-| RDAT-02 | Phase TBD | Pending |
-| RDAT-03 | Phase TBD | Pending |
-| RDAT-04 | Phase TBD | Pending |
-| RDAT-05 | Phase TBD | Pending |
-| RDAT-06 | Phase TBD | Pending |
-| RDAT-07 | Phase TBD | Pending |
-| RHIST-01 | Phase TBD | Pending |
-| RHIST-02 | Phase TBD | Pending |
-| RHIST-03 | Phase TBD | Pending |
-| RHIST-04 | Phase TBD | Pending |
-| RCONF-01 | Phase TBD | Pending |
-| RDEP-01 | Phase TBD | Pending |
-| RDEP-02 | Phase TBD | Pending |
+| API-01 | Phase 9 | Pending |
+| API-02 | Phase 9 | Pending |
+| API-03 | Phase 9 | Pending |
+| API-04 | Phase 9 | Pending |
+| API-05 | Phase 10 | Pending |
+| API-06 | Phase 10 | Pending |
+| API-07 | Phase 10 | Pending |
+| API-08 | Phase 10 | Pending |
+| REACT-01 | Phase 11 | Pending |
+| REACT-02 | Phase 11 | Pending |
+| REACT-03 | Phase 11 | Pending |
+| REACT-04 | Phase 11 | Pending |
+| RDASH-01 | Phase 13 | Pending |
+| RDASH-02 | Phase 13 | Pending |
+| RDASH-03 | Phase 13 | Pending |
+| RDASH-04 | Phase 13 | Pending |
+| RDAT-01 | Phase 12 | Pending |
+| RDAT-02 | Phase 12 | Pending |
+| RDAT-03 | Phase 12 | Pending |
+| RDAT-04 | Phase 12 | Pending |
+| RDAT-05 | Phase 12 | Pending |
+| RDAT-06 | Phase 12 | Pending |
+| RDAT-07 | Phase 12 | Pending |
+| RHIST-01 | Phase 14 | Pending |
+| RHIST-02 | Phase 14 | Pending |
+| RHIST-03 | Phase 14 | Pending |
+| RHIST-04 | Phase 14 | Pending |
+| RCONF-01 | Phase 14 | Pending |
+| RDEP-01 | Phase 15 | Pending |
+| RDEP-02 | Phase 15 | Pending |
 
 **Coverage:**
 - v1.0 requirements: 11 total, 11 mapped ✓
 - v1.1 requirements: 5 complete, 10 superseded by v2.0 ✓
-- v2.0 requirements: 28 total, 28 pending roadmap ✓
+- v2.0 requirements: 28 total, 28 mapped ✓
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-17*
-*Last updated: 2026-04-05 after v2.0 milestone started*
+*Last updated: 2026-04-05 after v2.0 roadmap created (Phases 9-15)*
