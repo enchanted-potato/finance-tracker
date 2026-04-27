@@ -25,13 +25,21 @@ def test_firebase_not_init_at_import():
     """Importing api.main must NOT trigger firebase_admin.initialize_app at module level."""
     import firebase_admin
 
-    # firebase_admin.apps is a dict — should be empty before TestClient context runs
-    # We import api.main without creating a TestClient
-    assert len(firebase_admin.apps) == 0, "Firebase apps should be empty before lifespan runs"
+    def _firebase_is_initialised() -> bool:
+        """Return True if the default Firebase app exists."""
+        try:
+            firebase_admin.get_app()
+            return True
+        except ValueError:
+            return False
+
+    # Before importing api.main, Firebase should not be initialised
+    # (this test runs after test_health_returns_200 which uses DEV_USER_ID — no Firebase init)
+    assert not _firebase_is_initialised(), "Firebase should not be initialised before this test"
 
     import api.main  # noqa: F401 — import only, no TestClient
 
-    assert len(firebase_admin.apps) == 0, (
+    assert not _firebase_is_initialised(), (
         "Importing api.main must not call firebase_admin.initialize_app at module level"
     )
 
