@@ -140,7 +140,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 09-01-PLAN.md — FastAPI package scaffold, auth dependency, health endpoint, pool_pre_ping + full test suite (Wave 1)
+- [x] 09-01-PLAN.md — FastAPI package scaffold, auth dependency, health endpoint, pool_pre_ping + full test suite (Wave 1)
 - [ ] 09-02-PLAN.md — Add api service to docker-compose.yml + Docker smoke test checkpoint (Wave 2)
 
 ---
