@@ -137,7 +137,11 @@ Plans:
   3. A CORS preflight from `http://localhost:5173` succeeds (HTTP 200 with correct `Access-Control-Allow-Origin` header); a preflight from an unlisted origin is rejected
   4. A Pydantic response schema with a `Decimal` balance field serialises to `{"balance": 10753.42}` (float), not `{"balance": "10753.42"}` (string) — verified with `curl`
   5. `pool_pre_ping=True` is set on the database engine; the app reconnects cleanly after a simulated database connection drop
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — FastAPI package scaffold, auth dependency, health endpoint, pool_pre_ping + full test suite (Wave 1)
+- [ ] 09-02-PLAN.md — Add api service to docker-compose.yml + Docker smoke test checkpoint (Wave 2)
 
 ---
 
@@ -234,7 +238,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13 → 14 → 15
 | 6. Dashboard and Navigation Polish | 4/4 | Complete | 2026-03-07 |
 | 7. Date-Aware Balance Entry | 0/TBD | Not started | - |
 | 8. History and Configure Improvements | 0/TBD | Not started | - |
-| 9. FastAPI Foundation | 0/TBD | Not started | - |
+| 9. FastAPI Foundation | 0/2 | Not started | - |
 | 10. Core Data API Routes | 0/TBD | Not started | - |
 | 11. React Scaffold and Auth | 0/TBD | Not started | - |
 | 12. Data Pages | 0/TBD | Not started | - |
