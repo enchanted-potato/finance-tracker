@@ -25,7 +25,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Dashboard and Navigation Polish** - Metric card styling, chart improvements, sidebar active color (completed 2026-03-07)
 - [ ] **Phase 7: Date-Aware Balance Entry** - Date picker + history view on Accounts, Liabilities, and Pension pages
 - [ ] **Phase 8: History and Configure Improvements** - Styled history table, date formatting, expanded row actions, inline delete
-- [ ] **Phase 9: FastAPI Foundation** - CORS, auth dependency, Firebase Admin lifespan, pool_pre_ping — platform correct before any feature routes
+- [x] **Phase 9: FastAPI Foundation** - CORS, auth dependency, Firebase Admin lifespan, pool_pre_ping — platform correct before any feature routes (completed 2026-04-29)
 - [ ] **Phase 10: Core Data API Routes** - All feature endpoints (accounts, liabilities, pension, snapshots, configure) with float schemas and Recharts-shaped responses
 - [ ] **Phase 11: React Scaffold and Auth** - Vite + Tailwind + shadcn/ui, Firebase Google Sign-In auth gate, Axios client with per-request token refresh, sidebar shell
 - [ ] **Phase 12: Data Pages** - Accounts, Liabilities, and Pension pages with CRUD dialogs, date-aware entry, and collapsible entry history
@@ -238,7 +238,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13 → 14 → 15
 | 6. Dashboard and Navigation Polish | 4/4 | Complete | 2026-03-07 |
 | 7. Date-Aware Balance Entry | 0/TBD | Not started | - |
 | 8. History and Configure Improvements | 0/TBD | Not started | - |
-| 9. FastAPI Foundation | 0/2 | Not started | - |
+| 9. FastAPI Foundation | 2/2 | Complete | 2026-04-29 |
 | 10. Core Data API Routes | 0/TBD | Not started | - |
 | 11. React Scaffold and Auth | 0/TBD | Not started | - |
 | 12. Data Pages | 0/TBD | Not started | - |
