@@ -92,4 +92,4 @@ Seeing your net worth trend over time at a glance, without the overhead of trans
 | Hardcoded test user for Phases 1-3 | Unblock UI development without auth complexity | ✓ Good |
 
 ---
-*Last updated: 2026-04-04 after milestone v2.0 started*
+*Last updated: 2026-04-29 after Phase 9 (FastAPI Foundation) complete — api/ package scaffolded, CORS/auth/lifespan/pool_pre_ping all verified*
