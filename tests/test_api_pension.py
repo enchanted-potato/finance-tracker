@@ -12,10 +12,11 @@ os.environ.setdefault("DEV_USER_ID", "test-user")
 
 @pytest.fixture
 def client_with_db(db_session):
-    """TestClient with pension router and db_session override."""
+    """TestClient with pension router and db_session override; DEV_USER_ID bypass active."""
     from fastapi.testclient import TestClient
     from api.main import app
     from api.routers import pension
+    from app.config import settings
     from app.database import get_session
 
     # Idempotent include of pension router
@@ -24,8 +25,9 @@ def client_with_db(db_session):
         app.include_router(pension.router)
 
     app.dependency_overrides[get_session] = lambda: db_session
-    with TestClient(app, raise_server_exceptions=False) as client:
-        yield client
+    with patch.object(settings, "dev_user_id", "test-user"):
+        with TestClient(app, raise_server_exceptions=False) as client:
+            yield client
     app.dependency_overrides.pop(get_session, None)
 
 
