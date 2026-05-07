@@ -8,7 +8,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials
 
 from app.config import settings
-from api.routers import health
+from api.routers import (
+    accounts,
+    configure,
+    dashboard,
+    health,
+    liabilities,
+    pension,
+    snapshots,
+)
 
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
@@ -55,3 +63,9 @@ app.add_middleware(
 )
 
 app.include_router(health.router)
+app.include_router(accounts.router)
+app.include_router(liabilities.router)
+app.include_router(pension.router)
+app.include_router(snapshots.router)
+app.include_router(configure.router)
+app.include_router(dashboard.router)
