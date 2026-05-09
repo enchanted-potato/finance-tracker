@@ -168,7 +168,13 @@ Plans:
   2. User can sign in with Google Sign-In; after login, the dashboard shell loads and the sidebar shows all page links with the active page highlighted
   3. Every API request made by the app includes a fresh Firebase ID token in the `Authorization` header — the raw token string is never stored in React component state
   4. Receiving HTTP 401 from the API redirects the user to the login screen
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 11-01-PLAN.md — Vite scaffold + Tailwind v3 + shadcn@2.3.0 init + Midnight theme + vitest config (Wave 1)
+- [ ] 11-02-PLAN.md — Firebase init + AuthContext + PrivateRoute + LoginPage + App routes + unit tests (Wave 2)
+- [ ] 11-03-PLAN.md — Axios apiClient with per-request getIdToken() + 401 redirect + unit tests (Wave 3)
+- [ ] 11-04-PLAN.md — AppSidebar + AppLayout + 6 page stubs + App.tsx route wiring + unit tests (Wave 3)
 
 ---
 
@@ -240,7 +246,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13 → 14 → 15
 | 8. History and Configure Improvements | 0/TBD | Not started | - |
 | 9. FastAPI Foundation | 2/2 | Complete | 2026-04-29 |
 | 10. Core Data API Routes | 0/TBD | Not started | - |
-| 11. React Scaffold and Auth | 0/TBD | Not started | - |
+| 11. React Scaffold and Auth | 0/4 | Not started | - |
 | 12. Data Pages | 0/TBD | Not started | - |
 | 13. Dashboard | 0/TBD | Not started | - |
 | 14. History and Configure | 0/TBD | Not started | - |
