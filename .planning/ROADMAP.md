@@ -171,7 +171,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 11-01-PLAN.md — Vite scaffold + Tailwind v3 + shadcn@2.3.0 init + Midnight theme + vitest config (Wave 1)
+- [x] 11-01-PLAN.md — Vite scaffold + Tailwind v3 + shadcn@2.3.0 init + Midnight theme + vitest config (Wave 1)
 - [ ] 11-02-PLAN.md — Firebase init + AuthContext + PrivateRoute + LoginPage + App routes + unit tests (Wave 2)
 - [ ] 11-03-PLAN.md — Axios apiClient with per-request getIdToken() + 401 redirect + unit tests (Wave 3)
 - [ ] 11-04-PLAN.md — AppSidebar + AppLayout + 6 page stubs + App.tsx route wiring + unit tests (Wave 3)
@@ -246,7 +246,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13 → 14 → 15
 | 8. History and Configure Improvements | 0/TBD | Not started | - |
 | 9. FastAPI Foundation | 2/2 | Complete | 2026-04-29 |
 | 10. Core Data API Routes | 0/TBD | Not started | - |
-| 11. React Scaffold and Auth | 0/4 | Not started | - |
+| 11. React Scaffold and Auth | 1/4 | In Progress|  |
 | 12. Data Pages | 0/TBD | Not started | - |
 | 13. Dashboard | 0/TBD | Not started | - |
 | 14. History and Configure | 0/TBD | Not started | - |
