@@ -1,6 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 @layer base {
   :root {
     --background: oklch(1 0 0);
@@ -35,7 +37,9 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-    --sidebar-background: 0 0% 98%}
+    --sidebar-background: 0 0% 98%;
+  }
+
   .dark {
     --background: oklch(0.141 0.005 285.823);
     --foreground: oklch(0.985 0 0);
@@ -68,8 +72,15 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-    --sidebar-background: 240 5.9% 10%}
+    --sidebar-background: 240 5.9% 10%;
+
+    /* Midnight palette overrides */
+    --background: 216 18% 11%;
+    --primary: 212 100% 68%;
+    --primary-foreground: 0 0% 100%;
+  }
 }
+
 @layer base {
   * {
     @apply border-border;
