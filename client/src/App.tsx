@@ -1,15 +1,14 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { PrivateRoute } from '@/components/PrivateRoute';
+import { AppLayout } from '@/components/AppLayout';
 import { LoginPage } from '@/pages/LoginPage';
-
-// Placeholder stubs — replaced by real pages in Plan 04
-function DashboardPlaceholder() { return <div>Dashboard</div>; }
-function AccountsPlaceholder() { return <div>Accounts</div>; }
-function LiabilitiesPlaceholder() { return <div>Liabilities</div>; }
-function PensionPlaceholder() { return <div>Pension</div>; }
-function HistoryPlaceholder() { return <div>History</div>; }
-function ConfigurePlaceholder() { return <div>Configure</div>; }
+import { DashboardPage } from '@/pages/DashboardPage';
+import { AccountsPage } from '@/pages/AccountsPage';
+import { LiabilitiesPage } from '@/pages/LiabilitiesPage';
+import { PensionPage } from '@/pages/PensionPage';
+import { HistoryPage } from '@/pages/HistoryPage';
+import { ConfigurePage } from '@/pages/ConfigurePage';
 
 export default function App() {
   return (
@@ -21,17 +20,17 @@ export default function App() {
             path="/*"
             element={
               <PrivateRoute>
-                <Routes>
-                  <Route path="/" element={<DashboardPlaceholder />} />
-                  <Route path="/accounts" element={<AccountsPlaceholder />} />
-                  <Route path="/liabilities" element={<LiabilitiesPlaceholder />} />
-                  <Route path="/pension" element={<PensionPlaceholder />} />
-                  <Route path="/history" element={<HistoryPlaceholder />} />
-                  <Route path="/configure" element={<ConfigurePlaceholder />} />
-                </Routes>
+                <AppLayout />
               </PrivateRoute>
             }
-          />
+          >
+            <Route index element={<DashboardPage />} />
+            <Route path="accounts" element={<AccountsPage />} />
+            <Route path="liabilities" element={<LiabilitiesPage />} />
+            <Route path="pension" element={<PensionPage />} />
+            <Route path="history" element={<HistoryPage />} />
+            <Route path="configure" element={<ConfigurePage />} />
+          </Route>
         </Routes>
       </AuthProvider>
     </BrowserRouter>
