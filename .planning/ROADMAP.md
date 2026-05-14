@@ -195,6 +195,15 @@ Plans:
 - [ ] 12-03-PLAN.md — LiabilitiesPage thin wrapper (Wave 2, parallel with 12-04)
 - [ ] 12-04-PLAN.md — PensionPage thin wrapper (Wave 2, parallel with 12-03)
 
+**Wave 1** *(blocked on Wave 0 completion)*
+**Wave 2** *(blocked on Wave 1 completion — plans 12-03 and 12-04 parallel)*
+
+Cross-cutting constraints:
+- `form.reset()` in `useEffect([open, editItem?.id])` — prevents stale dialog values (all plans)
+- `invalidateQueries` in `onSuccess` only — no optimistic updates (server computes history totals)
+- `toast.success/error` from `sonner` — locked from Phase 11, all plans
+- All monetary display: `Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' })`
+
 ---
 
 ### Phase 13: Dashboard
@@ -253,7 +262,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13 → 14 → 15
 | 9. FastAPI Foundation | 2/2 | Complete | 2026-04-29 |
 | 10. Core Data API Routes | 0/TBD | Not started | - |
 | 11. React Scaffold and Auth | 1/4 | In Progress|  |
-| 12. Data Pages | 0/4 | Not started | - |
+| 12. Data Pages | 0/4 | Ready to execute | - |
 | 13. Dashboard | 0/TBD | Not started | - |
 | 14. History and Configure | 0/TBD | Not started | - |
 | 15. Deployment | 0/TBD | Not started | - |
