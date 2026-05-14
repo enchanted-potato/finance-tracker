@@ -187,7 +187,13 @@ Plans:
   2. The Accounts page date picker defaults to today; submitting a balance entry for a past date saves a snapshot for that date and the entry appears in the history table
   3. The Accounts page entry history shows daily totals (computed by API); expanding a row reveals per-account balances for that day
   4. The Liabilities and Pension pages replicate the Accounts page behaviour exactly — CRUD dialogs, date-aware entry, and collapsible history with server-computed totals all work on all three pages
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 12-01-PLAN.md — Install deps + shadcn components + QueryClientProvider + test scaffolding (Wave 0, blocking)
+- [ ] 12-02-PLAN.md — API modules + shared DataPage components + AccountsPage (Wave 1)
+- [ ] 12-03-PLAN.md — LiabilitiesPage thin wrapper (Wave 2, parallel with 12-04)
+- [ ] 12-04-PLAN.md — PensionPage thin wrapper (Wave 2, parallel with 12-03)
 
 ---
 
@@ -247,7 +253,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13 → 14 → 15
 | 9. FastAPI Foundation | 2/2 | Complete | 2026-04-29 |
 | 10. Core Data API Routes | 0/TBD | Not started | - |
 | 11. React Scaffold and Auth | 1/4 | In Progress|  |
-| 12. Data Pages | 0/TBD | Not started | - |
+| 12. Data Pages | 0/4 | Not started | - |
 | 13. Dashboard | 0/TBD | Not started | - |
 | 14. History and Configure | 0/TBD | Not started | - |
 | 15. Deployment | 0/TBD | Not started | - |
