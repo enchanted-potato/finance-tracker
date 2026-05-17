@@ -68,9 +68,11 @@ describe('PensionPage', () => {
     ]);
     mockAxios.onGet('/api/pension/history').reply(200, []);
     renderWithQuery(<PensionPage />);
+    // Items appear in both the list AND the BalanceEntryForm select (via SelectItem mock)
+    // Use getAllByText to handle multiple occurrences of the same name
     await waitFor(() => {
-      expect(screen.getByText('NEST')).toBeTruthy();
-      expect(screen.getByText('Company Pension')).toBeTruthy();
+      expect(screen.getAllByText('NEST').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Company Pension').length).toBeGreaterThan(0);
     });
   });
 
