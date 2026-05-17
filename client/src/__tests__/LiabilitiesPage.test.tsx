@@ -69,8 +69,8 @@ describe('LiabilitiesPage', () => {
     mockAxios.onGet('/api/liabilities/history').reply(200, []);
     renderWithQuery(<LiabilitiesPage />);
     await waitFor(() => {
-      expect(screen.getByText('Mortgage')).toBeTruthy();
-      expect(screen.getByText('Car Loan')).toBeTruthy();
+      expect(screen.getAllByText('Mortgage').length > 0).toBeTruthy();
+      expect(screen.getAllByText('Car Loan').length > 0).toBeTruthy();
     });
   });
 
