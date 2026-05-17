@@ -73,9 +73,11 @@ describe('AccountsPage', () => {
     ]);
     mockAxios.onGet('/api/accounts/history').reply(200, []);
     renderWithQuery(<AccountsPage />);
+    // Items appear in both the list AND the BalanceEntryForm select (via SelectItem mock)
+    // Use getAllByText to handle multiple occurrences of the same name
     await waitFor(() => {
-      expect(screen.getByText('ISA')).toBeTruthy();
-      expect(screen.getByText('Checking')).toBeTruthy();
+      expect(screen.getAllByText('ISA').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Checking').length).toBeGreaterThan(0);
     });
   });
 
