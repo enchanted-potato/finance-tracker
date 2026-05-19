@@ -28,7 +28,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 9: FastAPI Foundation** - CORS, auth dependency, Firebase Admin lifespan, pool_pre_ping — platform correct before any feature routes (completed 2026-04-29)
 - [ ] **Phase 10: Core Data API Routes** - All feature endpoints (accounts, liabilities, pension, snapshots, configure) with float schemas and Recharts-shaped responses
 - [ ] **Phase 11: React Scaffold and Auth** - Vite + Tailwind + shadcn/ui, Firebase Google Sign-In auth gate, Axios client with per-request token refresh, sidebar shell
-- [ ] **Phase 12: Data Pages** - Accounts, Liabilities, and Pension pages with CRUD dialogs, date-aware entry, and collapsible entry history
+- [x] **Phase 12: Data Pages** - Accounts, Liabilities, and Pension pages with CRUD dialogs, date-aware entry, and collapsible entry history (completed 2026-05-19)
 - [ ] **Phase 13: Dashboard** - Metric cards and four Recharts charts (trend, allocation, pension) consuming real API data
 - [ ] **Phase 14: History and Configure** - Snapshot history table with expandable rows and CSV export/import; Configure page with inline type management
 - [ ] **Phase 15: Deployment** - React SPA on Firebase Hosting; FastAPI replaces Streamlit on Cloud Run; end-to-end production smoke test
@@ -190,10 +190,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 12-01-PLAN.md — Install deps + shadcn components + QueryClientProvider + test scaffolding (Wave 0, blocking)
-- [ ] 12-02-PLAN.md — API modules + shared DataPage components + AccountsPage (Wave 1)
-- [ ] 12-03-PLAN.md — LiabilitiesPage thin wrapper (Wave 2, parallel with 12-04)
-- [ ] 12-04-PLAN.md — PensionPage thin wrapper (Wave 2, parallel with 12-03)
+- [x] 12-01-PLAN.md — Install deps + shadcn components + QueryClientProvider + test scaffolding (Wave 0, blocking)
+- [x] 12-02-PLAN.md — API modules + shared DataPage components + AccountsPage (Wave 1)
+- [x] 12-03-PLAN.md — LiabilitiesPage thin wrapper (Wave 2, parallel with 12-04)
+- [x] 12-04-PLAN.md — PensionPage thin wrapper (Wave 2, parallel with 12-03)
 
 **Wave 1** *(blocked on Wave 0 completion)*
 **Wave 2** *(blocked on Wave 1 completion — plans 12-03 and 12-04 parallel)*
@@ -262,7 +262,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13 → 14 → 15
 | 9. FastAPI Foundation | 2/2 | Complete | 2026-04-29 |
 | 10. Core Data API Routes | 0/TBD | Not started | - |
 | 11. React Scaffold and Auth | 1/4 | In Progress|  |
-| 12. Data Pages | 0/4 | Ready to execute | - |
+| 12. Data Pages | 4/4 | Complete   | 2026-05-19 |
 | 13. Dashboard | 0/TBD | Not started | - |
 | 14. History and Configure | 0/TBD | Not started | - |
 | 15. Deployment | 0/TBD | Not started | - |
