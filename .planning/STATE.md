@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 9 context gathered
-last_updated: "2026-05-14T00:00:00.000Z"
-last_activity: 2026-05-14 -- Phase 12 planned (4 plans)
+last_updated: "2026-05-17T00:00:00.000Z"
+last_activity: 2026-05-17 -- Phase 12 execution started (1/4 plans complete)
 progress:
   total_phases: 12
   completed_phases: 5
@@ -18,19 +18,19 @@ progress:
 
 ## Current Position
 
-Phase: 11 (react-scaffold-and-auth) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 11
-Last activity: 2026-05-09 -- Phase 11 execution started
+Phase: 12 (data-pages) — EXECUTING
+Plan: 2 of 4 (plan 01 complete)
+Status: Executing Phase 12
+Last activity: 2026-05-17 -- Phase 12 execution started (Wave 1 running)
 
-Progress: [██░░░░░░░░] ~29% (Phase 11 ready; Phase 10 pending)
+Progress: [████░░░░░░] ~57% (Phase 12 executing; Wave 1 in progress)
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Seeing your net worth trend over time at a glance, without the overhead of transaction tracking.
-**Current focus:** Phase 11 — react-scaffold-and-auth
+**Current focus:** Phase 12 — data-pages
 
 ## Milestone Scope
 
