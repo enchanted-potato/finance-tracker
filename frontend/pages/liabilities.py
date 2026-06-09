@@ -135,8 +135,9 @@ def render() -> None:
                 )
                 affected_dates.add(entry_date)
 
-            # Also recapture any later snapshots in the same months so the History page
-            # (which shows the latest snapshot per month) reflects the change.
+            # Recapture all snapshots in the same months so the History page
+            # (which shows the latest snapshot per month) reflects the change,
+            # regardless of whether the snapshot date is before or after the entry date.
             all_snapshots = get_snapshot_history(session=session, user_id=user_id)
             for snap in all_snapshots:
                 snap_date = snap.snapshot_date.date()
@@ -144,7 +145,6 @@ def render() -> None:
                     if (
                         snap_date.year == affected_date.year
                         and snap_date.month == affected_date.month
-                        and snap_date > affected_date
                     ):
                         affected_dates.add(snap_date)
 

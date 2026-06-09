@@ -436,7 +436,10 @@ def sync_snapshot_liabilities(*, session: Session, user_id: str, snapshot_date: 
     Only touches total_liabilities and net_worth — never overwrites total_assets.
     If no snapshot exists for this date, does nothing.
     """
-    liabilities = _latest_liability_entries(session, user_id, snapshot_date)
+    import calendar
+    last_day = calendar.monthrange(snapshot_date.year, snapshot_date.month)[1]
+    end_of_month = date(snapshot_date.year, snapshot_date.month, last_day)
+    liabilities = _latest_liability_entries(session, user_id, end_of_month)
     total_liabilities = sum((lb.amount for lb in liabilities), Decimal("0")) if liabilities else None
 
     snapshot_dt = datetime.combine(snapshot_date, datetime.min.time())
