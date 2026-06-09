@@ -215,7 +215,11 @@ Cross-cutting constraints:
   2. The net worth trend line chart renders with y-axis values formatted with thousands comma separators; chart data is in Recharts format (one object per date with all series as keys) as returned by the API
   3. The asset allocation donut chart renders using Recharts — data is returned by the API with one slice per asset type
   4. The pension balance bar chart renders using Recharts with one bar per provider — data is returned by the API
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Install recharts + dashboard API module + full DashboardPage implementation (Wave 1)
+- [ ] 13-02-PLAN.md — DashboardPage unit tests covering all 4 RDASH requirements (Wave 2)
 
 ---
 
@@ -263,6 +267,6 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13 → 14 → 15
 | 10. Core Data API Routes | 0/TBD | Not started | - |
 | 11. React Scaffold and Auth | 1/4 | In Progress|  |
 | 12. Data Pages | 4/4 | Complete   | 2026-05-19 |
-| 13. Dashboard | 0/TBD | Not started | - |
+| 13. Dashboard | 0/2 | Not started | - |
 | 14. History and Configure | 0/TBD | Not started | - |
 | 15. Deployment | 0/TBD | Not started | - |
