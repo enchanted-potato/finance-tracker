@@ -221,6 +221,8 @@ Plans:
 - [ ] 13-01-PLAN.md — Install recharts + dashboard API module + full DashboardPage implementation (Wave 1)
 - [ ] 13-02-PLAN.md — DashboardPage unit tests covering all 4 RDASH requirements (Wave 2)
 
+**Wave 2** *(blocked on Wave 1 completion)*
+
 ---
 
 ### Phase 14: History and Configure
@@ -267,6 +269,6 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13 → 14 → 15
 | 10. Core Data API Routes | 0/TBD | Not started | - |
 | 11. React Scaffold and Auth | 1/4 | In Progress|  |
 | 12. Data Pages | 4/4 | Complete   | 2026-05-19 |
-| 13. Dashboard | 0/2 | Not started | - |
+| 13. Dashboard | 0/2 | Ready to execute | - |
 | 14. History and Configure | 0/TBD | Not started | - |
 | 15. Deployment | 0/TBD | Not started | - |
