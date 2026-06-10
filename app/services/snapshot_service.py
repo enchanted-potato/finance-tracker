@@ -452,6 +452,28 @@ def sync_snapshot_liabilities(*, session: Session, user_id: str, snapshot_date: 
     existing.total_liabilities = total_liabilities
     assets = existing.total_assets if existing.total_assets is not None else Decimal("0")
     existing.net_worth = (assets - total_liabilities) if total_liabilities is not None else None
+
+    # Keep detail_json in sync so the History detail panel matches the headline figure
+    if existing.detail_json is not None:
+        liability_type_ids = {lb.liability_type_id for lb in liabilities}
+        lt_rows = session.exec(
+            select(LiabilityType).where(LiabilityType.id.in_(liability_type_ids))
+        ).all() if liability_type_ids else []
+        lt_names = {lt.id: lt.name for lt in lt_rows}
+        existing.detail_json = {
+            **existing.detail_json,
+            "liabilities": [
+                {
+                    "id": lb.id,
+                    "name": lt_names.get(lb.liability_type_id, ""),
+                    "entry_date": str(lb.entry_date),
+                    "amount": str(lb.amount),
+                    "type_id": lb.liability_type_id,
+                }
+                for lb in liabilities
+            ],
+        }
+
     session.add(existing)
     session.commit()
     logger.info(f"Synced liabilities for snapshot {snapshot_date} user {user_id}")
